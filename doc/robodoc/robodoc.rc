@@ -1,0 +1,25 @@
+items:
+    NAME
+    FUNCTION
+    COPYRIGHT
+    INPUTS
+    OUTPUT
+    TODO
+    SOURCE
+options:
+    --src ../../src
+    --doc ./
+    --html
+    --multidoc
+    --index
+    --tabsize 8
+    --tell
+    --toc
+header markers:
+    !!****
+headertypes:
+    m "Modules"  robo_modules
+remark markers:
+    !!
+end markers:
+    !!***

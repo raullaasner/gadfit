@@ -1,0 +1,2124 @@
+% User guide
+
+% Copyright (C) 2014-2015 Raul Laasner
+% This file is distributed under the terms of the GNU General Public
+% License, see LICENSE in the root directory of the present
+% distribution or http://gnu.org/copyleft/gpl.txt .
+
+\documentclass{article}
+\def\version{1.2.0}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{enumitem}
+\usepackage{hyperref} \hypersetup{colorlinks,
+citecolor=blue,filecolor=blue,linkcolor=blue,urlcolor=black,pdftex}
+
+\newcommand{\D}{\,\textrm{d}}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\abs}{abs}
+\DeclareMathOperator{\asin}{asin}
+\DeclareMathOperator{\acos}{acos}
+\DeclareMathOperator{\atan}{atan}
+\DeclareMathOperator{\asinh}{asinh}
+\DeclareMathOperator{\acosh}{acosh}
+\DeclareMathOperator{\atanh}{atanh}
+\DeclareMathOperator{\erf}{erf}
+\DeclareMathOperator{\Li2}{Li_2}
+
+\title{User guide for GADfit version \version}
+\date{June 2015}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\section{Introduction}
+
+GADfit is a Fortran implementation of \textbf{g}lobal nonlinear curve
+fitting based on \textbf{a}utomatic \textbf{d}ifferentiation
+(AD). Global fitting refers to fitting many datasets simultaneously
+with some parameters shared among the datasets (not necessarily
+finding the global minimum in the parameter space). The optimization
+procedure is based on a modified Levenberg-Marquardt algorithm, which
+is well-suited for difficult large scale problems with a strong
+interdependence of parameters. The Jacobian and other quantities
+requiring differentiation are calculated using AD instead of finite
+differences, which ensures that the derivatives are always calculated
+with the same precision as function evaluation. The cost of
+calculating the derivatives is \textit{independent} of the number of
+fitting parameters and is a small constant of that of function
+evaluation, resulting in very efficient code. The method can be used
+for fitting functions of high complexity which, in the present
+implementation, includes nonlinear combinations of elementary and
+special functions, single or double integrals, and any control flow
+statements allowed by the programming language.
+
+GADfit is currently hosted by \texttt{sourceforge.net} .
+
+\subsection{Contributors}
+
+\begin{tabular}{lll}
+  Raul Laasner & University of Tartu & raullaasner@gmail.com \\
+\end{tabular}
+
+\subsection{Terms of use}
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, see ``Copying'' in the root directory of
+the present distribution or \texttt{http://gnu.org/copyleft/gpl.txt} .
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see
+\texttt{http://gnu.org/licenses/}.
+
+\section{Method}
+
+GADfit is based on the Levenberg-Marquardt algorithm
+\cite{marquardt63}, which is a standard technique for solving
+nonlinear least squares problems. A least squares problem refers to
+minimizing the sum of the squares of the differences between the
+measured data and a curve constructed by a parameterized function. If
+the model curve (the fitting function) has a nonlinear dependence on
+the fitting parameters, it is referred to as a nonlinear least squares
+problem.
+
+Given a set of $n$ data points $(x_i,y_i)$, where the $x_i$ are
+independent variables, and a model function
+$f(\bm x, \beta_1, \ldots, \beta_k)$, which depends on the $x_i$ and
+$k$ additional parameters (the fitting parameters), the sum of squares
+is defined as
+\begin{equation}
+  \label{eq:chi2}
+  \chi^2 = \sum_{i=1}^n \left[ \frac{y_i - f(x_i, \bm\beta)}{\sigma_i}
+  \right]^2,
+\end{equation}
+where $\sigma_i$ are the experimental uncertainties. As with all
+nonlinear optimization algorithms, Levenberg-Marquardt is an iterative
+procedure. One starts with an initial guess for the parameter vector
+$\bm\beta$ and finds an increment $\bm\delta$ such that
+$\bm\beta \rightarrow \bm\beta + \bm\delta$ leads to the lowering of
+$\chi^2$. This is repeated until some convergence criterion is
+satisfied. Following the original LM method, the increment vector (the
+step) is explicitly given by
+\begin{equation}
+  \label{eq:LM}
+  \left[\bm J^T \bm J + \lambda\diag \left(\bm J^T \bm J\right)
+  \right] \bm\delta = \bm J^T \left[ \bm y - \bm f(\bm \beta) \right],
+\end{equation}
+where\footnote{Usually the error factor is not included in the
+  definition.}
+\begin{equation}
+  \label{eq:Jacob}
+  J_{ij} = \frac{1}{\sigma_i} \frac{\partial f(x_i, \bm \beta)}
+  {\partial \beta_j}
+\end{equation}
+defines the Jacobian matrix and where the damping parameter $\lambda$
+allows the nature of the algorithm to adaptively change between the
+steepest descent and the Gauss-Newton method. If $\chi^2$ is far from
+its minimum, $\lambda$ should have a large value, bringing the
+algorithm closer to the steepest descent. On the other hand, close to
+the minimum, Gauss-Newton is the correct choice. A simple strategy
+would be as follows: if for the current iteration $\chi^2$ is smaller
+than for the previous iteration, accept the step and decrease
+$\lambda$ by a factor of 10. Otherwise increase $\lambda$, solve
+Eq.~\eqref{eq:LM}, and recalculate $\chi^2$ with the new step. If
+$\chi^2$ still increases, stop the procedure, otherwise proceed with
+the next iteration. If the procedure stops after the first iteration,
+start again with a larger initial value for $\lambda$. A sufficiently
+large $\lambda$ always exists that leads to a decrease of $\chi^2$
+\cite{marquardt63}.
+
+\subsection{\label{sec:mod_lm}Modified Levenberg-Marquardt}
+
+The above is a classical description of the LM algorithm, which is
+close to the default regime of GADfit unless the user modifies any of
+the default input parameters. In this section, we discuss several
+interesting modifications to the algorithm (see \cite{transtrum10,
+  transtrum11, transtrum12} and references therein), which aim to
+improve the convergence speed and the sensitivity to the initial
+guess.
+
+\paragraph{The damping matrix.} Originally, the rationale for choosing
+the damping matrix as $\bm D^T\bm D \equiv \diag(\bm J^T\bm J)$ in
+Eq.~\eqref{eq:LM} was to make the algorithm invariant to the rescaling
+of parameters. This is important when the parameters have very
+different magnitudes and the algorithm has to follow a narrow canyon
+in the parameter space in search of the minimum of $\chi^2$. However,
+this also poses a problem when the algorithm is in a region of space
+where the model is insensitive to the parameters. When this happens,
+the diagonal entries of both $\bm J^T\bm J$ and the damping matrix
+$\bm D^T\bm D$ become small for some parameters, which leads to
+uncontrollably large steps. There is a chance that some parameters are
+incorrectly pushed to infinite values, a phenomenon known as parameter
+evaporation. A compromise for both retaining the invariance to
+rescaling and guarding against parameter evaporation is to set the
+diagonal entries of $\bm D^T\bm D$ to the largest diagonal entries of
+$\bm J^T\bm J$ yet encountered. This approach is efficient provided
+that the initial guess does not lie on a plateau of the $\chi^2$
+surface in the parameter space. If this condition is not satisfied
+then, as a brute-force solution, the user can specify the minimum
+values for the diagonal of $\bm D^T\bm D$.
+
+\paragraph{Optimal path towards the minimum.} Following a geometric
+interpretation of nonlinear optimization, it has been suggested that a
+geodesic in the parameter space is the most natural path for the
+algorithm to follow. When the algorithm is navigating a narrow curved
+canyon, then instead of taking simple steps along the gradient of
+$\chi^2$, it would be more efficient to take the curvature of the
+canyon into account and move along, .e.g., parabolic trajectories. One
+can imagine the benefit of this, e.g., for the Rosenbrock function. To
+second order, the step is then given by
+\begin{equation}
+  \label{eq:delta12}
+  \begin{split}
+    \bm\delta =& \bm\delta_1 + \bm\delta_2, \\
+    \bm\delta_1 =& \left[ \bm J^T \bm J + \lambda\bm D^T\bm D
+    \right]^{-1} \bm J^T \left[ \bm y - \bm f(\bm\beta) \right], \\
+    \bm\delta_2 =& -\frac{1}{2} \left[ \bm J^T \bm J + \lambda\bm
+      D^T\bm D\right]^{-1} \bm J^T \bm\Omega,
+  \end{split}
+\end{equation}
+where (Einstein summation implied)
+\begin{equation}
+  \label{eq:omega}
+  \Omega_i = \frac{\partial^2
+    f(x_i,\beta)}{\partial\beta_j \partial\beta_k} \delta_1^j
+  \delta_1^k
+\end{equation}
+is the second directional derivative along $\bm\delta_1$. From
+geometric considerations, $\bm\delta_1$ and $\bm\delta_2$ are also
+called the velocity and the accelerations terms. The acceleration term
+either magnifies or shrinks the velocity term, or tilts it in a
+different direction. We do not delve here into the theoretical
+foundations leading to Eq.~\eqref{eq:delta12} and its comparison to
+alternative ways to include second order corrections. The interested
+reader is referred to \cite{transtrum10, transtrum11, transtrum12} for
+an in-depth discussion. We only make a few additional remarks for
+practical calculations.
+
+The geodesic acceleration is most useful in a narrow canyon. When the
+algorithm has not yet found a canyon and is scanning a large plateau,
+which is where the initial guess is likely to be, then damping is
+small and $\bm\delta_1$ is large. This causes $\bm\delta_2$ to be even
+larger and pointing in the opposite direction, which may steer the
+algorithm in the wrong direction. To avoid this, we require the effect
+of the second order term to always be smaller than the first order
+term,
+\begin{equation}
+  \label{eq:acc_alpha}
+  \frac{\sqrt{\bm\delta_2\bm D\bm\delta_2}}{\sqrt{\bm\delta_1\bm
+      D\bm\delta_1}} < \alpha, \quad 0 \le \alpha < 1,
+\end{equation}
+where $\bm D$ has been included to ensure scale invariance.
+
+Whether including the acceleration term pays off depends on the model
+and is ultimately for the user to test. With automatic differentiation
+the second directional derivative has about the same cost as the
+Jacobian, which is 3--4 times function evaluation.
+
+\paragraph{Uphill steps.} Accepting only downhill steps is the safest
+strategy, especially when one is far from the minimum. However, if the
+algorithm has to follow a narrow canyon, only very short steps are
+acceptable, making the search costly. It might then be beneficial to
+conditionally also allow uphill steps. This can be thought of as
+analogous to the trajectory of a bobsled racer. A useful criterion for
+allowing an uphill step is
+\begin{equation}
+  \label{eq:uphill}
+  \begin{split}
+    & \beta_i = \cos(\bm\delta_{1i},\bm\delta_{1i-1}), \\
+    & (1-\beta_i)^b\chi_i^2 < \min(\chi_1^2,\ldots,\chi_{i-1}^2),
+  \end{split}
+\end{equation}
+where $\beta_i$ is the cosine of the angle between the proposed step
+of the current iteration and that of the previous iteration. Only the
+velocity and not the acceleration term is considered here. According
+to Eq.~\eqref{eq:uphill}, uphill steps are allowed only for acute
+angles, and the probability of acceptance increases with the alignment
+of $\bm\delta_{1i}$ and $\bm\delta_{1i-1}$. The RHS of the inequality
+test usually refers to the sum of squares of the previous iteration,
+but we use $\min$ here in case any of the previous steps were
+uphill. Reasonable values for the exponent are 1 and 2, with $b=2$
+allowing greater uphill steps than $b=1$.
+
+In addition to faster convergence, this so-called ``bold'' acceptance
+criterion also exhibits a smaller probability of getting stuck at the
+local minima, which reside on the floor of the canyon.
+
+The drawback of this criterion is the reduced stability of the
+algorithm, since allowing uphill steps makes it more susceptible to
+parameter evaporation. It is better suited for problems where the
+canyon is easily found, but navigating the canyon is the main
+difficulty. This is in contrast to problems that start in a difficult
+region of the parameter space, but once heading in the right
+direction, the minimum is easily found.
+
+\paragraph{Updating the damping parameter.} The simple scheme of
+raising and lowering $\lambda$ by a factor of 10 as the steps are
+accepted or rejected is often adequate, but can be
+improved. Increasing $\lambda$ by a small factor $\lambda_\uparrow$
+when the step is uphill and decreasing it by a larger factor
+$\lambda_\downarrow$ when the step is downhill is expected to lead to
+a faster convergence (see Sec.~VIII.C of \cite{transtrum11}). The
+optimal values for the raising and lowering factors depend on the
+problem. One might start with, e.g., $\lambda_\uparrow=3$ and
+$\lambda_\downarrow=5$.
+
+A more advanced method for updating the damping parameter makes use of
+the gain factor,
+\begin{equation}
+  \label{eq:gain_factor}
+  \rho = \frac{\chi^2(\bm x, \bm\beta) - \chi^2(\bm x,
+    \bm\beta+\bm\delta_1)}{\chi^2(\bm x, \bm\beta) - \left| [\bm y
+      - \bm f(\bm\beta)]/\bm\sigma - 2(\bm J+\lambda\bm
+      D)\bm\delta_1 \right|^2} = \frac{\chi^2(\bm x, \bm\beta) -
+    \chi^2(\bm x, \bm\beta+\bm\delta_1)}{2\bm\delta_1(\bm J^T\bm
+    J+\lambda\bm D^T\bm D)\bm\delta_1},
+\end{equation}
+where $\bm a/\bm b$ implies element-wise division. The second term in
+the denominator is the linearly predicted value of $\chi^2$ using the
+new parameter vector $\bm\beta+\bm\delta_1$. A downhill step always
+produces a positive $\rho$ and thus the steps can be accepted or
+rejected based on the sign of $\rho$. If $\rho$ is close to zero,
+$\lambda$ is updated with $\lambda_\uparrow$ and
+$\lambda_\downarrow$. However, if $\rho$ is much greater than zero
+then the step should still be accepted but now the algorithm is
+stepping out of its trust-region. The next step is likely to increase
+$\chi^2$, which requires the lowering of $\lambda$. The oscillating
+behavior of $\lambda$ can be avoided by limiting the decrease of
+$\lambda$ so that the algorithm is unable to step out of the
+trust-region. Following Nielsen \cite{nielsen99}, this can be achieved
+by multiplying $\lambda$ by $\max[1/\lambda_\downarrow,1-(2\rho-1)^3]$
+for $\rho>0$. This method tends to increase the total number of
+iterations, but since the steps are accepted more often, $\chi^2$ is
+calculated by a lesser number of times per iteration, which can speed
+up the procedure.
+
+Another method for updating the damping parameter is due to Umrigar
+and Nightingale (unpublished). The idea is to vary $\lambda$ based on
+the history of success of the previous steps. If the current step is
+accepted then $\lambda$ is either decreased by a factor of $\xi$ if
+the change in the direction of $\bm\delta_1$ is less that $\pi/2$,
+left unchanged if the change is more than $\pi/2$, or increased if the
+step was uphill:
+\begin{align}
+  \label{eq:umnigh_lambda_acc}
+  \lambda_i =& \lambda_{i-1}/\xi, 
+  & \cos(\bm\delta_{1i},\bm\delta_{1i-1}) \ge 0, \\
+  \lambda_i =& \lambda_{i-1}, & \cos(\bm\delta_{1i},\bm\delta_{1i-1})
+                                < 0, \\
+  \lambda_i =& \lambda_{i-1}\sqrt{\xi}, & \chi_i^2 \ge \chi_{i-1}^2.
+\end{align}
+If the step is rejected, then $\lambda$ is always increased, but the
+increase depends on the change of $\bm\delta_1$:
+\begin{align}
+  \label{eq:umnigh_lambda_rej}
+  \lambda_i =& \lambda_{i-1}\sqrt{\xi}, 
+  & \cos(\bm\delta_{1i},\bm\delta_{1i-1}) \ge 0, \\
+  \lambda_i =& \lambda_{i-1}\xi, & \cos(\bm\delta_{1i},\bm\delta_{1i-1})
+                                   < 0.
+\end{align}
+$\xi$ is constrained to the range 1\ldots100 and is given by
+\begin{equation}
+  \label{eq:umnigh_xi}
+  \xi = \left( 1-|2a-1|) \right)^{-2},
+\end{equation}
+where $a$ is updated according to
+\begin{equation}
+  \label{eq:umnigh_a_update}
+  a_i = a_{i-1}m + A(1-m),
+\end{equation}
+where
+\begin{align}
+  \label{eq:umnigh_A_update}
+  A =& 1 && \cos(\bm\delta_{1i},\bm\delta_{1i-1}) \ge 0 \quad
+            \text{and} \quad \chi_i^2 < \chi_{i-1}^2, \\
+  A =& 1/2, && \cos(\bm\delta_{1i},\bm\delta_{1i-1})
+               < 0 \quad \text{or} \quad \chi_i^2 \ge \chi_{i-1}^2, \\
+  A =& 0 && \text{if step was rejected}.
+\end{align}
+The method works well in some cases but has thus far not seen
+extensive testing. The inital values for $a$ and $m$ are set to $0.5$
+and $e^{-0.2}$.
+
+\paragraph{Convergence criteria.} At the solution, the residual vector
+$\bm y - \bm f$ is orthogonal to the range of the Jacobian,
+$\bm J\bm\delta_1$. A measure of convergence can then be taken as the
+cosine of the angle between these two quantities,
+\begin{equation}
+  \label{eq:cos_phi}
+  |\cos\phi| = \frac{|(\bm y - \bm f) \bm J\bm \delta_1|}{|\bm y - \bm
+    f||\bm J\bm \delta_1|}.
+\end{equation}
+In addition to \eqref{eq:cos_phi}, most of the standard convergence
+criteria are available in GADfit. See \verb+gadf_fit+ under
+Sec.~\ref{sec:user}.
+
+\subsection{Global nonlinear optimization}
+
+For the case of fitting many curves simultaneously with shared
+parameters, the datasets are stacked to form a single dataset, which
+is then fitted with a piecewise function. The fitting function in
+constructed so that some parameters only have an effect on a subset of
+data points (local parameters) while others are active over the whole
+data range (global parameters).
+
+As an example, assume two datasets with sizes $n$ and $m$ and a
+fitting function $f(x,\alpha,\beta)$, which depends on two parameters
+$\alpha$ and $\beta$. $\alpha$ is different for the two curves while
+$\beta$ is shared (for an exponential decay process, these could be
+different initial amplitudes but the same decay constant). The global
+Jacobian is then
+\begin{equation}
+  \label{eq:globalJacob}
+  \bm J =
+  \left( \begin{matrix}
+      \frac{1}{\sigma_1} \frac{\partial f(x_1, \alpha, \beta)}
+      {\partial\alpha_1} && 0 && \frac{1}{\sigma_1} \frac{\partial
+        f(x_1, \alpha, \beta)} {\partial\beta} \\
+      \ldots && \ldots && \ldots \\
+      \frac{1}{\sigma_n} \frac{\partial f(x_n, \alpha, \beta)}
+      {\partial\alpha_1} && 0 && \frac{1}{\sigma_n} \frac{\partial
+        f(x_n, \alpha, \beta)} {\partial\beta} \\
+      0 && \frac{1}{\sigma_{n+1}} \frac{\partial f(x_{n+1}, \alpha,
+        \beta)} {\partial\alpha_2} && \frac{1}{\sigma_{n+1}}
+      \frac{\partial f(x_{n+1}, \alpha, \beta)} {\partial\beta} \\
+      \ldots && \ldots && \ldots \\
+      0 && \frac{1}{\sigma_{n+m}} \frac{\partial f(x_{n+m}, \alpha,
+        \beta)} {\partial\alpha_2} && \frac{1}{\sigma_{n+m}}
+      \frac{\partial f(x_{n+m}, \alpha, \beta)} {\partial\beta}
+    \end{matrix} \right),
+\end{equation}
+where the notation is
+$\partial f / \partial\alpha_i \equiv \partial f / \partial\alpha
+|_{\alpha = \alpha_i}$.
+Similarly, with 4 datasets, each consisting of 100 points, and with 4
+local and 2 global parameters, the Jacobian would have the dimensions
+$400\times18$. Sparsity of the Jacobian is not exploited. Since no
+conceptual change is introduced, the fitting procedure follows the
+same algorithm as with a single curve.
+
+\subsection{\label{sec:ad}Automatic differentiation}
+
+If the Jacobian \eqref{eq:globalJacob} was calculated using finite
+differences, the maximum accuracy one can hope for is half the number
+of significant digits of machine precision (about 7 for double
+precision). This is often sufficient if the fitting function is a
+simple combination of elementary functions such as the Gaussian or the
+exponential. However, problems can arise with difficult functions such
+as those containing a highly nonlinear combination of elementary or
+special functions or those requiring numerical integration. In such
+situations, both accuracy and the computational cost of finite
+differences can become problematic. With finite differences, the
+evaluation of $J_{ij}$ always takes two function calls and the
+evaluation of the whole gradient $(J_{i1}, \ldots, J_{in})$ takes $2n$
+function calls.
+
+In contrast, with automatic differentiation the derivatives are
+obtained with the same accuracy as function evaluation itself, while
+the computational cost is 3--4 times that of function evaluation
+\textit{irrespective} of the number of parameters
+\cite{griewank08}. AD exploits the fact that any mathematical
+function, no matter how complicated, is executed as a sequence of
+elementary arithmetic operations on a computer. By applying the chain
+rule of calculus at each step of execution, the derivative of the
+function can be calculated automatically, with working accuracy, and
+using at most a small constant of the computer time required for
+function evaluation. It should be noted that while AD is not numerical
+differentiation, it is also not symbolic differentiation. The chain
+rule is applied directly to the results of elementary operations and
+the symbolic form of the derivative is never saved in any way. Only
+the derivatives of the elementary functions need to be coded by hand
+(in AD literature, the term ``elemental function'' is more
+common). Afterwards, the algorithm can be applied to functions of
+arbitrary complexity.
+
+In this document, we describe two flavors of AD. The forward mode of
+AD is well-suited for calculating the gradient of a multi-valued
+function depending on a single parameter (just the derivative in this
+case), and for calculating the directional derivative of a
+single-valued function depending on many parameters. The reverse mode
+is suitable for calculating the gradient of a single-valued function
+depending on many parameters. For the general case of $n$ input and
+$m$ output variables, a complicated mix of both modes would in
+principle be optimal.
+
+\subsubsection{Forward mode}
+
+The basic idea behind the forward mode is to extend all numbers to
+include a second component,
+\begin{equation}
+  \label{eq:ddouble}
+  x \rightarrow \tilde x = x + \dot x d \equiv (x,\dot x),
+\end{equation}
+resulting in so-called dual numbers. The arithmetic on the dual
+numbers is defined by requiring $d^2=0$. This is in contrast to
+ordinary complex numbers, which are also dual numbers but where the
+second component is defined according to $i^2=-1$. Elementary
+arithmetic between dual numbers can then be written as follows:
+\begin{equation}
+  \label{eq:dual_arith}
+  \begin{split}
+    \tilde x + \tilde y =& x + y + (\dot x + \dot y)d = (x+y, \dot x +
+    \dot y), \\
+    \tilde x\tilde y =& xy + x\dot yd + \dot xyd + \dot x\dot yd^2 =
+    (xy, \dot xy + x\dot y), \\
+    \frac{\tilde x}{\tilde y} =& \frac{x + \dot xd}{y + \dot yd} =
+    \frac{(x + \dot xd)(y - \dot yd)}{y^2 - \dot y^2 d^2} =
+    \left(\frac{x}{y}, \frac{\dot xy - x\dot y}{y^2} \right), \\
+    \sin\tilde x =& \ldots = (\sin x, \dot x\cos x),
+  \end{split}
+\end{equation}
+where the last equality follows after a series expansion. Any nondual
+number can be interpreted as $\tilde x=x+0d$. It is seen from
+Eqs.~\eqref{eq:dual_arith} that the second component, also called the
+tangent, always has the form of the derivative of the operation. In
+fact, it can be proven that for any function $f(x)$, with a dual
+number as its argument,
+\begin{equation}
+  \label{eq:dual_general}
+  f(\tilde x) = f(x) + f'(x)\dot xd = \left( f(x), f'(x)\dot x
+  \right),
+\end{equation}
+where $f'(x)$ is the derivative of $f$ evaluated at $x$. Applying the
+dual number arithmetic to the composition of $f$ and $g$, we get
+\begin{equation}
+  \label{eq:dual_chain}
+  f(g(\tilde x)) = f(g(x) + g'(x)\dot xd) = \left( f(g(x)),
+    f'(g(x))g'(x)\dot x \right),
+\end{equation}
+where we have rediscovered the chain
+rule. Equation~\eqref{eq:dual_chain} can be repeatedly applied to
+yield the derivatives of arbitrarily complex functions.
+
+Which derivative the dot symbol represents depends on the initial
+values of the tangents. It can be shown that in general the initial
+values define the direction of the derivative in the space of
+independent variables. For instance, if we have two independent
+variables $x$ and $y$ and require the derivative with respect to $x$,
+then the tangent vector is $(1,0)$ in the $xy$-plane and the variables
+should be seeded with $\dot x = \D x/\D x = 1$ and
+$\dot y = \D y/\D x = 0$. For a directional derivative
+$\nabla_{x,y}f(x,y) \bm v$, where $\bm v = (\alpha, \beta)$, the seeds
+would be $\dot x = \alpha$ and $\dot y = \beta$.
+
+As a simple example, we shall evaluate
+$\frac{\partial}{\partial x} f(x, y)$ for $f(x, y) = x y + \sin (xy)$
+at $(x_0,y_0)$. Applying the rules discussed thus far, the
+computational graph for this procedure, in terms of the intermediate
+results $\tilde v_i$, is
+\begin{equation}
+  \label{eq:forward_example}
+  \begin{split}
+    \tilde v_1 =& (x_0,\dot x) = (x_0,1), \\
+    \tilde v_2 =& (y_0,\dot y) = (y_0,0), \\
+    \tilde v_3 =& \tilde v_1\tilde v_2 = (v_1v_2, v_1 \dot v_2 +
+    \dot v_1 v_2) = (x_0y_0, y_0), \\
+    \tilde v_4 =& \sin \tilde v_3 = (\sin v_3, \dot v_3 \cos v_3) =
+    (\sin x_0, y_0 \cos (x_0y_0)), \\
+    \tilde v_5 =& \tilde v_3 + \tilde v_4 = (x_0y_0 + \sin x_0y_0, y_0
+    + y_0 \cos (x_0y_0)).
+  \end{split}
+\end{equation}
+For such a simple case, it is easy to analytically check that the
+tangent of $\tilde v_5$ is indeed the correct result. Note that AD is
+as economical as the function evaluation --- the derivative of $xy$
+(the tangent of $\tilde v_3$) is calculated only once, even though it
+appears in two places. Again, we remind that AD is not symbolic
+differentiation since there is no record of the symbolic form of the
+derivatives. The algorithm only needs to recognize the elemental
+operation at hand, whose derivative needs to be precoded, but
+otherwise the procedure is completely mechanical. At each step in the
+computational graph, the algorithm has forgotten how it got there. For
+a better illustration, here is a throwaway C++ implementation of the
+same calculation with $(x_0,y_0) = (1.5,0.7)$.
+\begin{verbatim}
+class ddouble {
+public:
+  ddouble(double val=0, double dot=0) : val(val), dot(dot) {}
+  double val, dot;
+};
+ddouble operator+ (ddouble x, ddouble y) {
+  return ddouble(x.val+y.val, x.dot+y.dot);
+}
+ddouble operator* (ddouble x, ddouble y) {
+  return ddouble(x.val*y.val, x.val*y.dot+x.dot*y.val);
+}
+ddouble sin(ddouble x) {
+  return ddouble(sin(x.val), x.dot*cos(x.val));
+}
+int main() {
+  ddouble x(1.5, 1);
+  ddouble y(0.7, 0);
+  ddouble f;
+  f = x*y + sin(x*y);
+  std::cout << f.dot; // 1.0483 (this is correct)
+}
+\end{verbatim}
+
+If, instead of just $\frac{\partial}{\partial x}$, the whole gradient
+$\nabla_{x,y}f(x,y)$ is required, a second calculation needs to be
+performed starting with $\dot x = 0$, $\dot y = 1$. The accuracy is
+the same as before, but the cost is twice as much. Note that for each
+partial derivative the values (first components) of the elemental
+operations are the same. Due to the $O(n)$ scaling, the forward mode
+is generally not used for gradient calculation. Instead, it is better
+suited for directional derivatives, where a single sweep produces the
+value of $\nabla_{\bm p}f(\bm p)\bm v$, where $\bm p$ is a vector of
+independent variables.
+
+In GADfit, the Jacobian, which is the most important quantity, is
+calculated in the reverse mode of AD, which is more efficient for that
+purpose. The forward mode only comes into play if the acceleration
+term [Eqs.~\eqref{eq:delta12} and \eqref{eq:omega}] is included, in
+which case the second directional derivative is required. The
+generalization of the forward mode to second order is
+straightforward. The AD numbers now contain three components,
+\begin{equation}
+  \label{eq:adcomplex}
+  \tilde x = x + \dot x d + \ddot x d^2,
+\end{equation}
+and the arithmetic is defined by requiring third and higher order
+terms to be zero, $d^3 = 0$. The elemental operations become somewhat
+more complex,
+\begin{equation}
+  \label{eq:2nd_order_arith}
+  \begin{split}
+    \tilde x + \tilde y =& x + y + (\dot x + \dot y)d + (\ddot x +
+    \ddot y)d^2, \\
+    \tilde x\tilde y =& xy + (\dot xy + x\dot y)d +
+    (\ddot x\dot y + 2\dot x\dot y + x\ddot y)d^2, \\
+    \frac{\tilde x}{\tilde y} =& \frac{x}{y} + \frac{\dot xy-x\dot
+      y}{y^2}d + \frac{\ddot xy-x\ddot y-2\dot x\dot y+2\frac{x\dot
+        y^2}{y}}{y^2}d^2, \\
+    \sin\tilde x =& \sin x + \dot x\cos x d + (\ddot x\cos x - \dot
+    x^2\sin x) d^2,
+  \end{split}
+\end{equation}
+but otherwise the algorithm has the same structure. The complexity is
+actually less than appears in Eqs.~\eqref{eq:2nd_order_arith}, since
+once the first component of the resulting number has been calculated,
+it can be immediately used in the calculation of the second
+component. For the third component both of the previous terms are
+available. For instance, the last two of
+Eqs.~\eqref{eq:2nd_order_arith} can be rewritten in the form
+\begin{equation}
+  \label{eq:2nd_order_arith_compact}
+  \begin{split}
+    \tilde v =& \frac{\tilde x}{\tilde y} = v + \frac{\dot x-v\dot
+      y}{y}d + \frac{\ddot x-v\ddot y-2\dot v\dot y}{y}d^2, \\
+    \tilde v =& \sin\tilde x = v + \dot x\cos x d + (\ddot x\dot
+    v/\dot x - \dot x^2v) d^2.
+  \end{split}
+\end{equation}
+
+In order to calculate the second directional derivative
+$\partial_i\partial_j f(\bm p) v^iv^j$, where
+$\partial_i \equiv \partial/\partial p_i$, at $\bm P$, the independent
+variables should seeded with $(P_i, v_i, 0)$. A single sweep then
+produces the function value and the directional first and second
+derivatives at $\bm P$.
+
+\subsubsection{Reverse mode}
+
+The reverse mode is generally considered superior to the forward mode,
+because it is more efficient for calculating the gradient, which is
+more often required than the directional derivative. It is also harder
+to implement, since it consists of two parts --- the forward sweep,
+which performs function evaluation, and the return sweep, which
+processes the computational graph in the reverse order to yield the
+partial derivatives. Information about the elemental operations must
+be saved during the forward sweep, which necessitates some form of
+memory management. This is in contrast to the forward mode, where both
+the function value and the derivatives are obtained by traversing in
+the same direction along the computational graph.
+
+The reverse mode is best understood by starting with an example. The
+sequence of elemental operations for the evaluation of
+$f(x,y) = xy + \sin\frac{x}{y}$ at the point $(2.3,0.8)$, the forward
+sweep, is
+\begin{subequations}
+  \label{eq:forward_sweep}
+  \begin{align}
+    \label{eq:y1}
+    v_1 &= x = 2.3000, \\
+    \label{eq:y2}
+    v_2 &= y = 0.8000, \\
+    \label{eq:y3}
+    v_3 &= v_1v_2 = 1.8400, \\
+    \label{eq:y4}
+    v_4 &= v_1/v_2 = 2.8750, \\
+    \label{eq:y5}
+    v_5 &= \sin v_4 = 0.2634, \\
+    \label{eq:y6}
+    v_6 &= v_3+v_5 = 2.1034,
+  \end{align}
+\end{subequations}
+where the first two operations are just variable initialization. While
+the order of some of these operations can be compiler specific, it
+does not influence the outcome of the AD method. One might suppose
+that in order to compute the gradient $\nabla_{x,y}f$, it is necessary
+to process each of Eqs.~\eqref{eq:forward_sweep} twice, once for
+either parameter. However, the number of operations can be lowered by
+applying the chain rule backwards, i.e., by processing
+Eqs.~\eqref{eq:forward_sweep} in the order $v_6 \ldots v_1$ in terms
+of the adjoint quantities $\bar v_i \equiv \partial f/\partial v_i$.
+This is called the return sweep. Two trivial results are then obtained
+from Eq.~\eqref{eq:y6}:
+\begin{subequations}
+  \begin{equation}
+    \bar v_3 = \frac{\partial f}{\partial v_3} = \frac{\partial
+      v_6}{\partial v_3} = 1, \qquad
+    \bar v_5 = \frac{\partial f}{\partial v_5} = \frac{\partial
+      v_6}{\partial v_5} = 1.
+  \end{equation}
+  Using the result for $\bar v_5$, Eq.~\eqref{eq:y5} then yields the
+  adjoint of $v_4$,
+  \begin{equation}
+    \bar v_4 = \frac{\partial v_6}{\partial v_4} = \frac{\partial
+      v_6}{\partial v_5}\frac{\partial v_5}{\partial v_4} = \bar v_5
+    \cos v_4 = 1 \times (-0.9647) = -0.9647.
+  \end{equation}
+  Next, we process the two components of Eq.~\eqref{eq:y4},
+  \begin{equation}
+    \bar v_1 = \bar v_4 \frac{\partial v_4}{\partial v_1} = \frac{\bar
+      v_4}{v_2} = -1.2059, \quad \bar v_2 = \bar v_4 \frac{\partial
+      v_4}{\partial v_2} = -\frac{\bar v_4v_1}{v_2^2} = 3.4669.
+  \end{equation}
+  From Eq.~\eqref{eq:y3},
+  \begin{equation}
+    \label{eq:bar_y1_y2}
+    \bar v_1 = \bar v_1 + \bar v_3 \frac{\partial v_3}{\partial v_1} =
+    -0.4059, \quad \bar v_2 = \bar v_2 + \bar v_3 \frac{\partial
+      v_3}{\partial v_2} = 5.7669.
+  \end{equation}
+\end{subequations}
+The computation of $\bar v_i$ is cumulative. If some variable $v_i$
+appears several times in the forward sweep then all occurrences of
+$v_i$ must be accounted for. This is seen in
+Eqs.~\eqref{eq:bar_y1_y2}, which remember the previous values of
+$\bar v_1$ and $\bar v_2$. With the above scheme, Eqs.~\eqref{eq:y1}
+and \eqref{eq:y2} would yield $\bar v_1 = \bar v_1$ and
+$\bar v_2 = \bar v_2$ and are not processed in practice. We thus have
+the result
+\begin{equation}
+  \label{eq:Fgrad}
+  \nabla_{x,y} f(x,y) = (-0.4059,5.7669).
+\end{equation}
+For such a simple example finite differences would of course produce
+the same result. However, some benefit of the reverse mode is already
+seen --- a single sweep produces the partial derivatives of
+\textit{both} variables. This property becomes especially advantageous
+for optimization problems with a large number of fitting parameters.
+
+The algorithm can now be formulated as shown in Table~\ref{tab:AD}.
+\begin{table}[h]
+  \centering
+  \caption{The reverse mode of AD. $a\mathrel{+}=b$ is a shorthand for
+    $a = a + b$.}
+  \begin{tabular}{c|c}
+    Forward sweep & Return sweep \\ \hline
+    $v_i = x_i, \quad i=1\ldots n$ & $\partial f\partial x_i = \bar
+                                     v_i, \quad i=1\ldots n$ \\
+    $v_i \mathrel{+}= g_i(v_{j \leadsto i}), \quad i=n+1\ldots n+m$
+                  & $\bar v_i \mathrel{+}= \bar v_{j \leadsto
+                    i} \partial v_{j \leadsto i}/\partial v_i$ \\
+    $f = v_{n+m}$ & $\bar v_{n+m} = \partial f/\partial v_{n+m} = 1$
+  \end{tabular}
+  \label{tab:AD}
+\end{table}
+The first $n$ operations of the forward sweep initialize $n$
+independent variables. The intermediate values $v_i$ are then
+calculated by applying the elemental operations $g_i$ to all $v_j$ of
+which $v_i$ directly depends on (denoted with the $\leadsto$). The
+last of the $m$ intermediate values gives the function value,
+$f = v_{n+m}$. Information about each elemental operation during the
+forward sweep must be saved as it is required during the return
+sweep. The return sweep moves in the opposite direction, starting with
+$\partial f/\partial v_{n+m} = \partial f/\partial f = 1$ and followed
+by the calculation of $\bar v_i$ as illustrated in the above
+example. The partial derivatives are given by the first $n$ values of
+the adjoints array $\bm{\bar v}$.
+
+\subsubsection{Implementation}
+
+GADfit is based on operator overloading, where the basic variable is
+the ``AD variable'',
+\begin{verbatim}
+  type advar
+     real(kp) :: val, d = 0.0_kp, dd = 0.0_kp
+     integer :: index = 0
+  end type advar
+\end{verbatim}
+which is used for both forward and reverse modes. Each variable has
+fields for the value and first and second derivatives, and an index
+field. The former three are double or quadruple precision floating
+point numbers. Index is zero for ``passive'' variables, for which
+differentiation is not required, and is nonzero otherwise. Which mode
+is currently in use is determined by whether the global variable
+\verb+reverse_mode+ is true or false. While the \texttt{d} and
+\texttt{dd} fields are characteristic to the forward mode only, the
+index field is required for both modes. The rationale for the forward
+mode is that using the index the variable can be immediately
+identified as passive or active and thus many calculations involving
+\texttt{d=0.0} and \texttt{dd=0.0} can be avoided. In the forward
+mode, it only matters whether the index is zero or nonzero, while in
+the reverse mode, each new active variable is given a unique index.
+
+The reverse mode is complicated by the fact that during the forward
+sweep each elemental operation\footnote{Not to be confused with the
+  Fortran ``elemental'' keyword. In fact, these are all impure
+  non-elemental functions.} must be recorded by saving the indices of
+the participating variables and of the operation code into an array
+called the execution trace. The intermediate values are saved into a
+separate array, and an additional array is required for operations
+which produce a constant that is required during the return sweep
+(such as multiplication with a constant). As an example, if the
+variables $a$ and $b$ had indices 4 and 5, and the operation code for
+addition were 23, then for the operation $c = a + b$ that section of
+the trace would read $(\ldots, 4, 5, 6, 23, \ldots)$, where 6 is the
+index of the new variable $c$. For unary operations, there would be 3
+entries in the trace,
+$(\ldots, \textmd{in}, \textmd{out}, \textmd{opcode}, \ldots)$, for
+ternary operations 5 entries and so on. At the beginning of each
+return sweep, the adjoints array is reinitialized to zero with the
+last element set equal to 1. The execution trace is then processed
+starting with the last element, and the adjoints are calculated
+according to the AD algorithm, first by identifying the relevant
+operation (\texttt{case select(op\_id)}). In summary, the main AD work
+variables in the reverse mode, along with their internal names, are
+\begin{itemize}
+\item the intermediate values (\verb+forward_values+),
+\item the adjoints (\verb+adjoints+),
+\item the execution trace (\verb+trace+),
+\item the constants (\verb+ad_constants+).
+\end{itemize}
+No work variables are required for the forward mode. The current list
+of elemental operations includes
+\begin{itemize}
+% basic
+\item $x_1+x_2$, \quad $x_1-x_2$, \quad $x_1x_2$, \quad
+  $\frac{x_1}{x_2}$, \quad $x_1^{x_2}$, \quad $|x_1|$, \quad
+  $\ln x_1$,
+% trigonometric
+\item $\sin x_1$, \quad $\cos x_1$, \quad $\tan x_1$, \quad
+  $\sinh x_1$, \quad $\tanh x_1$, \quad $\asin x_1$, \quad
+  $\acos x_1$, \\ $\atan x_1$, \quad $\asinh x_1$, \quad $\acosh x_1$,
+  \quad $\atanh x_1$,
+% special
+\item $\erf(x_1) = \frac{2}{\sqrt{\pi}} \int_0^{x_1} e^{-t^2} \D t$,
+  \quad $\Li2(x_1) = -\int_0^{x_1} \frac{\ln(1-u)}{u} \D u$,
+% integrals
+\item
+  $\int_{a(x_1, \ldots, x_n)}^{b(x_1, \ldots, x_n)} f(x_1, \ldots,
+  x_n; t) \D t$,
+\end{itemize}
+where $x_i$ is either an AD variable, a real number of
+single/double/quadruple precision, or an integer. Note that the list
+also covers $-x_1$, $\exp(x_1)$, and $\sqrt{x_1}$. Integrals can be
+nested up to two layers, i.e., only single and double integrals are
+allowed. New elemental operations can be added to the source code
+without too much effort. Alternatively, any requests/suggestions are
+most welcome at \texttt{sourceforge.net/p/gadfit/discussion}. Unless
+the proposed elemental operation depends on a nonstandard external
+library, we will make an effort to include it in the next release.
+
+\subsubsection{AD with numerical integration}
+
+GADfit supports fitting functions containing bounded, semi-infinite,
+and infinite integrals. Numerical integration is performed using the
+adaptive Gauss-Kronrod algorithm. Default is the 15-point rule; also
+available are 21, 31, 41, 51, and 61 point rules. The integration
+interval is divided into subintervals, and on each iteration the
+subinterval with the largest error is processed. This is similar to
+\texttt{QUADPACK} except without the epsilon algorithm. During this
+procedure, AD is temporarily switched off by making all variables
+passive. When the integration procedure has converged with the desired
+accuracy, AD is switched on and the integral is computed once more
+with an optimal set of subintervals. Note that the optimal set of
+subintervals satisfies the error tolerances of the original integral,
+not necessarily the integral over the derivative of the integrand. One
+might suppose then that the procedure needs to be performed separately
+for each parameter, presumably using the forward mode of AD, yielding
+a unique set of subintervals for each parameter. Strictly speaking
+though, the derivative is required for the approximation
+\begin{equation}
+  \label{eq:quadrature}
+  F(x) = \int_A^B f(x,t) \D t \approx \sum_j \frac{b_j-a_j}{2}\sum_i
+  w_{i,j} f \left( x, \frac{b_j-a_j}{2}\xi_{i,j} + \frac{a_j+b_j}{2}
+  \right),
+\end{equation}
+where $a_j$ and $b_j$ are the bounds of each subinterval, $w_{i,j}$
+are the Gauss-Kronrod weights, and $\xi_{i,j}$ are the roots of the
+Legendre polynomials. Since it is Eq.~\eqref{eq:quadrature} that is
+the fitting function (or part of it) and not the exact integral,
+differentiation should be performed using the same approximate form
+instead of finding a more accurate approximation for the integral over
+the derivative of $f$ by using a different set of subintervals.
+
+The dependence on one or more fitting parameters can be in the
+integrand and/or one or both bounds. The general formula is
+\begin{multline}
+  \label{eq:grad_f}
+  \nabla_{\bm p} \int_{a(\bm p)}^{b(\bm p)} f(\bm p, s) \D s \\
+  = f(\bm p, b(\bm p)) \nabla_{\bm p} b(\bm p) - f(\bm p, a(\bm p))
+  \nabla_{\bm p} a(\bm p) + \int_{a(\bm p)}^{b(\bm p)} \nabla_{\bm p}
+  f(\bm p, s) \D s,
+\end{multline}
+where $\bm p$ is the fitting parameter vector.
+
+The general formula for the second derivative, required for the
+acceleration term, is
+\begin{multline}
+  \label{eq:nabla2_f}
+  \nabla_{\bm p}^2 \int_{a(\bm p)}^{b(\bm p)} f(\bm p,s) \D s = f(\bm
+  p,b(\bm p)) \nabla_{\bm p}^2 b(\bm p) - f(\bm p,a(\bm p))
+  \nabla_{\bm p}^2 a(\bm p) \\
+  + \left[ \nabla_{\bm p} f(\bm p,b(\bm p)) + \left. \nabla_{\bm\chi}
+      f(\bm\chi,b(\bm p)) \right|_{\bm\chi=\bm p} \right] \nabla_{\bm
+    p} b(\bm p) \\
+  - \left[ \nabla_{\bm p} f(\bm p,a(\bm p)) + \left. \nabla_{\bm\chi}
+      f(\bm\chi,a(\bm p)) \right|_{\bm\chi=\bm p} \right] \nabla_{\bm
+    p} a(\bm p) + \int_{a(b)}^{b(\bm p)} \nabla_{\bm p}^2 f(\bm p,s)
+  \D s,
+\end{multline}
+where most terms are actually evaluated with little effort. The only
+difficulty is with the terms $\nabla_{\bm p} f(\bm p,\xi(\bm p))$,
+where $\xi$ is one of the bounds. The reason is that the second
+argument to $f$, the integration variable, is required to be an
+ordinary floating point number. In order to calculate the derivative
+with respect to this variable using AD, it would need to be passed as
+an AD variable. Fundamentally, this is not an issue, but it is a major
+technical inconvenience. If the interface of $f$ is changed to allow
+this, then a lot of the internal procedures of GADfit would need to be
+modified to include an intermediary dummy AD variable for passing
+arguments to $f$ (Fortran does not allow passing derived types by
+value). Most of the time this would be an unnecessary conversion from
+real to a passive AD variable, and only for the above mentioned two
+terms would the argument need to be an active AD variable. This would
+incur massive overhead, resulting in an increase of the cpu time by up
+to 20\%, even if one is not interested in the acceleration term. As a
+solution, this is the only place where we use finite differences for
+evaluating the derivative. The error introduced is independent of the
+error of the numerical integration procedure and the effect on the
+final result should be negligible.
+
+The above scheme can be generalized to any order, although it is
+probably not worth to go deeper than double integrals, since each
+integration level comes with greatly reduced accuracy. Even double
+integrals should be used with extreme care and as a last resort.
+
+\section{Using GADfit}
+
+GADfit is a library, i.e., not a standalone program, written in the
+Fortran language, meaning that it is preferable if the user had at
+least basic knowledge of Fortran. The structure of the code is such
+that it is currently not possible to easily interface it with other
+languages. Also, it would be inefficient to have some sort of parser
+for translating user input into Fortran functions. This approach might
+seem inconvenient, but it allows the user to make full use of a
+powerful programming language for designing functions of arbitrary
+complexity, which is what AD is designed for.
+
+Section~\ref{sec:example}, which contains a tutorial covering the
+basic usage of GADfit, is aimed at all potential users, including
+those not familiar with Fortran.
+
+\subsection{Compilation}
+
+GADfit is dependent on the CMake build system. CMake is a set of tools
+for configuring, building, and testing software. As opposed to the
+commonly used GNU Autotools, it uses a simpler syntax and generally
+runs much faster. The prerequisites for installing GADfit are CMake
+and a Fortran compiler. CMake, released under the New BSD License, can
+be installed by issuing
+\begin{verbatim}
+  sudo apt-get install cmake
+\end{verbatim}
+(Here and elsewhere, we demonstrate how to obtain the relevant
+packages specifically on Ubuntu, which must not be older than version
+14.04; more advanced users can probably skip this section.) For
+building from source visit \texttt{cmake.org}. GADfit is developed
+with the requirement that it work without incident with the GNU
+Fortran compiler (GFortran). Currently, there is also support for the
+Intel compiler. In principle, any other Fortran 2008 conforming
+compiler should also work, but there is no guarantee. GFortran,
+released under the GPL 3+ license, can be obtained with
+\begin{verbatim}
+  sudo apt-get install gfortran
+\end{verbatim}
+or one could build from source by visiting
+\begin{verbatim}
+  http://gcc.gnu.org/wiki/GFortran.
+\end{verbatim}
+
+Steps for configuring and building GADfit are the following. Untar the
+source code and navigate into the build directory (\verb+~build+)
+\begin{verbatim}
+  tar xf gadfit-x.x.x.tar.gz
+  mkdir build && cd build
+\end{verbatim}
+One can also build in the source directory (\verb+~gadfit+) but it is
+generally a good habit to do out-of-source builds or at least create a
+separate build directory within the source directory.
+
+For configuring, there is the choice of using either a graphical CMake
+front end, a text file containing the configuration variables, or one
+could specify the build environment from the command line
+(\verb+cmake <options> ...+) in analogy to Autotools. The latter
+option is, however, inconvenient and will not be discussed here. The
+two commonly used graphical front ends are the command line based
+\texttt{ccmake}, obtained by installing \texttt{cmake-curses-gui}, and
+the Qt-based \texttt{cmake-gui}, obtained by installing
+\texttt{cmake-qt-gui}. When using \texttt{ccmake}, issue
+\begin{verbatim}
+  cmake ~gadfit
+  ccmake .
+\end{verbatim}
+from the build directory. Some CMake variables and options appear,
+most of which should be self-explanatory. A short help text to each
+variable is displayed at the bottom in a status bar. Pressing 't'
+reveals all options. When done editing, press 'c' to reconfigure and
+'g' to generate the native build script (the unix makefile on
+Linux). Pay attention when \texttt{ccmake} warns you that the cache
+variables have been reset. This will happen, e.g., when changing the
+compiler, and will necessitate the reconfiguring of some
+variables. After configuring, it is a good idea to go through all the
+variables once more to check that everything is correct. When
+finished, exit \texttt{ccmake} and issue
+\begin{verbatim}
+  make
+  make doc
+  make check
+  make install
+\end{verbatim}
+For using \texttt{cmake-gui} instead of \texttt{ccmake}, start with
+\begin{verbatim}
+  cmake ~gadfit
+  cmake-gui .
+\end{verbatim}
+The rest is analogous.
+
+The CMake configuration variables can also be put into an external
+file, an example of which is \texttt{configure.txt} in the root
+directory of GADfit. It contains a description and example initial
+values for the most important configuration variables. When done
+editing, run
+\begin{verbatim}
+  cmake -C ~gadfit/configure.txt ~gadfit
+\end{verbatim}
+from the build directory, followed by the \texttt{make} commands. A
+change of the content of the configuration file has no effect after
+the first configuring. Instead, it would be necessary to empty
+\verb+~build+ before using the configuration file again or, better,
+use \texttt{ccmake}. It is worth mentioning that every \verb+make+
+command used in this document can be followed by \verb+-j<n>+, where
+\verb+<n>+ is the number of cpus.
+
+\subsubsection{Parallelism}
+
+If the derivatives were calculated with finite differences, using
+\texttt{do concurrent} would be sufficient to parallelize most of
+GADfit. However, with AD both function evaluation and the gradient
+calculation become impure procedures, which means that a simple
+parallelization scheme is not possible. GADfit is parallelized using
+coarrays, a syntactic extension to the language that was included in
+the Fortran 2008 standard. Coarrays follow the SPMD parallelization
+scheme, where the main program is replicated at the start of
+execution. Each instance, called an image, has its own set of private
+variables plus so-called co-variables that are addressable by other
+images. Coarrays allow to parallelize programs with little effort
+compared to MPI or OpenMP, although it is often still MPI that runs
+under the hood.
+
+In order to compile a coarray program with GFortran, the compiler flag
+\texttt{-fcoarray=single} must be used for a serial build
+(single-image coarray) or \texttt{-fcoarray=lib} for a parallel build
+(multi-image coarray). The latter is present in the default Release
+and Debug build configurations. The multi-image coarray support is
+provided by an external project called OpenCoarrays, which must be
+built separately. The simplest way to achieve this is to issue
+\begin{verbatim}
+  wget github.com/sourceryinstitute/opencoarrays/archive/master.zip
+  unzip master.zip
+  mkdir opencoarrays-master/build && cd opencoarrays-master/build
+  cmake -DCMAKE_Fortran_COMPILER=mpif90 ..
+  make
+\end{verbatim}
+and set the \verb+OPEN_COARRAYS+ variable in the GADfit configuration
+to the full path of \verb+libcaf_mpi.a+. Otherwise the
+\texttt{-fcoarray=lib} flag, if present, is automatically replaced by
+\texttt{-fcoarray=single} and GADfit is compiled in serial.
+
+\subsubsection{\label{sec:runtime}Runtime linking}
+
+This section, for those new to Linux, provides a quick example of how
+to compile and run a Fortran program with calls to GADfit. Assuming we
+have successfully compiled GADfit as a shared library and created an
+input file \verb+main.f90+, the following script, if called from the
+directory where \verb+main.f90+ resides, should successfully compile
+and execute. How to write an input file is explained in
+Sec.~\ref{sec:example}.
+\begin{verbatim}
+#!/bin/bash
+
+GAD=/usr/local/gadfit
+
+# GNU
+FC=mpif90
+FFLAGS="-fcoarray=single -J$GAD/include -L$GAD/lib"
+# Intel
+#FC=ifort
+#FFLAGS="-coarray=shared -I$GAD/include -L$GAD/lib"
+
+# Lapack
+LIBS="$LIBS -llapack"
+
+# Atlas
+#FFLAGS="$FFLAGS -L/usr/local/atlas/lib"
+#LIBS="$LIBS -ltatlas"
+
+# MKL (for Intel and GNU compilers)
+#MKLROOT=/opt/intel/mkl
+#FFLAGS="$FFLAGS -L$MKLROOT/lib/intel64"
+#export LD_LIBRARY_PATH=$MKLROOT/lib/intel64:$LD_LIBRARY_PATH
+#LIBS="$LIBS -lmkl_intel_lp64 -lmkl_sequential -lmkl_core"
+#LIBS="$LIBS -lmkl_gf_lp64 -lmkl_sequential -lmkl_core -lpthread"
+
+export LD_LIBRARY_PATH=$GAD/lib:$LD_LIBRARY_PATH
+$FC $FFLAGS main.f90 -o main -lgadfit $LIBS && \
+mpirun -np 1 ./main # GNU
+#./main             # Intel
+\end{verbatim}
+The install paths of the relevant libraries and other variables may
+need to be modified to reflect the user's environment. If GADfit was
+properly built with multi-image coarray support, then the above
+compiler flags should be changed to include \texttt{-fcoarray=lib}
+instead of \texttt{-fcoarray=single} and \\
+\verb+FFLAGS="$FFLAGS-L<caf_mpi_dir>"+
+and
+\verb+LIBS="$LIBS -lcaf_mpi"+ should be included somewhere in the
+script. The \texttt{-np} flag to \texttt{mpirun} can then be any
+number.
+
+\subsection{\label{sec:example}Example input}
+
+Suppose we have made two measurements of a decay process, which are to
+be fitted against
+\begin{equation}
+  \label{eq:exp_decay}
+  I(t) = I_0e^{-t/\tau} + bgr.
+\end{equation}
+The decay curves correspond to the same physical phenomenon, meaning
+they share the same decay time $\tau$, but have been performed in
+slightly different experimental conditions with different initial
+amplitudes $I_0$ and backgrounds $bgr$. To get the best estimate for
+the fitting parameters, the curves should be fitted simultaneously
+with $\tau$ as a global fitting parameter and $I_{01}$, $I_{02}$,
+$bgr_1$, and $bgr_2$ as local parameters. The data files
+\verb+example_data1+ and \verb+example_data2+, along with an example
+input, \verb+example.f90+, that solves the nonlinear least squares
+problem, are found in \verb+~gadfit/tests+ and are copied to
+\verb+~build/tests+ after execution, which can be achieved by issuing
+\texttt{make example}. The data files are required to contain at least
+two columns (the rest are ignored). Any line beginning with a
+non-number is treated as a comment. In this example, we have chosen to
+put the fitting function into a Fortran module, followed by the main
+program which contains a small set of commands to perform the fitting
+procedure. Users with more knowledge of Fortran may wish to do
+differently as there is no one way to write the input. We shall first
+describe how to build the fitting function.
+
+\subsubsection{Defining the fitting function}
+
+In GADfit, all user defined functions are derived from an abstract
+type \texttt{fitfunc} (making them \textit{derived classes} in OOP
+terms). Two procedures must always be defined: a constructor, which
+specifies the number of fitting parameters, and the function
+body. While the user is advised to work through a full Fortran
+tutorial, in the following some effort has been made to explain the
+peculiarities of the language.
+\begin{verbatim}
+module test_f
+  ! This module defines the function I(x) = I0*exp(-t/tau)+bgr.
+  ! In Fortran, comments begin with an "!".
+
+  use ad ! Imports the module containing the procedures for AD. 
+         ! Similar to the #include directive in C.
+  use fitfunction ! Imports the abstract class for the fitting
+                  ! function. 
+  use gadf_constants ! Imports the floating point precision
+                     ! specifier (kp).
+
+  implicit none ! For historical reasons this should be present
+                ! in all modules.
+
+  ! We have chosen to call the type of the new fitting function
+  ! 'exponential'. init and eval are the constructor and the
+  ! function body, which must be renamed and implemented below.
+  type, extends(fitfunc) :: exponential
+   contains
+     procedure :: init => init_exponential
+     procedure :: eval => eval_exponential
+  end type exponential
+
+contains
+  ! The interfaces of the following procedures, i.e., the type of
+  ! the arguments and of the return value, are fixed.
+  subroutine init_exponential(this)
+    class(exponential), intent(out) :: this
+    ! Allocate memory to the fitting parameter array.
+    allocate(this%pars(3))
+    ! In C++ this would be something like
+    ! this->pars = new advar[3]
+  end subroutine init_exponential
+
+  type(advar) function eval_exponential(this, x) result(y)
+    class(exponential), intent(in) :: this
+    real(kp), intent(in) :: x
+    y = this%pars(1)*exp(-x/this%pars(2)) + this%pars(3)
+    ! In this context, I0 = this%pars(1), tau = this%pars(2), and
+    ! bgr = this%pars(3).
+  end function eval_exponential
+end module test_f
+\end{verbatim}
+While the above may seem discouragingly complex, it is in fact
+not. One can have a look at \verb+~gadfit/tests/function_template+,
+which is a stripped-down version of the above. The angle-bracketed
+words need to be replaced by user-defined values and the only effort
+lies in the description of the function body. In order to test whether
+the function has been correctly defined, one can use the same code as
+in the next section, but comment out the call to \verb+gadf_fit+. If
+there are no datasets, then \verb+gadf_print+ must be explicitly
+supplied with the arguments \verb+begin+ and \verb+end+, which define
+the argument range.
+
+The above is a very simple example highlighting only some of the
+functionality. For more complex examples, see the other input files in
+\verb+~gadfit/tests+.
+
+As a comment, we have used the module approach because the user might
+wish in the future to put the most commonly used fitting functions
+into a single module that can then be conveniently included, e.g., as
+a library in any source file. This is just a suggestion.
+
+\subsubsection{Fitting procedure}
+
+These are the commands necessary to run the example. For a complete
+overview of input variables, see Sec.~\ref{sec:input}.
+\begin{verbatim}
+  use test_f ! Include the above-defined fitting function
+  use gadfit ! and the main library.
+  
+  implicit none
+
+  type(exponential) :: f ! An instance of the fitting function
+
+  ! Initialize GADfit with the fitting function and the number of
+  ! datasets.
+  call gadf_init(f, 2)
+
+  ! Include both decay curves. The argument must be full or
+  ! relative path to the data. TESTS_BLD is expanded by the
+  ! preprocessor to ~build/tests.
+  call gadf_add_dataset(TESTS_BLD//'/example_data1')
+  call gadf_add_dataset(TESTS_BLD//'/example_data2')
+
+  ! The initial guess for all fitting parameters is 1.0. The
+  ! first argument denotes the dataset, the second argument the
+  ! parameter, third argument its value, and fourth whether the
+  ! parameter is allowed to vary or is kept fixed.
+  call gadf_set(1, 1, 1.0, .true.) ! I01
+  call gadf_set(2, 1, 1.0, .true.) ! I02
+  call gadf_set(1, 3, 1.0, .true.) ! bgr1
+  call gadf_set(2, 3, 1.0, .true.) ! bgr2
+  ! Global parameters don't have the dataset argument.
+  call gadf_set(2, 1.0, .true.)    ! tau
+
+  ! The uncertainties of the data points determine their
+  ! weighting in the fitting procedure. Here we are assuming shot
+  ! noise, i.e., the error of each data point is proportional to
+  ! the square root of its value. Default is no weighting.
+  call gadf_set_errors(SQRT_Y)
+
+  ! Perform the fitting procedure starting with lambda=10. If the
+  ! procedure doesn't converge, we should restart with a higher
+  ! value or modify any of the other arguments to gadf_fit. All
+  ! the arguments are optional with reasonable default values.
+  call gadf_fit(lambda=10.0)
+
+  ! The results are saved into ~gadfit/tests
+  call gadf_print(output=TESTS_BLD//'/example_results')
+  call gadf_close() ! Free memory
+end program
+\end{verbatim}
+
+In order to run the above code, one can manually link and compile from
+the command line, use a small script like in Sec.~\ref{sec:runtime},
+or simply issue
+\begin{verbatim}
+  make example
+\end{verbatim}
+from the build directory. If no linear algebra library has been
+specified, it will take a moment to build one.
+
+The results of the calculation will be printed to the standard output
+and also to \verb+~gadfit/tests/example_parameters+. The decay time
+should be about 20.5 units. If the errors are the true experimental
+uncertainties, then for a good fit the reduced sum of squares should
+be close to 1. The results can be visualized by running, for example,
+gnuplot in \verb+~build/tests+ and issuing
+\begin{verbatim}
+  p 'example_data1' t 'data1', 'example_data2' t 'data2', \
+  'example_results' u 1:2 w l t 'fit1', '' u 1:3 w l t 'fit2'
+\end{verbatim}
+The rest of the examples in \verb+~gadfit/tests+ can be built and run
+with
+\begin{verbatim}
+  make check
+\end{verbatim}
+The fitting functions used in the tests are
+\begin{equation*}
+  \begin{split}
+    f_1(x) =& f_{\text{max}}e^{-(x-x_0)^2/a^2}+bgr, \\
+    f_2(x) =& \pi \int_0^x t^ae^{-bt^2} \D t, \\
+    f(x) =& \int_0^\infty \D t \int_0^{x/b} \D y
+    \frac{\ln[(e^y-1)(1+ab \erf t)+1]}{xy} e^{-t},
+  \end{split}
+\end{equation*}
+where $\erf$ is the error function.
+
+\subsection{\label{sec:input}Input}
+
+Before using GADfit, there are a some general remarks about argument
+processing in a Fortran.
+\begin{itemize}
+\item There is no automatic argument type conversion when calling a
+  procedure. If the procedure expects a 64-bit real number, then this
+  is exactly what the user must supply. In C terms, if the function
+  expects a 'double', then a 'float' will cause an error. While it can
+  be compiler dependent, numbers such as 3.2 or 5e7 are generally
+  interpreted as single precision (32-bit) real numbers. In GADfit,
+  higher precision can be obtained by appending numbers with the
+  ``kind parameter'' (\verb+3.2_kp+, \verb+5e7_kp+) in which case they
+  become 64-bit or 128-bit real numbers, depending on how GADfit was
+  configured. When using 64-bit precision, instead of \verb+_kp+ we
+  can also use the \texttt{d} descriptor (\texttt{3.2d0},
+  \texttt{5d7}, \texttt{1d0}, etc.).
+
+  Internally, most procedures use at least double precision. However,
+  for user convenience, some procedures are also available in single
+  precision. For example, instead of
+\begin{verbatim}
+  call gadf_set(1, 3.2_kp)
+\end{verbatim}
+  we can also use
+\begin{verbatim}
+  call gadf_set(1, 3.2)
+\end{verbatim}
+  since precision is not that important when setting initial parameter
+  values. (The decimal point or an exponent must be present, else the
+  argument is interpreted as an integer.)
+
+\item Procedure arguments can be given as a value
+  (\verb+call gadf_fit(1.0)+) or as a name-value pair
+  (\verb+call gadf_fit(lambda=1.0)+). When using the latter option,
+  the arguments can be given in any order. It is also useful when
+  calling a procedure that has many optional arguments but the user
+  wishes to provide only some of them.
+\end{itemize}
+The next section contains a detailed list of all procedures that are
+required for normal use. The procedure arguments are given according
+to the format \verb+<type-specifier>::<variable>+, where the
+type-specifier can be \verb+real(kp)+ -- double or quad precision real
+number; \verb+real(real32)+ -- single precision real number;
+\verb+integer+ -- integer; \verb+character(*)+ -- character array
+(\verb+'asdf'+); \verb+logical+ -- truth value, can be either
+\verb+.true.+ or \verb+.false.+. If there is more than one allowed
+type for the argument, the choices are separated by a slash. Optional
+arguments have the keyword \verb+optional+. All procedures are
+subroutines except \verb+integrate+, which is a function.
+
+\subsubsection{\label{sec:user}User controlled routines}
+
+\begin{verbatim}
+gadf_init(f, num_datasets, ad_memory, sweep_size, trace_size,
+          const_size, rel_error, rel_error_outer, ws_size, 
+          ws_size_inner, integration_rule)
+\end{verbatim}
+Initializes the workspace. This procedure must always be called when
+performing a fitting procedure.
+\begin{itemize}
+\item
+\begin{verbatim}
+class(fitfunc) :: f
+\end{verbatim}
+  The fitting function. \verb+class(fitfunc)+ denotes a polymorphic
+  variable. In practice, \texttt{f} has an explicit type like
+  \verb+type(exponential)+ in the example.
+\item
+\begin{verbatim}
+integer, optional :: num_datasets
+\end{verbatim}
+  Number of datasets.
+
+  Default: 1.
+\item
+\begin{verbatim}
+character(*), optional :: ad_memory
+\end{verbatim}
+  Allocates memory for the work variables of the AD reverse mode so
+  that \verb+forward_values+ and \verb+adjoints+ contain $x$,
+  \verb+trace+ $4x$, and \verb+ad_constants+ $\frac{1}{2}x$ elements,
+  where $x$ is such that the total amount of memory reserved is equal
+  to that given by \verb+ad_memory+, whose format is ``number unit'',
+  where ``unit'' is B, kB, MB, or GB (also acceptable are b, kb, mb,
+  or gb). Example: \verb+ad_memory='1.25 MB'+. Overrides
+  \verb+sweep_size+, \verb+trace_size+, and \verb+const_size+, which
+  can be used for fine-tuning memory allocation.
+
+  Default: none.
+\item
+\begin{verbatim}
+integer, optional :: sweep_size
+\end{verbatim}
+  Size of \verb+forward_values+ and \verb+adjoints+.
+
+  Default: 10\,000.
+\item
+\begin{verbatim}
+integer, optional :: trace_size
+\end{verbatim}
+  Size of \verb+trace+.
+
+  Default: $4\times10\,000$.
+\item
+\begin{verbatim}
+integer, optional :: const_size
+\end{verbatim}
+  Size of \verb+ad_constants+.
+  
+  Default: $\frac{1}{2}\times10\,000$.
+\item
+\begin{verbatim}
+real(kp), optional :: rel_error
+\end{verbatim}
+  Tolerance for the relative error of numerical integration. When
+  dealing with double integrals, this applies to the outer integral.
+
+  Default (single integrals): 100 $\times$ machine epsilon or\\
+  Default (double integrals): 1000 $\times$ machine epsilon
+\item
+\begin{verbatim}
+real(kp), optional :: rel_error_inner
+\end{verbatim}
+  Tolerance for the relative error of the inner integral.
+  
+  Default: 100 $\times$ machine epsilon.
+\item
+\begin{verbatim}
+integer, optional :: ws_size
+\end{verbatim}
+  Size of the integration workspace. With double integrals this refers
+  to the outer integral. It is assumed that there are at most this
+  many integration subintervals.
+
+  Default: 1000.
+\item
+\begin{verbatim}
+integer, optional :: ws_size_inner
+\end{verbatim}
+  Size of the integration workspace for the inner integral when using
+  double integrals.
+
+  Default: 1000.
+\item
+\begin{verbatim}
+integer, optional :: integration_rule
+\end{verbatim}
+  Sets the Gauss-Kronrod integration rule. Allowed values are\\
+  \verb+GAUSS_KRONROD_15P+, \verb+GAUSS_KRONROD_21P+,
+  \verb+GAUSS_KRONROD_31P+,\\
+  \verb+GAUSS_KRONROD_41P+, \verb+GAUSS_KRONROD_51P+, and
+  \verb+GAUSS_KRONROD_61P+.
+
+  Default: \verb+GAUSS_KRONROD_15P+.
+\end{itemize}
+
+\begin{verbatim}
+gadf_add_dataset(path)
+\end{verbatim}
+Reads a dataset. This procedure must be called as many times as there
+are datasets, which is determined by the \verb+num_datasets+ argument
+to \verb+gadf_init+.
+\begin{itemize}
+\item
+\begin{verbatim}
+character(*) :: path
+\end{verbatim}
+  Full or relative path to the data file.
+\end{itemize}
+
+\begin{verbatim}
+gadf_set(dataset_i, par, value, active)
+\end{verbatim}
+Defines the parameter as local, sets its value, and marks it either
+active or passive.
+\begin{itemize}
+\item 
+\begin{verbatim}
+integer :: dataset_i
+\end{verbatim}
+  The dataset index.
+\item 
+\begin{verbatim}
+integer/character(*) :: par
+\end{verbatim}
+  Either the parameter index or its name.
+\item 
+\begin{verbatim}
+real(real32)/real(kp) :: val
+\end{verbatim}
+  Parameter value in either single or higher precision.
+\item 
+\begin{verbatim}
+logical, optional :: active
+\end{verbatim}
+  If \verb+.true.+ the parameter is active, else passive.
+  
+  Default: \verb+.false.+.
+\end{itemize}
+
+\begin{verbatim}
+gadf_set(par, value, active)
+\end{verbatim}
+Similar to the other \verb+gadf_set+ except that this one defines
+either a global fitting parameter or a global constant. If only one
+dataset is used, it doesn't matter which procedure is used.
+
+\begin{verbatim}
+gadf_set_verbosity(scope, digits, timing, memory, workloads, 
+                   delta1, delta2, cos_phi, grad_chi2, uphill,
+                   acc, output)
+\end{verbatim}
+Gives the user some control over how the results are displayed. All
+flags can be set to \texttt{.true.}. For instance, one might wish know
+$|\cos\phi|$ of Eq.~\eqref{eq:cos_phi} but not used it as a
+convergence criterion.
+\begin{itemize}
+\item 
+\begin{verbatim}
+integer, optional :: scope
+\end{verbatim}
+  Whether to show only local or global parameters or both during the
+  fitting procedure. Allowed values are \verb+GLOBAL+, \verb+LOCAL+,
+  and \verb+GLOBAL_AND_LOCAL+.
+
+  Default: \verb+GLOBAL_AND_LOCAL+.
+\item 
+\begin{verbatim}
+integer, optional :: digits
+\end{verbatim}
+  How many significant digits of the fitting parameters are shown
+  during the fitting procedure.
+
+  Default: 7.
+\item 
+\begin{verbatim}
+logical, optional :: timing
+\end{verbatim}
+  Whether to show the timing summary after the fitting procedure. The
+  cpu and wall times are measured for $\bm J$, $\chi^2$, $\bm\Omega$,
+  and simple linear algebra operations ($\bm J^T$, $\bm J^T\bm J$,
+  $\bm J^T(\bm y - \bm f), \ldots$). The cost of calculating $\bm J$
+  also includes the residual vector $\bm y - \bm f$, which is produced
+  as part of the forward sweep. All other parts of the fitting
+  procedure are serial. Since the serial portion of the code is
+  negligible, all images should in principle do the same amount of
+  work. The timing summary thus contains information about the load
+  imbalance. It contains the following parts:
+  \begin{itemize}
+  \item The cpu times per call are averaged over images and over the
+    number of calls to the procedure.
+  \item The relative cost is the cpu time averaged over images and
+    divided by the total cpu time spent in the main loop. With perfect
+    scaling the relative costs should add up to 100\%.
+  \item Detailed timing is shown for $\bm J$, $\chi^2$, and
+    $\bm\Omega$. The reported total cpu and wall times are over all
+    serial and parallel parts of the main loop, and do not correspond
+    exactly to the sum of the shown quantities.
+  \end{itemize}
+
+  Default: \verb+.false.+.
+\item 
+\begin{verbatim}
+logical, optional :: memory
+\end{verbatim}
+  Whether to show memory usage after the fitting procedure. Only the
+  peak usage is shown, which is not necessarily representative of the
+  actual load.
+
+  Default: \verb+.false.+.
+\item 
+\begin{verbatim}
+logical, optional :: workloads
+\end{verbatim}
+  Whether to show the workload of each image. If the loads are very
+  uneven, it is worth considering using adaptive parallelism.
+
+  Default: \verb+.false.+.
+\item 
+\begin{verbatim}
+logical, optional :: delta1
+\end{verbatim}
+  Whether to show $\bm\delta_1$, the velocity term.
+
+  Default: \verb+.false.+.
+\item 
+\begin{verbatim}
+logical, optional :: delta2
+\end{verbatim}
+  Whether to show $\bm\delta_2$, the acceleration term.
+
+  Default: \verb+.false.+.
+\item 
+\begin{verbatim}
+logical, optional :: cos_phi
+\end{verbatim}
+  Whether to show $|\cos\phi|$ [Eq.~\eqref{eq:cos_phi}].
+
+  Default: \verb+.false.+.
+\item 
+\begin{verbatim}
+logical, optional :: grad_chi2
+\end{verbatim}
+  Whether to show $|\nabla \chi^2| = |2\bm J^T (\bm y - \bm f)|$.
+
+  Default: \verb+.false.+.
+\item 
+\begin{verbatim}
+logical, optional :: uphill
+\end{verbatim}
+  Whether to show $\cos(\bm\delta_i,\bm\delta_{i-1})$
+  [Eq.~\eqref{eq:uphill}].
+
+  Default: \verb+.false.+.
+\item 
+\begin{verbatim}
+logical, optional :: acc
+\end{verbatim}
+  Whether to show the ratio of the contributions from the velocity and
+  the acceleration terms [Eq.~\eqref{eq:acc_alpha}].
+
+  Default: \verb+.false.+.
+\item 
+\begin{verbatim}
+character(*), optional :: output
+\end{verbatim}
+  Where to send the output. Can be a file or, in general, any I/O
+  device. On Linux, using \verb+'/dev/null'+ suppresses all output
+  except errors and warnings, which are sent to stderr.
+
+  Default: stdout (standard output).
+\end{itemize}
+
+\begin{verbatim}
+gadf_set_errors(e)
+\end{verbatim}
+Specifies the data point errors -- $\sigma_i$ in
+Eq.~\eqref{eq:Jacob}. If this procedure is not called, the errors are
+set to 1.
+\begin{itemize}
+\item 
+\begin{verbatim}
+integer, optional :: e
+\end{verbatim}
+  Allowed values are \verb+NONE+ -- $\sigma_i = 1$ (the default);
+  \verb+SQRT_Y+ -- $\sigma_i = \sqrt{y_i}$ (shot noise);
+  \verb+PROPTO_Y+ -- $\sigma_i = y_i$; \verb+INVERSE_Y+ -- $\sigma_i =
+  1/y_i$; \verb+USER+ -- user defined uncertainties, must be supplied
+  as the 3rd column in the data files.
+\end{itemize}
+
+\begin{verbatim}
+gadf_fit(lambda, lam_up, lam_down, accth, grad_chi2, cos_phi, 
+         rel_error, rel_error_global, chi2_rel, chi2_abs,
+         lam_incs, uphill, max_iter, damp_max, nielsen, umnigh,
+         ap)
+\end{verbatim}
+Performs the fitting procedure. The procedure stops if any of the
+convergence criteria is satisfied.
+\begin{itemize}
+\item 
+\begin{verbatim}
+real(real32), optional :: lambda
+\end{verbatim}
+  The adaptive damping parameter.
+
+  Default: 1.
+\item 
+\begin{verbatim}
+real(real32), optional :: lam_up
+\end{verbatim}
+  Factor by which $\lambda$ is increased for accepted steps.
+
+  Default: 10.
+\item 
+\begin{verbatim}
+real(real32), optional :: lam_down
+\end{verbatim}
+  Factor by which $\lambda$ is decreased for rejected steps.
+
+  Default: 10.
+\item 
+\begin{verbatim}
+real(real32), optional :: accth
+\end{verbatim}
+  Acceleration threshold [$\alpha$ in Eq.~\eqref{eq:acc_alpha}]. If
+  zero, the acceleration term is not calculated.
+
+  Default: 0.
+\item 
+\begin{verbatim}
+real(real32), optional :: grad_chi2
+\end{verbatim}
+  Tolerance for $|\nabla \chi^2| = |2\bm J^T (\bm y - \bm f)|$.
+
+  Default: 0.
+\item 
+\begin{verbatim}
+real(real32), optional :: cos_phi
+\end{verbatim}
+  Tolerance for the cosine of the angle between the residual vector
+  and the range of the Jacobian [Eq.~\eqref{eq:cos_phi}].
+
+  Default: 0.
+\item 
+\begin{verbatim}
+real(real32), optional :: rel_error
+\end{verbatim}
+  Tolerance for the relative change in any fitting parameter for two
+  consecutive iterations.
+
+  Default: 0.
+\item 
+\begin{verbatim}
+real(real32), optional :: rel_error_global
+\end{verbatim}
+  Same as \verb+rel_error+ but applies only to global parameters.
+
+  Default: 0.
+\item 
+\begin{verbatim}
+real(real32), optional :: chi2_rel
+\end{verbatim}
+  Tolerance for the relative change in $\chi^2$ for two consecutive
+  iterations.
+
+  Default: 0.
+\item 
+\begin{verbatim}
+real(real32), optional :: chi2_abs
+\end{verbatim}
+  Tolerance for the reduced sum of squares.
+
+  Default: 0.
+\item 
+\begin{verbatim}
+real(kp), optional :: DTD_min(:)
+\end{verbatim}
+  Minimum values of the diagonal entries of the damping matrix.
+
+  Default: 0.
+\item 
+\begin{verbatim}
+integer, optional :: lam_incs
+\end{verbatim}
+  Number of times $\lambda$ is allowed to increase consecutively
+  without terminating the fitting procedure.
+
+  Default: 2.
+\item 
+\begin{verbatim}
+integer, optional :: uphill
+\end{verbatim}
+  The exponent $b$ in Eq.~\eqref{eq:uphill}. If zero, uphill steps are
+  not allowed.
+
+  Default: 0.
+\item 
+\begin{verbatim}
+integer, optional :: max_iter
+\end{verbatim}
+  Iteration limit.
+
+  Default: unlimited.
+\item 
+\begin{verbatim}
+logical, optional :: damp_max
+\end{verbatim}
+  Whether to update the damping matrix with the largest entries of
+  $J^TJ$ yet encountered. If \texttt{.false.}, the classical Marquardt
+  scheme is used.
+
+  Default: \texttt{.true.}.
+\item 
+\begin{verbatim}
+logical, optional :: nielsen
+\end{verbatim}
+  Whether to update $\lambda$ with
+  $\max[1/\lambda_\downarrow,1-(2\rho-1)^3]$. See the paragraph on
+  updating $\lambda$ in Sec.~\ref{sec:mod_lm}. $\rho$ includes only
+  the velocity term.
+
+  Default: \texttt{.false.}.
+\item 
+\begin{verbatim}
+logical, optional :: umnigh
+\end{verbatim}
+  Whether to update $\lambda$ according to Umrigar and Nightingale.
+
+  Default: \texttt{.false.}.
+\item 
+\begin{verbatim}
+logical, optional :: ap
+\end{verbatim}
+  Whether to use adaptive parallelism. If \verb+.true.+, the input
+  data is redistributed among the images in an effort to achieve equal
+  workloads. The redistribution is based on the workloads of the
+  previous iteration and is repeated after each iteration. Adaptive
+  parallelism makes sense with integrals and other constructs whose
+  cost heavily depends on the argument.
+
+  Default: \verb+.false.+.
+\end{itemize}
+
+\begin{verbatim}
+gadf_print(begin, end, points, output, grouped, logplot, 
+           begin_kp, end_kp)
+\end{verbatim}
+Prints the results to an I/O device. The results include the
+theoretical curve(s), fitting parameter values, and summary of
+resources used. If no fitting procedure has been performed, only the
+theoretical curve is printed.
+\begin{itemize}
+\item 
+\begin{verbatim}
+real(real32), optional :: begin
+\end{verbatim}
+  The lower bound for the $x$-values.
+
+  Default: taken from the input data.
+\item 
+\begin{verbatim}
+real(real32), optional :: end
+\end{verbatim}
+  The upper bound for the $x$-values.
+
+  Default: taken from the input data.
+\item 
+\begin{verbatim}
+integer, optional :: points
+\end{verbatim}
+  Number of points printed per curve.
+
+  Default: 200.
+\item 
+\begin{verbatim}
+character(*), optional :: output
+\end{verbatim}
+  Output file root name.
+
+  Default: \verb+'out'+.
+\item 
+\begin{verbatim}
+logical, optional :: grouped
+\end{verbatim}
+  Whether to group all curves into a single file.
+
+  Default: \verb+.true.+.
+\item 
+\begin{verbatim}
+logical, optional :: logplot
+\end{verbatim}
+  Whether to produce results suitable for a $(\log x,y)$-plot.
+
+  Default: \verb+.false.+.
+\item 
+\begin{verbatim}
+real(kp), optional :: begin_kp
+\end{verbatim}
+  Same as \verb+begin+ but with double/quad precision; overrides
+  \verb+begin+.
+
+  Default: none.
+\item 
+\begin{verbatim}
+real(kp), optional :: end_kp
+\end{verbatim}
+  Same as \verb+end+ but with double/quad precision; overrides
+  \verb+end+.
+
+  Default: none.
+\end{itemize}
+
+\begin{verbatim}
+gadf_close()
+\end{verbatim}
+Frees all work variables. After this, it is safe to call
+\verb+gadf_init+ again.
+
+\begin{verbatim}
+integrate(f, pars, lower, upper, rel_error, abs_error)
+\end{verbatim}
+Performs numerical integration. Can be used as part of a fitting
+function. The result is of type \verb+advar+.
+\begin{itemize}
+\item
+\begin{verbatim}
+type(advar) function f(x, pars)
+  real(kp), intent(in) :: x
+  type(advar), intent(in out) :: pars(:)
+end function f
+\end{verbatim}
+  The integrand.
+\item
+\begin{verbatim}
+type(advar) :: pars(:)
+\end{verbatim}
+  Parameters passed to the integrand.
+\item
+\begin{verbatim}
+type(advar)/real(kp)/integer :: lower
+\end{verbatim}
+  Lower integration bound. Can be an active/passive fitting parameter,
+  a real number, \verb+-INFINITY+, or \verb+INFINITY+.
+\item
+\begin{verbatim}
+type(advar)/real(kp)/integer :: upper
+\end{verbatim}
+  Upper integration bound. Same comments as with \verb+lower+.
+\item
+\begin{verbatim}
+real(kp), optional :: relative_error
+\end{verbatim}
+  Tolerance for the relative error of the integral. Overrides
+  \verb+gadf_init+.
+
+  Default: whatever was specified with \verb+gadf_init+ or 100 (1000)
+  $\times$ machine epsilon for the inner (outer) integral.
+\item
+\begin{verbatim}
+real(kp), optional :: absolute_error
+\end{verbatim}
+  Tolerance for the absolute error.
+
+  Default: 0.
+\end{itemize}
+
+\subsection{\label{sec:internals}Internals}
+
+The previous section was about the main commands that would normally
+be used. This section describes more advanced usage of GADfit for
+experimental, debugging, or other purposes. Some knowledge of Fortran
+is assumed.
+
+\paragraph{Basic usage of the \texttt{fitfunc} class.} As was
+mentioned earlier, the user can test the fitting function by calling
+\verb+gadf_print+ without performing a fitting procedure. It is,
+however, possible to work directly with the fitting function, which
+inherits from the \verb+fitfunc+ class. The following code snippet
+prints the value of a function with the argument 2.0. It is assumed
+that GADfit has been compiled with double precision.
+\begin{verbatim}
+  type(test) :: f              ! 'test' extends fitfunc.
+  real(real64) :: dummy
+  !call init_integration()     ! if necessary or
+  !call init_integration_dbl() ! if necessary.
+  call f%init()
+  call f%set(1, 1d0)           ! Has just one parameter.
+  dummy = f%eval(2d0)          ! Converts AD variable to real.
+  write(*,*) dummy             ! Function value at 2.0.
+  call f%destroy()
+  call free_integration()      ! Optional but never hurts.
+\end{verbatim}
+Here and elsewhere, a dummy variable must be used since a component of
+a function result of derived type cannot be directly referenced in
+Fortran.
+
+If the only aim is to print the function value(s) at some point(s),
+then the code can be slightly reduced by using the procedures of
+Sec.~\ref{sec:input}. After calls to \verb+gadf_init+ and
+\verb+gadf_set+, multiple instances of the function, each with an
+independent set of parameters, are copied to the \verb+fitfuncs+
+array, which is protected (read-only public). The above code then
+reduces to
+\begin{verbatim}
+  type(test) :: f
+  real(real64) :: dummy
+  call gadf_init(f)
+  call gadf_set(1, 1d0)
+  dummy = fitfuncs(1)%eval(2d0)
+  write(*,*) dummy
+  call gadf_close()
+\end{verbatim}
+Another reason for directly working with the \verb+fitfunc+ class is
+the calculation of derivatives using finite differences, which can be
+used for testing new AD elemental operations. In the next snippet, the
+derivatives are calculated with respect to parameters 1 and 3, while
+parameter 2 is passive.
+\begin{verbatim}
+  type(test) :: f
+  real(real64) :: grad(2)
+  call f%init()
+  call f%set(1, 1.2d0)         
+  call f%set(2, -0.1d0)
+  call f%set(3, 1d17)
+  call f%grad_finite(2d0, [1,3], grad)
+  write(*,*) grad
+  call f%destroy()
+\end{verbatim}
+In order to calculate the 2nd directional derivative in the
+$(0.3,0.7)$ direction in the space spanned by parameters 1 and 3, the
+above code can be modified by inserting
+\begin{verbatim}
+  write(*,*) f%dir_deriv_2nd_finite(2d0, [1,3], [0.3d0,0.7d0])
+\end{verbatim}
+after the parameters have been initialized. See the documentation of
+\\\verb+grad_finite+ and \verb+dir_deriv_2nd_finite+ in
+\verb+fitfunction.f90+ for a better understanding.
+
+Both finite differences and AD are always available regardless of the
+value of \verb+USE_AD+ during configuration. This option only
+determines which one is used during the fitting procedure.
+
+\paragraph{Basic usage of the AD forward mode.} In the forward mode,
+parameters are made active by modifying both their \texttt{index} and
+\texttt{d} fields. In the interest of compactness, here we shall set
+the parameter values directly instead of using the more safe
+\texttt{set} procedure.
+\begin{verbatim}
+  type(test) :: f
+  type(advar) :: dummy
+  call f%init()
+  f%pars = [1.2d0, -0.1d0, 1d17]
+  f%pars%index = [1,0,0]
+  f%pars%d = [1,0,0]
+  dummy = f%eval(2d0)
+  write(*,*) dummy%d
+  f%pars%index = [0,0,1]
+  f%pars%d = [0,0,1]
+  dummy = f%eval(2d0)
+  write(*,*) dummy%d
+  call f%destroy()
+\end{verbatim}
+In order to calculate the 1st and 2nd directional
+derivatives in the $(0.3,0.7)$ direction, the above code becomes
+\begin{verbatim}
+  type(test) :: f
+  type(advar) :: dummy
+  call f%init()
+  f%pars = [1.2d0, -0.1d0, 1d17]
+  f%pars%index = [1,0,1]
+  f%pars%d = [0.3,0.0,0.7]
+  dummy = f%eval(2d0)
+  write(*,*) 'First  dir deriv:', dummy%d
+  write(*,*) 'Second dir deriv:', dummy%dd
+\end{verbatim}
+
+\paragraph{Basic usage of the AD reverse mode.} The reverse mode is a
+bit more difficult to use manually since the user has to be more
+acquainted with the internal work variables of
+\verb+automatic_differentiation.f90+. In particular, it is necessary
+to set \verb+index_count+ to the number of active parameters (index of
+the next AD variable will be \verb+index_count++1), and to initialize
+the array of intermediate values. The gradient calculation with
+respect to parameters 1 and 3, as in the previous examples, can then
+be achieved as follows.
+\begin{verbatim}
+  type(test) :: f
+  real(real64) :: dummy
+  call ad_init_reverse()
+  call f%init()
+  f%pars = [1.2d0, -0.1d0, 1d17]
+  f%pars%index = [1,0,2]
+  index_count = 2
+  forward_values(1:2) = [f%pars(1)%val, f%pars(3)%val]
+  dummy = f%eval(2d0)
+  !write(*, '(g0)') trace(:trace_count)
+  call ad_grad(2)
+  write(*,*) adjoints(1:2)
+  call f%destroy()
+  call ad_close()
+\end{verbatim}
+Uncommenting the line after function evaluation shows what the
+execution trace looks like after the forward sweep. If the function
+contains an integral, additional calls to \verb+init_integration+ or
+\verb+init_integration_dbl+ and \verb+free_integration+ are required.
+
+\paragraph{Numerical integration.} It is also possible to use GADfit
+just for evaluating integrals, although if this is the only purpose,
+there are better tools out there. The following example shows the
+calculation of $\int_{0.5}^\infty e^{-x}\D x$:
+\begin{verbatim}
+  type(advar) :: dummy, pars(0)
+  call init_integration()
+  dummy = integrate(f, pars, 0.5d0, INFINITY)
+  print*, dummy%val
+  call free_integration()
+contains
+  type(advar) function f(x, pars) result(y)
+    real(kp), intent(in) :: x
+    type(advar), intent(in out) :: pars(:)
+    y = exp(-x)
+  end function f
+\end{verbatim}
+
+\paragraph{Creation of new elemental operations.} New elemental
+operations can be introduced in \verb+automatic_differentiation.f90+.
+The main steps are:
+\begin{itemize}
+\item A new operation code is created.
+\item A module procedure is overloaded.
+\item In the reverse mode, the operation body is supposed to do the
+  following: the function body is evaluated; the newly created result
+  variable assumes a new unique index; the result of evaluation is
+  saved in \verb+forward_values+; the indices of all arguments, that
+  of the result variable, and the operation code are saved in
+  \verb+trace+; any constants are saved in \verb+ad_constants+;
+  \verb+index_count+, \verb+trace_count+, and \verb+const_count+ are
+  increased accordingly. In the forward mode, the implementation is
+  straightforward. In either case, if the argument is a passive
+  variable, only the function body is evaluated. For a better
+  understanding, have a look at the implementation of any unary
+  operation in the AD source file.
+\item In the reverse mode, the calculation of the adjoints is
+  implemented in the return sweep (\verb+ad_grad+).
+\end{itemize}
+The function body may also refer to an external function. The
+dilogarithm function, $\Li2$, is an example of importing special
+functions from GSL. $\Li2$ is available if \verb+GSL_DIR+ is pointed
+to the GSL root directory during configuration. This is not required
+for running any of the tests.
+
+\section{Troubleshooting}
+
+A good place to bring up any issues is
+\texttt{sourceforge.net/p/gadfit}.
+
+\bibliographystyle{physrev}
+\bibliography{refs}
+
+\end{document}
