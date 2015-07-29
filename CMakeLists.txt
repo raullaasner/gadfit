@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 2.8.12)
 project(GADfit Fortran)
 set(GADfit_VERSION_MAJOR 1)
 set(GADfit_VERSION_MINOR 2)
-set(GADfit_VERSION_PATCH 0)
+set(GADfit_VERSION_PATCH 1)
 set(GADFIT gadfit-${GADfit_VERSION_MAJOR}.${GADfit_VERSION_MINOR}.${GADfit_VERSION_PATCH})
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
