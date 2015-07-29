@@ -55,7 +55,7 @@ To be clear, issuing `./configure <options> && make && make install` does not wo
    
    While GADfit builds fine in the source directory, it is generally a good habit to do out-of-source builds in order to keep the source directory clean. The source and build directories are denoted `~gadfit` and `~build`.
 
-* In order to use the CMake frontend ccmake, issue
+* In order to use the CMake frontend `ccmake`, issue
    
    ```
    cmake ~gadfit
