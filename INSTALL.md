@@ -1,7 +1,7 @@
 Quick installation instructions
 ===============================
 
-GADfit is developed with the CMake build system. CMake is a set of tools for configuring, building, and testing software. In comparison to GNU Autotools, it uses a simpler syntax and generally runs faster. It is advised to read the user guide for detailed installation instructions. This document provides quick installation steps aimed mainly at Autotools oriented users.
+GADfit is developed with the CMake build system. CMake is a set of tools for configuring, building, and testing software. In comparison to GNU Autotools, it uses a simpler syntax and generally runs faster. It is advised to read the [user guide](https://raullaasner.github.io/gadfit/user_guide.pdf) for detailed installation instructions. This document provides quick installation steps aimed mainly at Autotools oriented users.
 
 0. For the impatient
 --------------------
@@ -9,8 +9,8 @@ GADfit is developed with the CMake build system. CMake is a set of tools for con
 Obtain CMake, a Fortran compiler, the GADfit tarball, and issue
 
 ```
-tar xf gadfit-x.x.x.tar.gz
-cd gadfit-x.x.x
+tar xf gadfit.tar.gz
+cd gadfit
 cmake .
 make
 make install
@@ -70,7 +70,7 @@ To be clear, issuing `./configure <options> && make && make install` does not wo
    make install
    ```
    
-   `check` runs the tests found in `~gadfit/tests`. Tests can also be built individually by issuing `make <test>`, where `<test>` is the test name without the f90 extension. `make doc` generates the user guide, although a prebuilt one is already supplied with the source code. All `make` commands can be used with `-j<n>`, where `<n>` is the number of threads.
+   `check` runs the tests found in `~gadfit/tests`. Tests can also be built individually by issuing `make <test>`, where `<test>` is the test name without the f90 extension. `make doc` generates the user guide, although a prebuilt one is supplied with the source code. All `make` commands can be used with `-j<n>`, where `<n>` is the number of threads.
    
 * The Qt based CMake frontend can be used by issuing
    
