@@ -1,7 +1,7 @@
 Quick installation instructions
 ===============================
 
-GADfit is developed with the CMake build system. CMake is a set of tools for configuring, building, and testing software. In comparison to GNU Autotools, it uses a simpler syntax and generally runs faster. It is advised to read the [user guide](https://raullaasner.github.io/gadfit/user_guide.pdf) for detailed installation instructions. This document provides quick installation steps aimed mainly at Autotools oriented users.
+GADfit is developed with the CMake build system. CMake is a set of tools for configuring, building, and testing software. In comparison to GNU Autotools, it uses a simpler syntax and generally runs faster. It is advised to read the [user guide](https://raullaasner.github.io/gadfit/doc/user_guide/user_guide.pdf) for detailed installation instructions. This document provides quick installation steps aimed mainly at Autotools oriented users.
 
 0. For the impatient
 --------------------
