@@ -29,6 +29,13 @@ Installation
 * See [INSTALL.md](https://github.com/raullaasner/gadfit/blob/master/INSTALL.md) for quick installation instructions.
 * See the [user guide](https://raullaasner.github.io/gadfit/doc/user_guide/user_guide.pdf) for detailed instructions (recommended).
 
+Screenshots
+-----------
+
+* [Fitting procedure](https://raullaasner.github.io/gadfit/screenshot1.png)
+* [Example input](https://raullaasner.github.io/gadfit/screenshot2.png)
+* [Example fitting function](https://raullaasner.github.io/gadfit/screenshot3.png)
+
 Authors and how to contact them
 -------------------------------
 
@@ -37,7 +44,7 @@ See the [user guide](https://raullaasner.github.io/gadfit/doc/user_guide/user_gu
 Documentation
 -------------
 
-See the [user guide](https://raullaasner.github.io/gadfit/doc/user_guide/user_guide.pdf).
+Details about theory, implementation, configuring and compilation of GADfit, and usage are found in the [user guide](https://raullaasner.github.io/gadfit/doc/user_guide/user_guide.pdf).
 
 Troubleshooting
 ---------------
