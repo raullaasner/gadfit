@@ -1115,7 +1115,6 @@ contains
       end do
       my_size = sizes(this_image())
       ! STEP 3 - Reallocate the work variables
-#ifdef ASSOCIATE_SUPPORT
       ! dim = (global parameters) + (local parameters) x (number of datasets)
       associate(dim => size(fitfuncs)*size(active_pars)-shift)
         allocate(Jacobian(my_size, dim), JacobianT(dim, my_size), &
@@ -1123,13 +1122,6 @@ contains
         call check_err(__FILE__, __LINE__)
         JacobianT = 0.0_kp
       end associate
-#else
-      allocate(Jacobian(my_size, size(fitfuncs)*size(active_pars)-shift), &
-           & JacobianT(size(fitfuncs)*size(active_pars)-shift, my_size), &
-           & res(my_size), omega(my_size), stat=err_stat, errmsg=err_msg)
-      call check_err(__FILE__, __LINE__)
-      JacobianT = 0.0_kp
-#endif
     end subroutine re_initialize
     !!***
     
