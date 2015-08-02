@@ -9,7 +9,6 @@
 #cmakedefine POLYM_ARRAY_SUPPORT
 #cmakedefine IMPURE_ELEMENTAL_SUPPORT
 #cmakedefine CRITICAL_SUPPORT
-#cmakedefine ASSOCIATE_SUPPORT
 #cmakedefine HAS_CO_SUM
 #cmakedefine DEF_LEN_CHAR_COMP_SUPPORT
 #cmakedefine USE_AD
