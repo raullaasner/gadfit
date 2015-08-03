@@ -5,7 +5,7 @@
 
 # PROJECT
 cmake_minimum_required(VERSION 2.8.12)
-project(GADfit Fortran)
+project(GADfit Fortran C)
 set(GADfit_VERSION_MAJOR 1)
 set(GADfit_VERSION_MINOR 2)
 set(GADfit_VERSION_PATCH 1)
@@ -65,7 +65,8 @@ mark_as_advanced(CLEAR CMAKE_Fortran_FLAGS_DEBUG)
 mark_as_advanced(CLEAR CMAKE_Fortran_FLAGS_RELEASE)
 unset(CMAKE_Fortran_FLAGS_MINSIZEREL CACHE)
 unset(CMAKE_Fortran_FLAGS_RELWITHDEBINFO CACHE)
-set(GSL_DIR "" CACHE STRING "GSL root directory")
+set(GSL_DIR "" CACHE STRING
+  "GSL root directory (standard location is, e.g., /usr)")
 if (GSL_DIR)
   unset(GSL_INCLUDE_DIR CACHE)
   unset(GSL_LIBRARY CACHE)
@@ -98,6 +99,7 @@ endif()
 option(QUAD_PRECISION
   "If enabled, uses quadruple precision, else double precision" OFF)
 set(OPEN_COARRAYS "" CACHE STRING "Full path to libcaf_mpi.a")
+set(LIBS ${LIBS} ${OPEN_COARRAYS})
 
 # COMPILER CAPABILITIES
 # Default
