@@ -9,7 +9,10 @@ set(TESTS
   3_integral_double)
 
 enable_testing()
+
+# GADfit
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/../src)
+set(LIBS ${LIBS} gadfit)
 
 if (NOT LINALG_LIBS)
   if (LINALG_FLAVOR MATCHES "lapack")
@@ -30,7 +33,6 @@ try_compile(LINALG_TEST ${CMAKE_CURRENT_BINARY_DIR}
   CMAKE_FLAGS
   "-DLINK_LIBRARIES=${LIBS}"
   "-DLINK_DIRECTORIES=${LINALG_LIB_PATH}")
-set(LIBS ${LIBS} gadfit)
 if (LINALG_TEST)
   message(STATUS "Linear algebra library is OK")
 else()
@@ -39,12 +41,34 @@ else()
   message(STATUS "Fallback linear algebra library is used for tests.")
 endif()
 
+# OpenCoarrays
+if (NOT OPEN_COARRAYS)
+  include(ExternalProject)
+  ExternalProject_Add(
+    OpenCoarrays-fallback
+    EXCLUDE_FROM_ALL 1
+    URL https://github.com/sourceryinstitute/opencoarrays/archive/1.0.1.tar.gz
+    URL_MD5 b84d98bf28a4a6865b146581eb04ac9d
+    CMAKE_CACHE_ARGS
+    -DCMAKE_Fortran_COMPILER:STRING=${CMAKE_Fortran_COMPILER}
+    -DCMAKE_C_COMPILER:STRING=${CMAKE_C_COMPILER}
+    -DCMAKE_BUILD_TYPE:STRING=Release
+    BUILD_COMMAND ${CMAKE_COMMAND} --build . --target caf_mpi
+    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/OpenCoarrays-fallback-prefix/src/OpenCoarrays-fallback-build/src/mpi/libcaf_mpi.a ${CMAKE_CURRENT_BINARY_DIR}
+    )
+  link_directories(${CMAKE_CURRENT_BINARY_DIR})
+  set(LIBS ${LIBS} caf_mpi)
+endif()
+
 # Example input
 add_executable(example0 EXCLUDE_FROM_ALL example.f90)
 if (TARGET lapack-fallback)
   add_dependencies(example0 lapack-fallback)
 endif()
-target_link_libraries(example0 ${LIBS} ${OPEN_COARRAYS})
+if (TARGET OpenCoarrays-fallback)
+  add_dependencies(example0 OpenCoarrays-fallback)
+endif()
+target_link_libraries(example0 ${LIBS})
 set(SRC ${CMAKE_CURRENT_SOURCE_DIR})
 set(BLD ${CMAKE_CURRENT_BINARY_DIR})
 add_custom_target(example 
@@ -60,14 +84,15 @@ foreach(f ${TESTS})
   if (TARGET lapack-fallback)
     add_dependencies(${f} lapack-fallback)
   endif()
+  if (TARGET OpenCoarrays-fallback)
+    add_dependencies(${f} OpenCoarrays-fallback)
+  endif()
   add_test(${f} ${CMAKE_CURRENT_BINARY_DIR}/${f})
-  target_link_libraries(${f} ${LIBS} ${OPEN_COARRAYS})
+  target_link_libraries(${f} ${LIBS})
   set_tests_properties(${f} PROPERTIES FAIL_REGULAR_EXPRESSION 
     "(Error|BAD TERMINATION)")
 endforeach()
 
-set(SRC ${CMAKE_CURRENT_SOURCE_DIR})
-set(BLD ${CMAKE_CURRENT_BINARY_DIR})
 add_custom_target(check
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
   ${SRC}/1_gaussian_data ${BLD}/1_gaussian_data
