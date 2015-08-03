@@ -21,9 +21,9 @@ Note that this might produce only a serial build.
 1. Prerequisites
 ----------------
 
-*If the user is running Ubuntu, it must not be older than 14.04. Otherwise, newer versions of CMake and GFortran need to be installed manually.*
+*If the user is running Ubuntu, it must not be older than 14.04. Otherwise, newer versions of CMake and GFortran need to be installed manually. For multi-image support, GCC at least version 5.1 is required.*
 
-* **Fortran compiler**. GADfit is expected to work with the latest GNU Fortran compiler (GFortran). In principle, any other F2008 compliant compiler should also work. On Ubuntu, GFortran, released under the GPL 3+ license, can be obtained by issuing
+* **Fortran compiler (required)**. GADfit is expected to work with the latest GNU Fortran compiler (GFortran). In principle, any other F2008 compliant compiler should also work. On Ubuntu, GFortran, released under the GPL 3+ license, can be obtained by issuing
 
    ```
    sudo apt-get install gfortran
@@ -31,7 +31,7 @@ Note that this might produce only a serial build.
 
    Source code is available at https://gcc.gnu.org/wiki/GFortran.
 
-* **CMake**. On Ubuntu, CMake, released under the New BSD license, can be obtained by issuing
+* **CMake (required)**. On Ubuntu, CMake, released under the New BSD license, can be obtained by issuing
    
    ```
    sudo apt-get install cmake
@@ -39,7 +39,9 @@ Note that this might produce only a serial build.
    
   Source code is available at http://cmake.org.
 
-* **OpenCoarrays**. The Coarray support of GFortran is provided by the OpenCoarrays project, which allows to run GADfit in parallel. It is available at https://github.com/sourceryinstitute/opencoarrays/archive/master.zip and can be built and installed using standard CMake commands.
+* **OpenCoarrays**. The multi-image Coarray support of GFortran is provided by the OpenCoarrays project, which allows to run GADfit in parallel. It is available at https://github.com/sourceryinstitute/opencoarrays and can be built and installed using standard CMake commands. By default, the library is automatically downloaded and built (only if the compiler flag `-fcoarray=lib` is given). The Coarray support of the Intel compiler does not depend on an external project and is available out of the box.
+
+* **Linear algebra library**. While not required during compilation, a linear algebra library is necessary for using GADfit or running the tests (see `make check` below). By default, the supplied Lapack library is used.
 
 2a. Linux
 ---------
