@@ -60,6 +60,7 @@ if (NOT BUILD_SHARED) # If this is the first run
     "Choose the build configuration (None Debug Release)" FORCE)
 endif()
 option(BUILD_SHARED "If enabled, builds a shared library, else static." ON)
+mark_as_advanced(CLEAR CMAKE_Fortran_COMPILER)
 mark_as_advanced(CLEAR CMAKE_Fortran_FLAGS)
 mark_as_advanced(CLEAR CMAKE_Fortran_FLAGS_DEBUG)
 mark_as_advanced(CLEAR CMAKE_Fortran_FLAGS_RELEASE)
