@@ -39,7 +39,7 @@ Note that this might produce only a serial build.
    
   Source code is available at http://cmake.org.
 
-* **OpenCoarrays**. The multi-image Coarray support of GFortran is provided by the OpenCoarrays project, which allows to run GADfit in parallel. It is available at https://github.com/sourceryinstitute/opencoarrays and can be built and installed using standard CMake commands. By default, the library is automatically downloaded and built (only if the compiler flag `-fcoarray=lib` is given). The Coarray support of the Intel compiler does not depend on an external project and is available out of the box.
+* **OpenCoarrays**. The multi-image Coarray support of GFortran is provided by the OpenCoarrays project, which allows to run GADfit in parallel. It is available at https://github.com/sourceryinstitute/opencoarrays and can be built and installed using standard CMake commands. By default, the OpenCoarrays is automatically downloaded and built (only if the compiler flag `-fcoarray=lib` is given). The Coarray support of the Intel compiler does not depend on an external project and is available out of the box.
 
 * **Linear algebra library**. While not required during compilation, a linear algebra library is necessary for using GADfit or running the tests (see `make check` below). By default, the supplied Lapack library is used.
 

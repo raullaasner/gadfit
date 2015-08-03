@@ -547,19 +547,24 @@ The CMake configuration variables can also be put into an external file, an exam
 \end{verbatim}
 from the build directory, followed by the \texttt{make} commands. A change of the content of the configuration file has no effect after the first configuring. Instead, it would be necessary to empty \verb+~build+ before using the configuration file again or, better, use \texttt{ccmake}. It is worth mentioning that every \verb+make+ command used in this document can be followed by \verb+-j<n>+, where \verb+<n>+ is the number of threads.
 
-\subsubsection{Parallelism}
+When using GADfit, i.e., when linking to an executable code (such as when running the tests with \texttt{make check}), the two additional dependencies (OpenCoarrays and a linear algebra library; see below) are by default automatically built when needed.
+
+\subsubsection{\label{sec:parallelism}Parallelism}
 
 If the derivatives were calculated with finite differences, using \texttt{do concurrent} would be sufficient to parallelize most of GADfit. However, with AD both function evaluation and the gradient calculation become impure procedures, which means that a simple parallelization scheme is not possible. GADfit is parallelized using Coarrays, a syntactic extension to the language that was included in the Fortran 2008 standard. Coarrays follow the SPMD parallelization scheme, where the main program is replicated at the start of execution. Each instance, called an image, has its own set of private variables plus so-called co-variables that are addressable by other images. Coarrays allow to parallelize programs with little effort compared to MPI or OpenMP, although it is often still MPI that runs under the hood.
 
-In order to compile a Coarray program with GFortran, the compiler flag \texttt{-fcoarray=single} must be used for a serial build (single-image Coarray) or \texttt{-fcoarray=lib} for a parallel build (multi-image Coarray). The latter is present in the default Release and Debug build configurations. The multi-image Coarray support is provided by the OpenCoarrays project, which must be built separately. The simplest way to achieve this is to issue
+In order to compile a Coarray program with GFortran, the compiler flag \texttt{-fcoarray=single} must be used for a serial build (single-image Coarray) or \texttt{-fcoarray=lib} for a parallel build (multi-image Coarray). The latter starts with GCC 5 and thus with older versions only a serial build is possible.
+
+The multi-image Coarray support of GFortran is provided by the OpenCoarrays project. It can be automatically downloaded and built with \texttt{make example} or \texttt{make check}. The Coarray communication library, \verb+libcaf_mpi.a+, is installed in \verb+~gadfit/tests+. Alternatively, one may issue, e.g.,
 \begin{verbatim}
-  wget github.com/sourceryinstitute/opencoarrays/archive/master.zip
-  unzip master.zip
-  mkdir opencoarrays-master/build && cd opencoarrays-master/build
+  wget https://github.com/sourceryinstitute/opencoarrays/\
+  archive/1.0.1.tar.gz
+  tar xf 1.0.1.tar.gz
+  mkdir opencoarrays-1.0.1/build && cd opencoarrays-1.0.1/build
   cmake -DCMAKE_Fortran_COMPILER=mpif90 ..
-  make # libcaf_mpi.a is probably in ./src/mpi
+  make caf_mpi # libcaf_mpi.a is in ./src/mpi
 \end{verbatim}
-and set the \verb+OPEN_COARRAYS+ variable in the GADfit configuration to the full path of \verb+libcaf_mpi.a+. Otherwise the \texttt{-fcoarray=lib} flag, if present, is automatically replaced by \texttt{-fcoarray=single} and GADfit is compiled in serial. When building with multi-image support, check that \texttt{-fcoarray} is correctly set --- it could have been automatically changed with the first configuring.
+and set the \verb+OPEN_COARRAYS+ variable in the GADfit configuration to the full path of \verb+libcaf_mpi.a+. When doing a serial build or when using the Intel compiler, there is no external dependency.
 
 \subsubsection{\label{sec:runtime}Runtime linking}
 
@@ -571,7 +576,8 @@ GAD=/usr/local/gadfit
 
 # GNU
 FC=mpif90
-FFLAGS="-fcoarray=single -J$GAD/include -L$GAD/lib"
+FFLAGS="-J$GAD/include -L$GAD/lib"
+LIBS="$LIBS /usr/local/opencoarrays/lib/libcaf_mpi.a"
 # Intel
 #FC=ifort
 #FFLAGS="-coarray=shared -I$GAD/include -L$GAD/lib"
@@ -592,11 +598,10 @@ LIBS="$LIBS -llapack"
 
 export LD_LIBRARY_PATH=$GAD/lib:$LD_LIBRARY_PATH
 $FC $FFLAGS main.f90 -o main -lgadfit $LIBS && \
-mpirun -np 1 ./main # GNU
+mpirun -np 4 ./main # GNU
 #./main             # Intel
 \end{verbatim}
-The install paths of the relevant libraries and other variables may need to be modified to reflect the user's environment. If GADfit was properly built with multi-image Coarray support, then the above compiler flags should be changed to include \texttt{-fcoarray=lib} instead of \texttt{-fcoarray=single} and \\
-\verb+FFLAGS="$FFLAGS-L<caf_mpi_dir>"+ and \verb+LIBS="$LIBS -lcaf_mpi"+ should be included somewhere in the script. The \texttt{-np} flag to \texttt{mpirun} can then be any number.
+This may need to be modified to reflect the user's environment. If \verb+libcaf_mpi.a+ was automatically built (see Sec.~\ref{sec:parallelism}), it resides in \verb+~gadfit/tests+. If GADfit was built in serial, \verb+libcaf_mpi.a+ need not be linked.
 
 \subsection{\label{sec:example}Example input}
 
