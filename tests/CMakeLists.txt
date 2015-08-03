@@ -42,7 +42,8 @@ else()
 endif()
 
 # OpenCoarrays
-if (NOT OPEN_COARRAYS)
+if (NOT OPEN_COARRAYS AND CMAKE_Fortran_COMPILER_ID MATCHES "GNU" AND
+    CURRENT_FLAGS MATCHES "-fcoarray=lib")
   include(ExternalProject)
   ExternalProject_Add(
     OpenCoarrays-fallback
