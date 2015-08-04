@@ -11,12 +11,12 @@ endif()
 
 # PROJECT
 if (NOT CMAKE_VERSION VERSION_LESS 3)
-  project(GADfit VERSION 1.2.1 LANGUAGES Fortran C)
+  project(GADfit VERSION 1.2.2 LANGUAGES Fortran C)
 else()
   cmake_policy(PUSH)
   cmake_policy(VERSION 2.8.12)
   project(GADfit Fortran C)
-  set(PROJECT_VERSION 1.2.1)
+  set(PROJECT_VERSION 1.2.2)
   cmake_policy(POP)
 endif()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
