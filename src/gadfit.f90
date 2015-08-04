@@ -1559,11 +1559,9 @@ contains
   contains
     subroutine print_header()
       character(10) :: date, time
-      write(io_unit, '(*(g0))') &
-           & 'GADfit version ', GADfit_VERSION_MAJOR, '.', &
-           & GADfit_VERSION_MINOR, '.', GADfit_VERSION_PATCH
+      write(io_unit, '(*(g0))') 'GADfit version ', PROJECT_VERSION
       write(io_unit, '(*(g0))') 'Platform: ', CMAKE_PLATFORM
-      write(io_unit, '(*(g0))') 'Fortran compiler: ', CMAKE_FORTRAN_COMPILER, ''
+      write(io_unit, '(*(g0))') 'Fortran compiler: ', CMAKE_Fortran_COMPILER, ''
       call date_and_time(date, time)
       write(io_unit, '(*(g0))') &
            & 'Calculation finished: ', time(1:2), ':', time(3:4), ':', &
