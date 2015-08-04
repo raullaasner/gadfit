@@ -18,12 +18,10 @@
 
 # Flags for the Fortran compiler.
 #set (CMAKE_Fortran_FLAGS "" CACHE STRING "")
-#set (CMAKE_Fortran_FLAGS_RELEASE "-O3 -funroll-all-loops -fstack-arrays -fcoarray=single -ffree-line-length-0 -cpp" CACHE STRING "")
-#set (CMAKE_Fortran_FLAGS_DEBUG "-O3 -g -Wall -Wno-maybe-uninitialized -Wextra -pedantic -fcheck=all -ffpe-trap=zero,overflow -fbacktrace -ffree-line-length-0 -fcoarray=single -std=f2008ts -cpp" CACHE STRING "")
+#set (CMAKE_Fortran_FLAGS_RELEASE "-O3 -funroll-all-loops -fstack-arrays -fcoarray=single" CACHE STRING "")
+#set (CMAKE_Fortran_FLAGS_DEBUG "-O3 -g -Wall -Wno-maybe-uninitialized -Wextra -pedantic -fcheck=all -ffpe-trap=zero,overflow -fbacktrace -fcoarray=single -std=f2008ts" CACHE STRING "")
 
-# Whether to build in Release or Debug configuration. If left empty,
-# CMAKE_Fortran_FLAGS must at least include the coarray, unlimited
-# line length, and the cpp flags.
+# Whether to build in Release or Debug configuration.
 set (CMAKE_BUILD_TYPE Release CACHE STRING "")
 
 # Whether to build a shared or a static library.

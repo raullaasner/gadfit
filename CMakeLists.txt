@@ -3,53 +3,102 @@
 # License, see LICENSE in the root directory of the present
 # distribution or http://gnu.org/copyleft/gpl.txt .
 
-# PROJECT
+# CMAKE
 cmake_minimum_required(VERSION 2.8.12)
-project(GADfit Fortran C)
-set(GADfit_VERSION_MAJOR 1)
-set(GADfit_VERSION_MINOR 2)
-set(GADfit_VERSION_PATCH 1)
-set(GADFIT gadfit-${GADfit_VERSION_MAJOR}.${GADfit_VERSION_MINOR}.${GADfit_VERSION_PATCH})
+if (NOT CMAKE_VERSION VERSION_LESS 3)
+  cmake_policy(VERSION 3.0)
+endif()
+
+# PROJECT
+if (NOT CMAKE_VERSION VERSION_LESS 3)
+  project(GADfit VERSION 1.2.1 LANGUAGES Fortran C)
+else()
+  cmake_policy(PUSH)
+  cmake_policy(VERSION 2.8.12)
+  project(GADfit Fortran C)
+  set(PROJECT_VERSION 1.2.1)
+  cmake_policy(POP)
+endif()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 
 # FORTRAN COMPILER
-execute_process(COMMAND ${CMAKE_Fortran_COMPILER} --version
-  OUTPUT_VARIABLE tmp)
-string(REGEX MATCH "[0-9]+[.][0-9]+[.][0-9]+" COMPILER_VERSION "${tmp}")
-# Replace initial Release flags set by CMake
+if (NOT CMAKE_VERSION VERSION_LESS 3.3)
+  set(CMAKE_Fortran_COMPILER_VERSION ${CMAKE_Fortran_COMPILER_VERSION}
+    CACHE STRING "")
+  mark_as_advanced(FORCE CMAKE_Fortran_COMPILER_VERSION)
+else()
+  execute_process(COMMAND ${CMAKE_Fortran_COMPILER} --version
+    OUTPUT_VARIABLE tmp)
+  string(REGEX MATCH "[0-9]+[.][0-9]+[.][0-9]+"
+    CMAKE_Fortran_COMPILER_VERSION "${tmp}")
+endif()
+
+# COMPILER FLAGS
+# Redefine initial Release flags
 if ("${CMAKE_Fortran_FLAGS_RELEASE}" STREQUAL
     ${CMAKE_Fortran_FLAGS_RELEASE_INIT})
   if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
     unset(CMAKE_Fortran_FLAGS_RELEASE CACHE)
-    if (NOT COMPILER_VERSION STRLESS "5.1.0")
-      set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -fstack-arrays -fcoarray=lib -ffree-line-length-0 -cpp" CACHE STRING "GFortran Release flags")
+    if (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS "5.1.0")
+      set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -fstack-arrays -fcoarray=lib"
+	CACHE STRING "GFortran Release flags")
     else()
       # Multi-image support starts with GCC 5
       set(CAF_SINGLE_RELEASE TRUE)
-      set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -fstack-arrays -fcoarray=single -ffree-line-length-0 -cpp" CACHE STRING "GFortran Release flags")
+      set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -fstack-arrays -fcoarray=single"
+	CACHE STRING "GFortran Release flags")
     endif()
   elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
     unset(CMAKE_Fortran_FLAGS_RELEASE CACHE)
-    set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -ipo -xHost -coarray=shared -fpp"
+    set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -ipo -xHost -coarray=shared"
       CACHE STRING "IFORT Release flags")
   endif()
 endif()
-# Replace initial Debug flags set by CMake
+# Redefine initial Debug flags
 if ("${CMAKE_Fortran_FLAGS_DEBUG}" STREQUAL ${CMAKE_Fortran_FLAGS_DEBUG_INIT})
   if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
     unset(CMAKE_Fortran_FLAGS_DEBUG CACHE)
-    if (NOT COMPILER_VERSION STRLESS "5.1.0")
-      set(CMAKE_Fortran_FLAGS_DEBUG "-O3 -g -Wall -Wno-maybe-uninitialized -Wextra -pedantic -fcheck=all -ffpe-trap=zero,overflow -fbacktrace -ffree-line-length-0 -fcoarray=lib -std=f2008ts -cpp" CACHE STRING "GFortran Debug flags")
+    if (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS "5.1.0")
+      set(CMAKE_Fortran_FLAGS_DEBUG "-O3 -g -Wall -Wno-maybe-uninitialized -Wextra -pedantic -fcheck=all -ffpe-trap=zero,overflow -fbacktrace -fcoarray=lib -std=f2008ts" CACHE STRING "GFortran Debug flags")
     else()
       set(CAF_SINGLE_DEBUG TRUE)
-      set(CMAKE_Fortran_FLAGS_DEBUG "-O3 -g -Wall -Wno-maybe-uninitialized -Wextra -pedantic -fcheck=all -ffpe-trap=zero,overflow -fbacktrace -ffree-line-length-0 -fcoarray=single -std=f2008ts -cpp" CACHE STRING "GFortran Debug flags")
+      set(CMAKE_Fortran_FLAGS_DEBUG "-O3 -g -Wall -Wno-maybe-uninitialized -Wextra -pedantic -fcheck=all -ffpe-trap=zero,overflow -fbacktrace -fcoarray=single -std=f2008ts" CACHE STRING "GFortran Debug flags")
     endif()
   elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
     unset(CMAKE_Fortran_FLAGS_DEBUG CACHE)
-    set(CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -debug all -check all -fpe0 -traceback -warn -coarray=shared -std08 -fpp" CACHE STRING "IFORT Debug flags")
+    set(CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -debug all -check all -fpe0 -traceback -warn -coarray=shared -std08" CACHE STRING "IFORT Debug flags")
   endif()
 endif()
+# Current flags
+macro(determine_current_flags)
+  set(CURRENT_Fortran_FLAGS ${CMAKE_Fortran_FLAGS})
+  if (CMAKE_BUILD_TYPE MATCHES "^Release$" OR NOT BUILD_SHARED)
+    set(CURRENT_Fortran_FLAGS
+      "${CURRENT_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_RELEASE}")
+  elseif (CMAKE_BUILD_TYPE MATCHES "^Debug$")
+    set(CURRENT_Fortran_FLAGS
+      "${CURRENT_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_DEBUG}")
+  endif()
+endmacro()
+determine_current_flags()
+# Make sure the required flags are present
+if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
+  foreach(flag -cpp -ffree-line-length-0)
+    if (NOT CURRENT_Fortran_FLAGS MATCHES ${flag})
+      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${flag}")
+    endif()
+  endforeach()
+endif()
+if (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
+  if ((NOT CURRENT_Fortran_FLAGS MATCHES "-fpp") AND
+      (NOT CURRENT_Fortran_FLAGS MATCHES "-cpp"))
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fpp")
+  endif()
+endif()
+set(CMAKE_Fortran_FLAGS ${CMAKE_Fortran_FLAGS} CACHE STRING
+  "Flags for Fortran compiler." FORCE)
+determine_current_flags()
   
 # OPTIONS
 option(USE_AD
@@ -57,7 +106,7 @@ option(USE_AD
 # Default is Release
 if (NOT BUILD_SHARED) # If this is the first run
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING
-    "Choose the build configuration (None Debug Release)" FORCE)
+    "Choose the build configuration (None, Debug, Release)" FORCE)
 endif()
 option(BUILD_SHARED "If enabled, builds a shared library, else static." ON)
 mark_as_advanced(CLEAR CMAKE_Fortran_COMPILER)
@@ -109,42 +158,32 @@ set(IMPURE_ELEMENTAL_SUPPORT  TRUE)
 set(CRITICAL_SUPPORT          TRUE)
 set(HAS_CO_SUM                TRUE)
 set(DEF_LEN_CHAR_COMP_SUPPORT TRUE)
-# Current flags
-set(CURRENT_FLAGS ${CMAKE_Fortran_FLAGS})
-if (CMAKE_BUILD_TYPE MATCHES "^Release$")
-  set(CURRENT_FLAGS ${CURRENT_FLAGS} ${CMAKE_Fortran_FLAGS_RELEASE})
-elseif (CMAKE_BUILD_TYPE MATCHES "^Debug$")
-  set(CURRENT_FLAGS ${CURRENT_FLAGS} ${CMAKE_Fortran_FLAGS_DEBUG})
-endif()
 # GNU
 if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-  if (NOT CURRENT_FLAGS MATCHES "-cpp")
-    message(FATAL_ERROR "Missing the -cpp flag")
-  endif()
-  if (NOT CURRENT_FLAGS MATCHES "-fcoarray=")
-    message(FATAL_ERROR "Missing a Coarray flag (-fcoarray=).")
+  if (NOT CURRENT_Fortran_FLAGS MATCHES "-fcoarray=")
+    message(FATAL_ERROR "Missing a Coarray flag (-fcoarray=)")
   endif()
   set(POLYM_ARRAY_SUPPORT FALSE)
-  if (CURRENT_FLAGS MATCHES "-fcoarray=lib")
+  if (CURRENT_Fortran_FLAGS MATCHES "-fcoarray=lib")
     set(CRITICAL_SUPPORT FALSE)
   endif()
-  if(COMPILER_VERSION STRLESS "5.1.0")
+  if(CMAKE_Fortran_COMPILER_VERSION VERSION_LESS "5.1.0")
     set(HAS_CO_SUM FALSE)
-    if (CURRENT_FLAGS MATCHES "-fcoarray=lib")
+    if (CURRENT_Fortran_FLAGS MATCHES "-fcoarray=lib")
       message(FATAL_ERROR "Must use at least GCC 5.1 for -fcoarray=lib")
     endif()
   endif()
-  if (COMPILER_VERSION STRLESS "4.9.0")
+  if (CMAKE_Fortran_COMPILER_VERSION VERSION_LESS "4.9.0")
     set(DEF_LEN_CHAR_COMP_SUPPORT FALSE)
-    if (CURRENT_FLAGS MATCHES "-fcoarray=lib")
+    if (CURRENT_Fortran_FLAGS MATCHES "-fcoarray=lib")
       message(FATAL_ERROR "Must use at least GCC 5.1 for -fcoarray=lib")
   endif()
   endif()
 endif()
 # Intel
 if (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
-  if (NOT CURRENT_FLAGS MATCHES "-coarray=")
-    message(FATAL_ERROR "Coarray compiler flags missing (-coarray=).")
+  if (NOT CURRENT_Fortran_FLAGS MATCHES "-coarray=")
+    message(FATAL_ERROR "Missing a Coarray flag (-coarray=)")
   endif()
   set(IMPURE_ELEMENTAL_SUPPORT FALSE)
   set(HAS_CO_SUM FALSE)
@@ -169,8 +208,8 @@ configure_file( "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
 message("")
 message("Summary")
 message("=======")
-message("Fortran compiler: ${CMAKE_Fortran_COMPILER_ID} ${COMPILER_VERSION}")
-message("Compiler flags: ${CURRENT_FLAGS}")
+message("Fortran compiler: ${CMAKE_Fortran_COMPILER_ID} ${CMAKE_Fortran_COMPILER_VERSION}")
+message("Compiler flags: ${CURRENT_Fortran_FLAGS}")
 message("Build configuration: ${CMAKE_BUILD_TYPE}")
 if (BUILD_SHARED)
   message("Building a shared library")
@@ -193,7 +232,7 @@ else()
   message("Not using GSL")
 endif()
 message("Install location: ${CMAKE_INSTALL_PREFIX}")
-foreach (x RELEASE DEBUG)
+foreach(x RELEASE DEBUG)
   if (CAF_SINGLE_${x})
     message(WARNING "Building ${x} in serial (-fcoarray=single)")
   endif()
