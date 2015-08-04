@@ -521,7 +521,7 @@ Steps for configuring and building GADfit are the following. Untar the source co
 \end{verbatim}
 One can also build in the source directory (\verb+~gadfit+) but it is generally a good habit to do out-of-source builds or at least create a separate build directory within the source directory.
 
-For configuring, there is the choice of using either a graphical CMake front end, a text file containing the configuration variables, or one could specify the build environment from the command line (\verb+cmake <options> ...+) in analogy to Autotools. The latter option is, however, inconvenient and will not be discussed here. The two commonly used graphical front ends are the command line based \texttt{ccmake}, obtained by installing \texttt{cmake-curses-gui}, and the Qt-based \texttt{cmake-gui}, obtained by installing \texttt{cmake-qt-gui}. When using \texttt{ccmake}, issue
+For configuring, there is the choice of using either a graphical CMake front end, a text file containing the configuration variables, or specifying the build environment from the command line (\verb+cmake <options> ...+) in analogy to Autotools. The latter is, however, inconvenient and will not be discussed here. The two commonly used graphical front ends are the command line based \texttt{ccmake}, obtained by installing \texttt{cmake-curses-gui}, and the Qt-based \texttt{cmake-gui}, obtained by installing \texttt{cmake-qt-gui}. When using \texttt{ccmake}, issue
 \begin{verbatim}
   cmake ~gadfit
   ccmake .
@@ -565,6 +565,8 @@ The multi-image Coarray support of GFortran is provided by the OpenCoarrays proj
   make caf_mpi # libcaf_mpi.a is in ./src/mpi
 \end{verbatim}
 and set the \verb+OPEN_COARRAYS+ variable in the GADfit configuration to the full path of \verb+libcaf_mpi.a+. When doing a serial build or when using the Intel compiler, there is no external dependency.
+
+The building of OpenCoarrays requires CMake at least version 3.0. Thus, on Ubuntu 14.04, the default versions of both GFortran and CMake are unsatisfactory for using GADfit in parallel. A solution would be to switch to a newer Ubuntu or install newer versions of GCC and CMake manually. With the Intel compiler, there are no such limitations.
 
 \subsubsection{\label{sec:runtime}Runtime linking}
 

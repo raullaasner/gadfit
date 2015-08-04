@@ -43,20 +43,41 @@ endif()
 
 # OpenCoarrays
 if (NOT OPEN_COARRAYS AND CMAKE_Fortran_COMPILER_ID MATCHES "GNU" AND
-    CURRENT_FLAGS MATCHES "-fcoarray=lib")
+    CURRENT_Fortran_FLAGS MATCHES "-fcoarray=lib")
   include(ExternalProject)
-  ExternalProject_Add(
-    OpenCoarrays-fallback
-    EXCLUDE_FROM_ALL 1
-    URL https://github.com/sourceryinstitute/opencoarrays/archive/1.0.1.tar.gz
-    URL_MD5 b84d98bf28a4a6865b146581eb04ac9d
-    CMAKE_CACHE_ARGS
-    -DCMAKE_Fortran_COMPILER:STRING=${CMAKE_Fortran_COMPILER}
-    -DCMAKE_C_COMPILER:STRING=${CMAKE_C_COMPILER}
-    -DCMAKE_BUILD_TYPE:STRING=Release
-    BUILD_COMMAND ${CMAKE_COMMAND} --build . --target caf_mpi
-    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/OpenCoarrays-fallback-prefix/src/OpenCoarrays-fallback-build/src/mpi/libcaf_mpi.a ${CMAKE_CURRENT_BINARY_DIR}
-    )
+  if (NOT CMAKE_VERSION VERSION_LESS 3.3)
+    ExternalProject_Add(
+      OpenCoarrays-fallback
+      EXCLUDE_FROM_ALL 1
+      URL
+      https://github.com/sourceryinstitute/opencoarrays/archive/1.0.1.tar.gz
+      URL_MD5 b84d98bf28a4a6865b146581eb04ac9d
+      CMAKE_CACHE_ARGS
+      -DCMAKE_Fortran_COMPILER:STRING=${CMAKE_Fortran_COMPILER}
+      -DCMAKE_C_COMPILER:STRING=${CMAKE_C_COMPILER}
+      -DCMAKE_BUILD_TYPE:STRING=Release
+      BUILD_COMMAND ${CMAKE_COMMAND} --build . --target caf_mpi
+      INSTALL_COMMAND ${CMAKE_COMMAND} -E
+      copy src/mpi/libcaf_mpi.a ${CMAKE_CURRENT_BINARY_DIR}
+      )
+  else()
+    ExternalProject_Add(
+      OpenCoarrays-fallback
+      DOWNLOAD_COMMAND wget
+      https://github.com/sourceryinstitute/opencoarrays/archive/1.0.1.tar.gz
+      COMMAND tar xf 1.0.1.tar.gz
+      CMAKE_CACHE_ARGS
+      -DCMAKE_Fortran_COMPILER:STRING=${CMAKE_Fortran_COMPILER}
+      -DCMAKE_C_COMPILER:STRING=${CMAKE_C_COMPILER}
+      -DCMAKE_BUILD_TYPE:STRING=Release
+      CONFIGURE_COMMAND ${CMAKE_COMMAND} ../opencoarrays-1.0.1
+      BUILD_COMMAND ${CMAKE_COMMAND} --build . --target caf_mpi
+      INSTALL_COMMAND ${CMAKE_COMMAND} -E
+      copy src/mpi/libcaf_mpi.a ${CMAKE_CURRENT_BINARY_DIR}
+      )
+    set_target_properties(OpenCoarrays-fallback PROPERTIES
+      EXCLUDE_FROM_ALL TRUE)
+  endif()
   link_directories(${CMAKE_CURRENT_BINARY_DIR})
   set(LIBS ${LIBS} caf_mpi)
 endif()

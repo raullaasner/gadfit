@@ -21,7 +21,7 @@ Note that this might produce only a serial build.
 1. Prerequisites
 ----------------
 
-*If the user is running Ubuntu, it must not be older than 14.04. Otherwise, newer versions of CMake and GFortran need to be installed manually. For multi-image support, GCC at least version 5.1 is required.*
+*If the user is running Ubuntu, it must not be older than 14.04. Otherwise, newer versions of CMake and GFortran need to be installed manually. For multi-image support, GCC at least version 5.1 and CMake at least version 3.0 are required.*
 
 * **Fortran compiler (required)**. GADfit is expected to work with the latest GNU Fortran compiler (GFortran). In principle, any other F2008 compliant compiler should also work. On Ubuntu, GFortran, released under the GPL 3+ license, can be obtained by issuing
 
