@@ -10,10 +10,7 @@ set(TESTS
 
 enable_testing()
 
-# GADfit
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/../src)
-set(LIBS ${LIBS} gadfit)
-
+# Linear algebra libraries
 if (NOT LINALG_LIBS)
   if (LINALG_FLAVOR MATCHES "lapack")
     find_package(LAPACK REQUIRED)
@@ -40,6 +37,10 @@ else()
   set(LIBS ${LIBS} lapack-fallback)
   message(STATUS "Fallback linear algebra library is used for tests.")
 endif()
+
+# GADfit
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/../src)
+set(LIBS ${LIBS} gadfit)
 
 # OpenCoarrays
 if (NOT OPEN_COARRAYS AND CMAKE_Fortran_COMPILER_ID MATCHES "GNU" AND
