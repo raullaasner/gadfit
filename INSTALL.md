@@ -94,4 +94,4 @@ To be clear, issuing `./configure <options> && make && make install` does not wo
 2b. Others
 ----------
 
-Currently not supported.
+Currently not supported (any help for porting this software to other platforms is most welcome).
