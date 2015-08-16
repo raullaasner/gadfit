@@ -564,7 +564,7 @@ The multi-image Coarray support of GFortran is provided by the OpenCoarrays proj
   cmake -DCMAKE_Fortran_COMPILER=mpif90 ..
   make caf_mpi # libcaf_mpi.a is in ./src/mpi
 \end{verbatim}
-and set the \verb+OPEN_COARRAYS+ variable in the GADfit configuration to the full path of \verb+libcaf_mpi.a+. When doing a serial build or when using the Intel compiler, there is no external dependency.
+and set the \verb+OPEN_COARRAYS+ variable in the GADfit configuration to the full path of \verb+libcaf_mpi.a+. When doing a serial build or when using the Intel compiler, there is no such external dependency.
 
 The building of OpenCoarrays requires CMake at least version 3.0. Thus, on Ubuntu 14.04, the default versions of both GFortran and CMake are unsatisfactory for using GADfit in parallel. A solution would be to switch to a newer Ubuntu or install newer versions of GCC and CMake manually. With the Intel compiler, there are no such limitations.
 
