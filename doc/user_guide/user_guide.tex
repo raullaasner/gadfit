@@ -47,7 +47,7 @@ GADfit is currently hosted by GitHub.
 \subsection{Contributors}
 
 \begin{tabular}{lll}
-  Raul Laasner & University of Tartu & raullaasner@gmail.com \\
+  Raul Laasner & Duke University & raullaasner@gmail.com \\
 \end{tabular}
 
 \subsection{Terms of use}
@@ -491,7 +491,7 @@ The general formula for the second derivative, required for the acceleration ter
 \end{multline}
 where most terms are actually evaluated with little effort. The only difficulty is with the terms $\nabla_{\bm p} f(\bm p,\xi(\bm p))$, where $\xi$ is one of the bounds. The reason is that the second argument to $f$, the integration variable, is required to be an ordinary floating point number. In order to calculate the derivative with respect to this variable using AD, it would need to be passed as an AD variable. Fundamentally, this is not an issue, but it is a major technical inconvenience. If the interface of $f$ is changed to allow this, then a lot of the internal procedures of GADfit would need to be modified to include an intermediary dummy AD variable for passing arguments to $f$ (Fortran does not allow passing derived types by value). Most of the time this would be an unnecessary conversion from real to a passive AD variable, and only for the above mentioned two terms would the argument need to be an active AD variable. This would incur massive overhead, resulting in an increase of the cpu time by up to 20\%, even if one is not interested in the acceleration term. As a solution, this is the only place where we use finite differences for evaluating the derivative. The error introduced is independent of the error of the numerical integration procedure and the effect on the final result should be negligible.
 
-The above scheme can be generalized to any order, although it is probably not worth to go deeper than double integrals, since each integration level comes with greatly reduced accuracy. Even double integrals should be used with extreme care and as a last resort.
+The above scheme can be generalized to any order, although it is probably not worth going deeper than double integrals since each integration level greatly reduces accuracy. Even double integrals should be used with extreme care and as a last resort.
 
 \section{Using GADfit}
 
@@ -545,7 +545,7 @@ The CMake configuration variables can also be put into an external file, an exam
 \begin{verbatim}
   cmake -C ~gadfit/configure.txt ~gadfit
 \end{verbatim}
-from the build directory, followed by the \texttt{make} commands. A change of the content of the configuration file has no effect after the first configuring. Instead, it would be necessary to empty \verb+~build+ before using the configuration file again or, better, use \texttt{ccmake}. It is worth mentioning that every \verb+make+ command used in this document can be followed by \verb+-j<n>+, where \verb+<n>+ is the number of threads.
+from the build directory, followed by the \texttt{make} commands. A change of the content of the configuration file has no effect after the first configuring. Instead, it would be necessary to empty \verb+~build+ before using the configuration file again or, better, use \texttt{ccmake}. It is worth mentioning that every \verb+make+ command demonstrated in this document can be followed by \verb+-j<n>+, where \verb+<n>+ is the number of threads.
 
 When using GADfit, i.e., when linking to an executable code (such as when running the tests with \texttt{make check}), the two additional dependencies (OpenCoarrays and a linear algebra library; see below) are by default automatically built when needed.
 
@@ -747,17 +747,17 @@ where $\erf$ is the error function.
 
 Before using GADfit, there are a some general remarks about argument processing in a Fortran.
 \begin{itemize}
-\item There is no automatic argument type conversion when calling a procedure. If the procedure expects a 64-bit real number, then this is exactly what the user must supply. In C terms, if the function expects a 'double', then a 'float' will cause an error. While it can be compiler dependent, numbers such as 3.2 or 5e7 are generally interpreted as single precision (32-bit) real numbers. In GADfit, higher precision can be obtained by appending numbers with the ``kind parameter'' (\verb+3.2_kp+, \verb+5e7_kp+) in which case they become 64-bit or 128-bit real numbers, depending on how GADfit was configured. When using 64-bit precision, instead of \verb+_kp+ we can also use the \texttt{d} descriptor (\texttt{3.2d0}, \texttt{5d7}, \texttt{1d0}, etc.).
+\item There is no automatic argument type conversion when calling a procedure. If the procedure expects a 64-bit real number, then this is exactly what the user must supply. In C terms, if the function expects a 'double', then a 'float' will cause an error. While it can be compiler dependent, numbers such as 3.2 or 5e7 are generally interpreted as single precision (32-bit) real numbers. In GADfit, higher precision can be obtained by appending numbers with the ``kind parameter'' (\verb+3.2_kp+, \verb+5e7_kp+) in which case they become 64-bit or 128-bit real numbers, depending on how GADfit was configured. With 64-bit precision, instead of \verb+_kp+ we can also use the \texttt{d} descriptor (\texttt{3.2d0}, \texttt{5d7}, \texttt{1d0}, etc.).
 
 Internally, most procedures use at least double precision. However, for user convenience, some procedures are also available in single precision. For example, instead of
 \begin{verbatim}
   call gadf_set(1, 3.2_kp)
 \end{verbatim}
-  we can also use
+  we can also have
 \begin{verbatim}
   call gadf_set(1, 3.2)
 \end{verbatim}
-  since precision is not that important when setting initial parameter values. (The decimal point or an exponent must be present, else the argument is interpreted as an integer.)
+  since precision is not that important when setting initial parameter values. (The decimal point or an exponent must still be present, else the argument is interpreted as an integer.)
 
 \item Procedure arguments can be given as a value (\verb+call gadf_fit(1.0)+) or as a name-value pair (\verb+call gadf_fit(lambda=1.0)+). When using the latter option, the arguments can be given in any order. It is also useful when calling a procedure that has many optional arguments but the user wishes to provide only some of them.
 \end{itemize}
