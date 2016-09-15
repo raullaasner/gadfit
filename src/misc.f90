@@ -29,11 +29,7 @@ module misc
 #endif
 
   type :: string
-#ifdef DEF_LEN_CHAR_COMP_SUPPORT
      character(:), allocatable :: name
-#else
-     character(50) :: name
-#endif
    contains
      procedure :: assign_character
      generic :: assignment(=) => assign_character
@@ -105,11 +101,7 @@ contains
   !! SOURCE
   elemental integer function len_string(x) result(y)
     type(string), intent(in) :: x
-#ifdef DEF_LEN_CHAR_COMP_SUPPORT
     y = len(x%name)
-#else
-    y = len(trim(x%name))
-#endif
   end function len_string
   !!***
 
