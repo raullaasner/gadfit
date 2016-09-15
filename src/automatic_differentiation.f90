@@ -431,61 +431,29 @@ contains
   !! val field.
   !!
   !! SOURCE
-#ifdef IMPURE_ELEMENTAL_SUPPORT
   impure elemental subroutine assign_advar_integer(this, x)
     class(advar), intent(out) :: this
     integer, intent(in) :: x
     this%val = real(x, kp)
   end subroutine assign_advar_integer
-#else
-  elemental subroutine assign_advar_integer(this, x)
-    class(advar), intent(out) :: this
-    integer, intent(in) :: x
-    this%val = real(x, kp)
-  end subroutine assign_advar_integer
-#endif
 
-#ifdef IMPURE_ELEMENTAL_SUPPORT
   impure elemental subroutine assign_advar_real32(this, x)
     class(advar), intent(out) :: this
     real(real32), intent(in) :: x
     this%val = real(x, kp)
   end subroutine assign_advar_real32
-#else
-  elemental subroutine assign_advar_real32(this, x)
-    class(advar), intent(out) :: this
-    real(real32), intent(in) :: x
-    this%val = real(x, kp)
-  end subroutine assign_advar_real32
-#endif
 
-#ifdef IMPURE_ELEMENTAL_SUPPORT
   impure elemental subroutine assign_advar_real64(this, x)
     class(advar), intent(out) :: this
     real(real64), intent(in) :: x
     this%val = real(x, kp)
   end subroutine assign_advar_real64
-#else
-  elemental subroutine assign_advar_real64(this, x)
-    class(advar), intent(out) :: this
-    real(real64), intent(in) :: x
-    this%val = real(x, kp)
-  end subroutine assign_advar_real64
-#endif
 
-#ifdef IMPURE_ELEMENTAL_SUPPORT
   impure elemental subroutine assign_advar_real128(this, x)
     class(advar), intent(out) :: this
     real(real128), intent(in) :: x
     this%val = real(x, kp)
   end subroutine assign_advar_real128
-#else
-  elemental subroutine assign_advar_real128(this, x)
-    class(advar), intent(out) :: this
-    real(real128), intent(in) :: x
-    this%val = real(x, kp)
-  end subroutine assign_advar_real128
-#endif
 
   elemental subroutine assign_integer_advar(x, this)
     integer, intent(out) :: x

@@ -281,19 +281,11 @@ contains
   !!****f* fitfunction/fitfunc%destroy
   !!
   !! SOURCE
-#ifdef IMPURE_ELEMENTAL
   impure elemental subroutine destroy(this)
     class(fitfunc), intent(in out) :: this
     call safe_deallocate(__FILE__, __LINE__, this%pars)
     call safe_deallocate(__FILE__, __LINE__, this%parnames)
   end subroutine destroy
-#else
-  subroutine destroy(this)
-    class(fitfunc), intent(in out) :: this
-    call safe_deallocate(__FILE__, __LINE__, this%pars)
-    call safe_deallocate(__FILE__, __LINE__, this%parnames)
-  end subroutine destroy
-#endif
   !!***
 
   !!****f* fitfunction/safe_deallocate_fitfunc
@@ -304,17 +296,9 @@ contains
     character(*), intent(in) :: file
     integer, intent(in) :: line
     class(fitfunc), allocatable, intent(in out) :: array(:)
-#ifndef IMPURE_ELEMENTAL
     integer :: i
-#endif
     if (allocated(array)) then
-#ifdef IMPURE_ELEMENTAL
        call array%destroy()
-#else
-       do i = 1, size(array)
-          call array(i)%destroy()
-       end do
-#endif
        deallocate(array, stat=err_stat, errmsg=err_msg)
        call check_err(file, line)
     end if

@@ -79,19 +79,11 @@ contains
   !!****f* misc/string%assign_character
   !!
   !! SOURCE
-#ifdef IMPURE_ELEMENTAL_SUPPORT
   impure elemental subroutine assign_character(this, x)
     class(string), intent(out) :: this
     character(*), intent(in) :: x
     this%name = x
   end subroutine assign_character
-#else
-  elemental subroutine assign_character(this, x)
-    class(string), intent(out) :: this
-    character(*), intent(in) :: x
-    this%name = x
-  end subroutine assign_character
-#endif
   !!***
 
   !!****f* misc/string%equals_character
