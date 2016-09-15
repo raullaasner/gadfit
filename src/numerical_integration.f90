@@ -105,7 +105,6 @@ contains
   !!****f* numerical_integration/workspace%workspace_destroy
   !!
   !! SOURCE
-#ifdef IMPURE_ELEMENTAL
   impure elemental subroutine workspace_destroy(this)
     class(workspace), intent(in out) :: this
     call safe_deallocate(__FILE__, __LINE__, this%lower)
@@ -113,15 +112,6 @@ contains
     call safe_deallocate(__FILE__, __LINE__, this%sums)
     call safe_deallocate(__FILE__, __LINE__, this%abs_error)
   end subroutine workspace_destroy
-#else
-  subroutine workspace_destroy(this)
-    class(workspace), intent(in out) :: this
-    call safe_deallocate(__FILE__, __LINE__, this%lower)
-    call safe_deallocate(__FILE__, __LINE__, this%upper)
-    call safe_deallocate(__FILE__, __LINE__, this%sums)
-    call safe_deallocate(__FILE__, __LINE__, this%abs_error)
-  end subroutine workspace_destroy
-#endif
   !!***
 
   !!****f* numerical_integration/init_integration
@@ -838,12 +828,7 @@ contains
     call safe_deallocate(__FILE__, __LINE__, roots)
     call safe_deallocate(__FILE__, __LINE__, weights_gauss)
     call safe_deallocate(__FILE__, __LINE__, weights_kronrod)
-#ifdef IMPURE_ELEMENTAL
     call ws%destroy()
-#else
-    call ws(1)%destroy()
-    call ws(2)%destroy()
-#endif
   end subroutine free_integration
   !!***
 end module numerical_integration

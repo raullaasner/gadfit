@@ -154,7 +154,6 @@ set(LIBS ${LIBS} ${OPEN_COARRAYS})
 # COMPILER CAPABILITIES
 # Default
 set(POLYM_ARRAY_SUPPORT       TRUE)
-set(IMPURE_ELEMENTAL_SUPPORT  TRUE)
 set(CRITICAL_SUPPORT          TRUE)
 set(HAS_CO_SUM                TRUE)
 set(DEF_LEN_CHAR_COMP_SUPPORT TRUE)
@@ -185,7 +184,6 @@ if (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   if (NOT CURRENT_Fortran_FLAGS MATCHES "-coarray=")
     message(FATAL_ERROR "Missing a Coarray flag (-coarray=)")
   endif()
-  set(IMPURE_ELEMENTAL_SUPPORT FALSE)
   set(HAS_CO_SUM FALSE)
 endif()
 
