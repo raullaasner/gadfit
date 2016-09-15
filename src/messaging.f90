@@ -13,8 +13,6 @@
 !! check of err_stat, and some I/O helper procedures.
 !! 
 !! SOURCE
-#include <config.h>
-
 module messaging
 
   implicit none
@@ -48,20 +46,11 @@ contains
     character(*), intent(in) :: file, msg
     integer, intent(in) :: line
     integer, intent(in), optional :: img
-#ifdef CRITICAL_SUPPORT
     critical ! Often all images encounter an error at the same time.
       write(error_unit, '(/, *(g0))') file, ':', line, ':'
       call print_msg('ERROR', msg, error_unit)
       error stop
     end critical
-#else
-    if ((.not. present(img) .and. this_image() == 1) .or. &
-         & (present(img) .and. this_image() == img)) then
-       write(error_unit, '(/, *(g0))') file, ':', line, ':'
-       call print_msg('ERROR', msg, error_unit)
-       error stop
-    end if
-#endif
   end subroutine error
   !!***
   
@@ -76,15 +65,10 @@ contains
     use, intrinsic :: iso_fortran_env, only: error_unit
     character(*), intent(in) :: file, msg
     integer, intent(in) :: line
-#ifdef CRITICAL_SUPPORT
     critical
       write(error_unit, '(/, *(g0))') file, ':', line, ':'
       call print_msg('WARNING', msg, error_unit)
     end critical
-#else
-    write(error_unit, '(/, *(g0))') file, ':', line, ':'
-    call print_msg('WARNING', msg, error_unit)
-#endif
   end subroutine warning
   !!***
   
@@ -99,15 +83,10 @@ contains
     use, intrinsic :: iso_fortran_env, only: output_unit
     character(*), intent(in) :: file, msg
     integer, intent(in) :: line
-#ifdef CRITICAL_SUPPORT
     critical
       write(output_unit, '(/, *(g0))') file, ':', line, ':'
       call print_msg('COMMENT', msg, output_unit)
     end critical
-#else
-    write(output_unit, '(/, *(g0))') file, ':', line, ':'
-    call print_msg('COMMENT', msg, output_unit)
-#endif
   end subroutine comment
   !!***
   

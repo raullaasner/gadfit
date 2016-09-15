@@ -18,8 +18,6 @@
 !! automatic_differentiation.f90.
 !!
 !! SOURCE
-#include <config.h>
-
 module fitfunction
 
   use ad

@@ -5,9 +5,6 @@
 #define TESTS_BLD '@CMAKE_CURRENT_BINARY_DIR@/tests'
 #cmakedefine QUAD_PRECISION
 #cmakedefine POLYM_ARRAY_SUPPORT
-#cmakedefine IMPURE_ELEMENTAL_SUPPORT
-#cmakedefine CRITICAL_SUPPORT
 #cmakedefine HAS_CO_SUM
-#cmakedefine DEF_LEN_CHAR_COMP_SUPPORT
 #cmakedefine USE_AD
 #cmakedefine GSL_DIR
