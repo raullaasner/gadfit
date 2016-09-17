@@ -87,9 +87,9 @@ defines the Jacobian matrix and where the damping parameter $\lambda$ allows the
 
 The above is a classical description of the LM algorithm, which is close to the default regime of GADfit unless the user modifies any of the default input parameters. In this section, we discuss several interesting modifications to the algorithm (see \cite{transtrum10,   transtrum11, transtrum12} and references therein), which aim to improve the convergence speed and the sensitivity to the initial guess.
 
-\paragraph{The damping matrix.} Originally, the rationale for choosing the damping matrix as $\bm D^T\bm D \equiv \diag(\bm J^T\bm J)$ in Eq.~\eqref{eq:LM} was to make the algorithm invariant to the rescaling of parameters. This is important when the parameters have very different magnitudes and the algorithm has to follow a narrow canyon in the parameter space in search of the minimum of $\chi^2$. However, this also poses a problem when the algorithm is in a region of space where the model is insensitive to the parameters. When this happens, the diagonal entries of both $\bm J^T\bm J$ and the damping matrix $\bm D^T\bm D$ become small for some parameters, which leads to uncontrollably large steps. There is a chance that some parameters are incorrectly pushed to infinite values, a phenomenon known as parameter evaporation. A compromise for both retaining the invariance to rescaling and guarding against parameter evaporation is to set the diagonal entries of $\bm D^T\bm D$ to the largest diagonal entries of $\bm J^T\bm J$ yet encountered. This approach is efficient provided that the initial guess does not lie on a plateau of the $\chi^2$ surface in the parameter space. If this condition is not satisfied then, as a brute-force solution, the user can specify the minimum values for the diagonal of $\bm D^T\bm D$.
+\paragraph{The damping matrix.} Originally, the rationale for choosing the damping matrix as $\bm D^T\bm D \equiv \diag(\bm J^T\bm J)$ in Eq.~\eqref{eq:LM} was to make the algorithm invariant to the rescaling of parameters. This is important when the parameters have very different magnitudes and the algorithm has to follow a narrow canyon in the parameter space in search of the minimum of $\chi^2$. However, this also poses a problem when the algorithm is in a region of space where the model is insensitive to the parameters. When this happens, the diagonal entries of both $\bm J^T\bm J$ and the damping matrix $\bm D^T\bm D$ become small for some of the parameters, which leads to uncontrollably large steps. There is a chance that some parameters are incorrectly pushed to infinite values, a phenomenon known as parameter evaporation. A compromise for both retaining the invariance to rescaling and guarding against parameter evaporation is to set the diagonal entries of $\bm D^T\bm D$ to the largest diagonal entries of $\bm J^T\bm J$ yet encountered. This approach is efficient provided that the initial guess does not lie on a plateau of the $\chi^2$ surface in the parameter space. If this condition is not satisfied then, as a brute-force solution, the user can specify the minimum values for the diagonal of $\bm D^T\bm D$.
 
-\paragraph{Optimal path towards the minimum.} Following a geometric interpretation of nonlinear optimization, it has been suggested that a geodesic in the parameter space is the most natural path for the algorithm to follow. When the algorithm is navigating a narrow curved canyon, then instead of taking simple steps along the gradient of $\chi^2$, it would be more efficient to take the curvature of the canyon into account and move along, .e.g., parabolic trajectories. One can imagine the benefit of this, e.g., for the Rosenbrock function. To second order, the step is then given by
+\paragraph{Optimal path towards the minimum.} Following a geometric interpretation of nonlinear optimization, it has been suggested that a geodesic in the parameter space is the most natural path for the algorithm to follow. When the algorithm is navigating a narrow curved canyon, then instead of taking simple steps along the gradient of $\chi^2$, it would be more efficient to take the curvature of the canyon into account and move along parabolic trajectories. One can imagine the benefit of this for the Rosenbrock function, to give an example. To second order, the step is then given by
 \begin{equation}
   \label{eq:delta12}
   \begin{split}
@@ -107,7 +107,7 @@ where (Einstein summation implied)
     f(x_i,\beta)}{\partial\beta_j \partial\beta_k} \delta_1^j
   \delta_1^k
 \end{equation}
-is the second directional derivative along $\bm\delta_1$. From geometric considerations, $\bm\delta_1$ and $\bm\delta_2$ are also called the velocity and the accelerations terms. The acceleration term either magnifies or shrinks the velocity term, or tilts it in a different direction. We do not delve here into the theoretical foundations leading to Eq.~\eqref{eq:delta12} and its comparison to alternative ways to include second order corrections. The interested reader is referred to \cite{transtrum10, transtrum11, transtrum12} for an in-depth discussion. We only make a few additional remarks for practical calculations.
+is the second directional derivative along $\bm\delta_1$. From geometric considerations, $\bm\delta_1$ and $\bm\delta_2$ are also called the velocity and the accelerations terms. The acceleration term either magnifies or shrinks the velocity term, or tilts it in a different direction. We do not delve here into the theoretical foundations leading to Eq.~\eqref{eq:delta12} and its comparison to alternative ways of including second order corrections. The interested reader is referred to \cite{transtrum10, transtrum11, transtrum12} for an in-depth discussion. We only make a few additional remarks for practical calculations.
 
 The geodesic acceleration is most useful in a narrow canyon. When the algorithm has not yet found a canyon and is scanning a large plateau, which is where the initial guess is likely to be, then damping is small and $\bm\delta_1$ is large. This causes $\bm\delta_2$ to be even larger and pointing in the opposite direction, which may steer the algorithm in the wrong direction. To avoid this, we require the effect of the second order term to always be smaller than the first order term,
 \begin{equation}
@@ -227,7 +227,7 @@ If the Jacobian \eqref{eq:globalJacob} was calculated using finite differences, 
 
 In contrast, with automatic differentiation the derivatives are obtained with the same accuracy as function evaluation itself, while the computational cost is 3--4 times that of function evaluation \textit{irrespective} of the number of parameters \cite{griewank08}. AD exploits the fact that any mathematical function, no matter how complicated, is executed as a sequence of elementary arithmetic operations on a computer. By applying the chain rule of calculus at each step of execution, the derivative of the function can be calculated automatically, with working accuracy, and using at most a small constant of the computer time required for function evaluation. It should be noted that while AD is not numerical differentiation, it is also not symbolic differentiation. The chain rule is applied directly to the results of elementary operations and the symbolic form of the derivative is never saved in any way. Only the derivatives of the elementary functions need to be coded by hand (in AD literature, the term ``elemental function'' is more common). Afterwards, the algorithm can be applied to functions of arbitrary complexity.
 
-In this document, we describe two flavors of AD. The forward mode of AD is well-suited for calculating the gradient of a multi-valued function depending on a single parameter (just the derivative in this case), and for calculating the directional derivative of a single-valued function depending on many parameters. The reverse mode is suitable for calculating the gradient of a single-valued function depending on many parameters. For the general case of $n$ input and $m$ output variables, a complicated mix of both modes would in principle be optimal.
+In this document, we describe two flavors of AD. The forward mode of AD is well-suited for calculating the gradient of a multi-valued function depending on a single parameter (just the derivative in this case), and for calculating the directional derivative of a single-valued function depending on many parameters. The reverse mode is suitable for calculating the gradient of a single-valued function depending on many parameters. For the general case of $n$ input and $m$ output variables, a nontrivial mix of both modes would in principle be optimal.
 
 \subsubsection{Forward mode}
 
@@ -262,7 +262,7 @@ where $f'(x)$ is the derivative of $f$ evaluated at $x$. Applying the dual numbe
   f(g(\tilde x)) = f(g(x) + g'(x)\dot xd) = \left( f(g(x)),
     f'(g(x))g'(x)\dot x \right),
 \end{equation}
-where we have rediscovered the chain rule. Equation~\eqref{eq:dual_chain} can be repeatedly applied to yield the derivatives of arbitrarily complex functions.
+where we have in fact rediscovered the chain rule. Equation~\eqref{eq:dual_chain} can be repeatedly applied to yield the derivatives of arbitrarily complex functions.
 
 Which derivative the dot symbol represents depends on the initial values of the tangents. It can be shown that in general the initial values define the direction of the derivative in the space of independent variables. For instance, if we have two independent variables $x$ and $y$ and require the derivative with respect to $x$, then the tangent vector is $(1,0)$ in the $xy$-plane and the variables should be seeded with $\dot x = \D x/\D x = 1$ and $\dot y = \D y/\D x = 0$. For a directional derivative $\nabla_{x,y}f(x,y) \bm v$, where $\bm v = (\alpha, \beta)$, the seeds would be $\dot x = \alpha$ and $\dot y = \beta$.
 
@@ -465,7 +465,7 @@ GADfit supports fitting functions containing bounded, semi-infinite, and infinit
 \end{equation}
 where $a_j$ and $b_j$ are the bounds of each subinterval, $w_{i,j}$ are the Gauss-Kronrod weights, and $\xi_{i,j}$ are the roots of the Legendre polynomials. Since it is Eq.~\eqref{eq:quadrature} that is the fitting function (or part of it) and not the exact integral, differentiation should be performed using the same approximate form instead of finding a more accurate approximation for the integral over the derivative of $f$ by using a different set of subintervals.
 
-The dependence on one or more fitting parameters can be in the integrand and/or one or both bounds. The general formula is
+The dependence on one or more fitting parameters can be in the integrand and/or one or both bounds. The general formula for the gradient is
 \begin{multline}
   \label{eq:grad_f}
   \nabla_{\bm p} \int_{a(\bm p)}^{b(\bm p)} f(\bm p, s) \D s \\
@@ -489,7 +489,7 @@ The general formula for the second derivative, required for the acceleration ter
     p} a(\bm p) + \int_{a(b)}^{b(\bm p)} \nabla_{\bm p}^2 f(\bm p,s)
   \D s,
 \end{multline}
-where most terms are actually evaluated with little effort. The only difficulty is with the terms $\nabla_{\bm p} f(\bm p,\xi(\bm p))$, where $\xi$ is one of the bounds. The reason is that the second argument to $f$, the integration variable, is required to be an ordinary floating point number. In order to calculate the derivative with respect to this variable using AD, it would need to be passed as an AD variable. Fundamentally, this is not an issue, but it is a major technical inconvenience. If the interface of $f$ is changed to allow this, then a lot of the internal procedures of GADfit would need to be modified to include an intermediary dummy AD variable for passing arguments to $f$ (Fortran does not allow passing derived types by value). Most of the time this would be an unnecessary conversion from real to a passive AD variable, and only for the above mentioned two terms would the argument need to be an active AD variable. This would incur massive overhead, resulting in an increase of the cpu time by up to 20\%, even if one is not interested in the acceleration term. As a solution, this is the only place where we use finite differences for evaluating the derivative. The error introduced is independent of the error of the numerical integration procedure and the effect on the final result should be negligible.
+Equation~\eqref{eq:nabla2_f} might seem complex, but most terms are actually evaluated with little effort. The only difficulty is with the terms $\nabla_{\bm p} f(\bm p,\xi(\bm p))$, where $\xi$ is one of the bounds. The reason is that the second argument to $f$, the integration variable, is required to be an ordinary floating point number. In order to calculate the derivative with respect to this variable using AD, it would need to be passed as an AD variable. Fundamentally, this is not an issue, but it is a major technical inconvenience. If the interface of $f$ is changed to allow this, then a lot of the internal procedures of GADfit would need to be modified to include an intermediary dummy AD variable for passing arguments to $f$ (Fortran does not allow passing derived types by value). Most of the time this would be an unnecessary conversion from real to a passive AD variable, and only for the above mentioned two terms would the argument need to be an active AD variable. This would incur massive overhead, resulting in an increase of the cpu time by up to 20\%, even if one is not interested in the acceleration term. As a solution, this is the only place where we use finite differences for evaluating the derivative. The error introduced is independent of the error of the numerical integration procedure and the effect on the final result should be negligible.
 
 The above scheme can be generalized to any order, although it is probably not worth going deeper than double integrals since each integration level greatly reduces accuracy. Even double integrals should be used with extreme care and as a last resort.
 
@@ -528,8 +528,8 @@ For configuring, there is the choice of using either a graphical CMake front end
 \end{verbatim}
 from the build directory. Some CMake variables and options appear, most of which should be self-explanatory. A short help text to each variable is displayed at the bottom in a status bar. Pressing 't' reveals all options. When done editing, press 'c' to reconfigure and 'g' to generate the native build script (the unix makefile on Linux). Pay attention when \texttt{ccmake} warns you that the cache variables have been reset. This will happen, e.g., when changing the compiler, and will necessitate the reconfiguring of some variables. After configuring, it is a good idea to go through all the variables once more to check that everything is correct. When finished, exit \texttt{ccmake} and issue
 \begin{verbatim}
-  make
-  make check
+  make -j
+  make -j check
   make install
 \end{verbatim}
 In addition, \verb+make doc+ may be issued for generating the user guide, although a prebuilt one is supplied with the source code.
@@ -545,7 +545,7 @@ The CMake configuration variables can also be put into an external file, an exam
 \begin{verbatim}
   cmake -C ~gadfit/configure.txt ~gadfit
 \end{verbatim}
-from the build directory, followed by the \texttt{make} commands. A change of the content of the configuration file has no effect after the first configuring. Instead, it would be necessary to empty \verb+~build+ before using the configuration file again or, better, use \texttt{ccmake}. It is worth mentioning that every \verb+make+ command demonstrated in this document can be followed by \verb+-j<n>+, where \verb+<n>+ is the number of threads.
+from the build directory, followed by the \texttt{make} commands. A change of the content of the configuration file has no effect after the first configuring. Instead, it would be necessary to empty \verb+~build+ before using the configuration file again or, better, use \texttt{ccmake}.
 
 When using GADfit, i.e., when linking to an executable code (such as when running the tests with \texttt{make check}), the two additional dependencies (OpenCoarrays and a linear algebra library; see below) are by default automatically built when needed.
 
@@ -562,7 +562,7 @@ The multi-image Coarray support of GFortran is provided by the OpenCoarrays proj
   tar xf 1.0.1.tar.gz
   mkdir opencoarrays-1.0.1/build && cd opencoarrays-1.0.1/build
   cmake -DCMAKE_Fortran_COMPILER=mpif90 ..
-  make caf_mpi # libcaf_mpi.a is in ./src/mpi
+  make -j caf_mpi # libcaf_mpi.a is in ./src/mpi
 \end{verbatim}
 and set the \verb+OPEN_COARRAYS+ variable in the GADfit configuration to the full path of \verb+libcaf_mpi.a+. When doing a serial build or when using the Intel compiler, there is no such external dependency.
 
@@ -719,7 +719,7 @@ end program
 
 In order to run the above code, one can manually link and compile from the command line, use a small script like in Sec.~\ref{sec:runtime}, or simply issue
 \begin{verbatim}
-  make example
+  make -j example
 \end{verbatim}
 from the build directory. If no linear algebra library has been specified, it will take a moment to build one.
 
@@ -730,7 +730,7 @@ The results of the calculation will be printed to the standard output and also t
 \end{verbatim}
 The rest of the examples in \verb+~gadfit/tests+ can be built and run with
 \begin{verbatim}
-  make check
+  make -j check
 \end{verbatim}
 The fitting functions used in the tests are
 \begin{equation*}

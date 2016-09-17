@@ -16,7 +16,7 @@ Programming principles
 
 * **Compilation stage.** There should be no compilation warnings when using the default debug flags except when due to a compiler bug. This requirement currently holds for the following compilers: GFortran.
 
-* **Preprocessor.** Use preprocessor macros only for actual preprocessing and not for something that is a short-hand notation for a Fortran statement. Excessive use of the macros makes it difficult for source code indexing tools to navigate through the source code.
+* **Preprocessor.** Use preprocessor macros only for actual preprocessing and not for something that is a short-hand notation for a Fortran statement. Excessive use of macros makes it difficult for source code indexing tools to navigate through the source code.
 
 
 Format
