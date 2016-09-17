@@ -4,35 +4,17 @@
 # distribution or http://gnu.org/copyleft/gpl.txt .
 
 # CMAKE
-cmake_minimum_required(VERSION 2.8.12)
-if (NOT CMAKE_VERSION VERSION_LESS 3)
-  cmake_policy(VERSION 3.0)
-endif()
+cmake_minimum_required(VERSION 3.6)
 
 # PROJECT
-if (NOT CMAKE_VERSION VERSION_LESS 3)
-  project(GADfit VERSION 1.2.2 LANGUAGES Fortran C)
-else()
-  cmake_policy(PUSH)
-  cmake_policy(VERSION 2.8.12)
-  project(GADfit Fortran C)
-  set(PROJECT_VERSION 1.2.2)
-  cmake_policy(POP)
-endif()
+project(GADfit VERSION 1.2.2 LANGUAGES Fortran C)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 
 # FORTRAN COMPILER
-if (NOT CMAKE_VERSION VERSION_LESS 3.3)
-  set(CMAKE_Fortran_COMPILER_VERSION ${CMAKE_Fortran_COMPILER_VERSION}
-    CACHE STRING "")
-  mark_as_advanced(FORCE CMAKE_Fortran_COMPILER_VERSION)
-else()
-  execute_process(COMMAND ${CMAKE_Fortran_COMPILER} --version
-    OUTPUT_VARIABLE tmp)
-  string(REGEX MATCH "[0-9]+[.][0-9]+[.][0-9]+"
-    CMAKE_Fortran_COMPILER_VERSION "${tmp}")
-endif()
+set(CMAKE_Fortran_COMPILER_VERSION ${CMAKE_Fortran_COMPILER_VERSION}
+  CACHE STRING "")
+mark_as_advanced(FORCE CMAKE_Fortran_COMPILER_VERSION)
 
 # COMPILER FLAGS
 # Redefine initial Release flags

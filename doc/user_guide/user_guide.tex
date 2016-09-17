@@ -31,7 +31,7 @@ citecolor=blue,filecolor=blue,linkcolor=blue,urlcolor=black,pdftex}
 \DeclareMathOperator{\Li2}{Li_2}
 
 \title{User guide for GADfit version \version}
-\date{August 2015}
+\date{September 2016}
 
 \begin{document}
 
@@ -46,8 +46,8 @@ GADfit is currently hosted by GitHub.
 
 \subsection{Contributors}
 
-\begin{tabular}{lll}
-  Raul Laasner & Duke University & raullaasner@gmail.com \\
+\begin{tabular}{ll}
+  Raul Laasner & raullaasner@gmail.com \\
 \end{tabular}
 
 \subsection{Terms of use}
@@ -505,7 +505,7 @@ GADfit is dependent on the CMake build system. CMake is a set of tools for confi
 \begin{verbatim}
   sudo apt-get install cmake
 \end{verbatim}
-(Here and elsewhere, we demonstrate how to obtain the relevant packages specifically on Ubuntu, which must not be older than version 14.04; more advanced users can probably skip this section.) For building from source visit \texttt{http://cmake.org}. GADfit is developed with the requirement that it work without incident with the GNU Fortran compiler (GFortran). Currently, there is also support for the Intel compiler. In principle, any other Fortran 2008 conforming compiler should also work, but there is no guarantee. GFortran, released under the GPL 3+ license, can be obtained with
+(Here and elsewhere, we demonstrate how to obtain the relevant packages specifically on Ubuntu, which must not be older than version 16.04; more advanced users can probably skip this section.) For building from source visit \texttt{http://cmake.org}. GADfit is developed with the requirement that it work without incident with the GNU Fortran compiler (GFortran). Currently, there is also support for the Intel compiler. In principle, any other Fortran 2008 conforming compiler should also work, but there is no guarantee. GFortran, released under the GPL 3+ license, can be obtained with
 \begin{verbatim}
   sudo apt-get install gfortran
 \end{verbatim}
@@ -553,20 +553,17 @@ When using GADfit, i.e., when linking to an executable code (such as when runnin
 
 If the derivatives were calculated with finite differences, using \texttt{do concurrent} would be sufficient to parallelize most of GADfit. However, with AD both function evaluation and the gradient calculation become impure procedures, which means that a simple parallelization scheme is not possible. GADfit is parallelized using Coarrays, a syntactic extension to the language that was included in the Fortran 2008 standard. Coarrays follow the SPMD parallelization scheme, where the main program is replicated at the start of execution. Each instance, called an image, has its own set of private variables plus so-called co-variables that are addressable by other images. Coarrays allow to parallelize programs with little effort compared to MPI or OpenMP, although it is often still MPI that runs under the hood.
 
-In order to compile a Coarray program with GFortran, the compiler flag \texttt{-fcoarray=single} must be used for a serial build (single-image Coarray) or \texttt{-fcoarray=lib} for a parallel build (multi-image Coarray). The latter starts with GCC 5 and thus with older versions only a serial build is possible.
-
-The multi-image Coarray support of GFortran is provided by the OpenCoarrays project. It can be automatically downloaded and built with \texttt{make example} or \texttt{make check}. The Coarray communication library, \verb+libcaf_mpi.a+, is installed in \verb+~gadfit/tests+. Alternatively, one may issue, e.g.,
+In order to compile a Coarray program with GFortran, the compiler flag \texttt{-fcoarray=lib} must be used. For GFortran, the Coarray support is provided by the OpenCoarrays project. It can be automatically downloaded and built with \texttt{make example} or \texttt{make check}. The Coarray communication library, \verb+libcaf_mpi.a+, is installed in \verb+~gadfit/tests+. Alternatively, one may issue, e.g.,
 \begin{verbatim}
   wget https://github.com/sourceryinstitute/opencoarrays/\
-  archive/1.0.1.tar.gz
-  tar xf 1.0.1.tar.gz
-  mkdir opencoarrays-1.0.1/build && cd opencoarrays-1.0.1/build
+  archive/1.7.2.tar.gz
+  tar xf 1.7.2.tar.gz
+  mkdir opencoarrays-1.7.2/build && cd opencoarrays-1.7.2/build
   cmake -DCMAKE_Fortran_COMPILER=mpif90 ..
-  make -j caf_mpi # libcaf_mpi.a is in ./src/mpi
+  make -j caf_mpi # libcaf_mpi.a is in
+                  # ./opencoarrays-1.7.2/build/src/mpi
 \end{verbatim}
-and set the \verb+OPEN_COARRAYS+ variable in the GADfit configuration to the full path of \verb+libcaf_mpi.a+. When doing a serial build or when using the Intel compiler, there is no such external dependency.
-
-The building of OpenCoarrays requires CMake at least version 3.0. Thus, on Ubuntu 14.04, the default versions of both GFortran and CMake are unsatisfactory for using GADfit in parallel. A solution would be to switch to a newer Ubuntu or install newer versions of GCC and CMake manually. With the Intel compiler, there are no such limitations.
+and set the \verb+OPEN_COARRAYS+ variable in the GADfit configuration to the full path of \verb+libcaf_mpi.a+. When the Intel compiler, there is no such external dependency.
 
 \subsubsection{\label{sec:runtime}Runtime linking}
 
