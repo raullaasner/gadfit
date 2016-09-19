@@ -1,4 +1,4 @@
-# Copyright (C) 2014-2015 Raul Laasner
+# Copyright (C) 2014-2016 Raul Laasner
 # This file is distributed under the terms of the GNU General Public
 # License, see LICENSE in the root directory of the present
 # distribution or http://gnu.org/copyleft/gpl.txt .
@@ -7,7 +7,7 @@
 cmake_minimum_required(VERSION 3.6)
 
 # PROJECT
-project(GADfit VERSION 1.2.2 LANGUAGES Fortran C)
+project(GADfit VERSION 1.2.3 LANGUAGES Fortran C)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 
