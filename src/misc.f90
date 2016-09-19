@@ -2,7 +2,7 @@
 !!
 !! COPYRIGHT
 !! 
-!! Copyright (C) 2014-2015 Raul Laasner
+!! Copyright (C) 2014-2016 Raul Laasner
 !! This file is distributed under the terms of the GNU General Public
 !! License, see LICENSE in the root directory of the present
 !! distribution or http://gnu.org/copyleft/gpl.txt .
