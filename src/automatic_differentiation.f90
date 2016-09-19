@@ -1006,7 +1006,7 @@ contains
           trace(trace_count+4) = POWER_A_A
           trace_count = trace_count + 4
        else
-          y%d = y%val*(x2%d*log(x1%val) + x2%val*x1%d/x1%val)
+          y%d = y%val*x2%d*log(x1%val) + x1%d*x2%val*x1%val**(x2%val-1)
           y%dd = y%d**2/y%val + y%val*(x2%dd*log(x1%val) + &
                & (2*x2%d*x1%d + x2%val*(x1%dd - x1%d**2/x1%val))/x1%val)
           y%index = 1
@@ -1036,7 +1036,7 @@ contains
           trace(trace_count+3) = POWER_A_R
           trace_count = trace_count + 3
        else
-          y%d = y%val*x2*x1%d/x1%val
+          y%d = x1%d*x2*x1%val**(x2-1)
           y%dd = y%d**2/y%val + y%val*x2*(x1%dd - x1%d**2/x1%val)/x1%val
           y%index = 1
        end if
