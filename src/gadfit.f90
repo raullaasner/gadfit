@@ -573,6 +573,7 @@ contains
     real(kp), allocatable :: JTres(:)[:] ! JacobianT*res
     real(kp), allocatable :: omega(:)
     real(kp), allocatable :: JTomega(:)[:] ! JacobianT*omega
+    real(kp), allocatable :: Jdelta(:)
     real(kp), allocatable :: old_pars(:,:)
     real(real64), allocatable :: DTD(:,:), delta1(:), delta2(:), old_delta1(:)
     ! Tells how to position the derivatives in the Jacobian with
@@ -947,22 +948,20 @@ contains
           end if
        end if
        if (present(cos_phi) .or. show_cos_phi) then
-          block
-            real(kp), allocatable :: Jdelta(:)
-            ! With AP the size changes with each iteration
-            allocate(Jdelta(size(res)), stat=err_stat, errmsg=err_msg)
-            call check_err(__FILE__, __LINE__)
-            Jdelta = matmul(Jacobian, delta1)
-            tmp = dot_product(res, Jdelta)
-            call co_sum(tmp)
-            dummy%val = abs(tmp)
-            tmp = dot_product(res,res)
-            call co_sum(tmp)
-            dummy%val = dummy%val/sqrt(tmp)
-            tmp = dot_product(Jdelta, Jdelta)
-            call co_sum(tmp)
-            dummy%val = dummy%val/sqrt(tmp)
-          end block
+          ! With AP the size changes with each iteration
+          allocate(Jdelta(size(res)), stat=err_stat, errmsg=err_msg)
+          call check_err(__FILE__, __LINE__)
+          Jdelta = matmul(Jacobian, delta1)
+          tmp = dot_product(res, Jdelta)
+          call co_sum(tmp)
+          dummy%val = abs(tmp)
+          tmp = dot_product(res,res)
+          call co_sum(tmp)
+          dummy%val = dummy%val/sqrt(tmp)
+          tmp = dot_product(Jdelta, Jdelta)
+          call co_sum(tmp)
+          dummy%val = dummy%val/sqrt(tmp)
+          deallocate(Jdelta)
           if (this_image() == 1 .and. show_cos_phi) &
                & write(out_unit, '(1x, *(g0))') '|cos(phi)|    = ', dummy%val
           if (present(cos_phi) .and. dummy%val < cos_phi ) then
