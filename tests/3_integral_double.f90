@@ -7,9 +7,9 @@ module integral_double_m
   use fitfunction
   use gadf_constants
   use numerical_integration
-  
+
   implicit none
-  
+
   type, extends(fitfunc) :: integral_double
    contains
      procedure :: init => init_integral_double
@@ -61,7 +61,7 @@ end module integral_double_m
 
   use integral_double_m
   use gadfit
-  
+
   implicit none
 
   type(integral_double) :: f
@@ -72,7 +72,7 @@ end module integral_double_m
   ! enough.
   call gadf_init(f, ad_memory='10 MB', &
        & rel_error_inner=1e-6_kp, rel_error=1e-5_kp)
-  
+
   call gadf_add_dataset(TESTS_BLD//'/3_integral_double_data')
 
   call gadf_set('a', 1.0, .true.)

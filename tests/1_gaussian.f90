@@ -6,9 +6,9 @@ module gaussian_m
   use ad
   use fitfunction
   use gadf_constants
-  
+
   implicit none
-  
+
   type, extends(fitfunc) :: gaussian
    contains
      procedure :: init => init_gaussian
@@ -35,7 +35,7 @@ end module gaussian_m
 
   use gaussian_m
   use gadfit
-  
+
   implicit none
 
   type(gaussian) :: f
@@ -54,7 +54,7 @@ end module gaussian_m
 
   call gadf_set_errors(NONE)
   call gadf_set_verbosity(output='/dev/null')
-  
+
   call gadf_fit(0.1)
 
   call gadf_print(output=TESTS_BLD//'/1_gaussian_results')
@@ -86,6 +86,6 @@ end module gaussian_m
     end if
   end block
 #endif
-  
+
   call gadf_close()
 end program

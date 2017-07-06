@@ -7,9 +7,9 @@ module integral_single_m
   use fitfunction
   use gadf_constants
   use numerical_integration
-  
+
   implicit none
-  
+
   type, extends(fitfunc) :: integral_single
    contains
      procedure :: init => init_integral_single
@@ -48,7 +48,7 @@ end module integral_single_m
 
   use integral_single_m
   use gadfit
-  
+
   implicit none
 
   type(integral_single) :: f
@@ -79,6 +79,6 @@ end module integral_single_m
      write(*,'(27(" "), 2(g0))') 'Expected value: ', TEST_TARGET
      write(*,*)
   end if
-  
+
   call gadf_close()
 end program

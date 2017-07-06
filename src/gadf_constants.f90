@@ -1,8 +1,8 @@
 !!****m* GADfit/gadf_constants
-!! 
+!!
 !! COPYRIGHT
-!! 
-!! Copyright (C) 2014-2016 Raul Laasner
+!!
+!! Copyright (C) 2014-2017 Raul Laasner
 !! This file is distributed under the terms of the GNU General Public
 !! License, see LICENSE in the root directory of the present
 !! distribution or http://gnu.org/copyleft/gpl.txt .
@@ -19,7 +19,7 @@ module gadf_constants
 #endif
 
   implicit none
-  
+
   public
 
   ! Zwillinger, D., Standard Mathematical Tables and Formulae, 31st

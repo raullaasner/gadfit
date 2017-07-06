@@ -1,12 +1,12 @@
 !!****m* GADfit/automatic_differentiation
-!! 
+!!
 !! COPYRIGHT
-!! 
-!! Copyright (C) 2014-2016 Raul Laasner
+!!
+!! Copyright (C) 2014-2017 Raul Laasner
 !! This file is distributed under the terms of the GNU General Public
 !! License, see LICENSE in the root directory of the present
 !! distribution or http://gnu.org/copyleft/gpl.txt .
-!! 
+!!
 !! FUNCTION
 !!
 !! Procedures for finding the gradient of a function using the reverse
@@ -17,7 +17,7 @@
 !! numerical_integration.f90. Also provides the definition of
 !! type(advar) (the AD variable), which is the central variable used
 !! in GADfit. See the user guide for details about the AD algorithm.
-!! 
+!!
 !! SOURCE
 #include <config.h>
 
@@ -30,7 +30,7 @@ module ad
   use misc,           only: safe_deallocate
 
   implicit none
-  
+
   public
   private :: c_double, real32, real64, real128, kp, sqrtpi, &
        & DEFAULT_SWEEP_SIZE, max_trace_count, max_index_count, max_const_count
@@ -97,7 +97,7 @@ module ad
   interface safe_deallocate
      module procedure safe_deallocate_advar
   end interface safe_deallocate
-  
+
   ! AD elemental operations. For most binary operations, all variants
   ! are present: (advar,advar), (advar,T), and (T,advar), where T can
   ! be a real(real32), real(real64), real(real128), or an integer. T
@@ -279,7 +279,7 @@ contains
   !! INPUTS
   !!
   !! All optional
-  !! 
+  !!
   !! memory - allocates forward_values(x), adjoints(x), trace(4*x),
   !!          and ad_constants(x/2), where x is such that the total
   !!          memory reserved is equal to the amount specified by
@@ -544,7 +544,7 @@ contains
     real(real32), intent(in) :: x2
     y = add_advar_real(x1, real(x2, kp))
   end function add_advar_real32
-  
+
   type(advar) function add_advar_real64(x1,x2) result(y)
     type(advar), intent(in) :: x1
     real(real64), intent(in) :: x2
@@ -562,7 +562,7 @@ contains
     integer, intent(in) :: x2
     y = add_advar_real(x1, real(x2, kp))
   end function add_advar_integer
-  
+
   type(advar) function add_real_advar(x1, x2) result(y)
     real(kp), intent(in) :: x1
     type(advar), intent(in) :: x2
@@ -1082,7 +1082,7 @@ contains
        else
           y%d = y%val*x2*x1%d/x1%val
           y%dd = y%d**2/y%val + y%val*x2*(x1%dd - x1%d**2/x1%val)/x1%val
-          y%index = 1          
+          y%index = 1
        end if
     end if
   end function power_advar_integer
@@ -1564,7 +1564,7 @@ contains
     if (index_count > size(forward_values) .or. trace_count > size(trace) .or. &
          & const_count > size(ad_constants)) &
          & call error(__FILE__, __LINE__, &
-         & 'Too many elemental operations. Request more memory.', this_image())
+         & 'Too many elemental operations. Request more memory.')
     ! For memory report
     max_trace_count = max(max_trace_count, trace_count)
     max_index_count = max(max_index_count, index_count)
@@ -1647,7 +1647,7 @@ contains
                adjoints(trace(i-2)) = adjoints(trace(i-2)) + &
                     & adjoints(trace(i-1))
             end if
-            i = i - 3          
+            i = i - 3
          case(EXP_A)
             adjoints(trace(i-2)) = adjoints(trace(i-2)) + &
                  & adjoints(trace(i-1))*forward_values(trace(i-1))
@@ -1749,7 +1749,7 @@ contains
     index_count = num_parameters
   end subroutine ad_grad
   !!***
-  
+
   !!****f* automatic_differentiation/ad_memory_report
   !!
   !! FUNCTION

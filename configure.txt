@@ -6,7 +6,7 @@
 #  set(<variable> <value> CACHE <type> <docstring>) .
 # You only need to edit the <value> parameter. For example, using
 #  set(CMAKE_Fortran_COMPILER mpif90 CACHE STRING "")
-# and running 
+# and running
 #  cmake -C <src_root>/configure.txt <src_root>
 # is the Autotools equivalent of running
 #  <src_root>/configure FC=mpif90

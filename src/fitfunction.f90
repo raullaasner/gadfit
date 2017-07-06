@@ -1,14 +1,14 @@
 !!****m* GADfit/fitfunction
-!! 
+!!
 !! COPYRIGHT
-!! 
-!! Copyright (C) 2014-2016 Raul Laasner
+!!
+!! Copyright (C) 2014-2017 Raul Laasner
 !! This file is distributed under the terms of the GNU General Public
 !! License, see LICENSE in the root directory of the present
 !! distribution or http://gnu.org/copyleft/gpl.txt .
-!! 
+!!
 !! FUNCTION
-!! 
+!!
 !! Defines and provides basic functionality for an abstract type for
 !! the fitting function, from which all user defined types are
 !! derived. Initialization and the value function are deferred to user
@@ -29,7 +29,7 @@ module fitfunction
 
   private
   public :: fitfunc, safe_deallocate
-  
+
   type, abstract :: fitfunc
      type(advar),  allocatable :: pars(:)
      type(string), allocatable :: parnames(:)
@@ -294,7 +294,6 @@ contains
     character(*), intent(in) :: file
     integer, intent(in) :: line
     class(fitfunc), allocatable, intent(in out) :: array(:)
-    integer :: i
     if (allocated(array)) then
        call array%destroy()
        deallocate(array, stat=err_stat, errmsg=err_msg)
