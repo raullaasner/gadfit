@@ -1,12 +1,12 @@
 !!****m* GADfit/linalg
-!! 
+!!
 !! COPYRIGHT
-!! 
-!! Copyright (C) 2014-2016 Raul Laasner
+!!
+!! Copyright (C) 2014-2017 Raul Laasner
 !! This file is distributed under the terms of the GNU General Public
 !! License, see LICENSE in the root directory of the present
 !! distribution or http://gnu.org/copyleft/gpl.txt .
-!! 
+!!
 !! FUNCTION
 !!
 !! Wrappers for linear algebra routines.
@@ -16,12 +16,12 @@ module linalg
 
   use, intrinsic :: iso_fortran_env, only: real64
   use messaging, only: str, error, err_stat
-  
+
   implicit none
 
   private
   public :: potr_f08
-  
+
 contains
   !!***
 
@@ -60,13 +60,11 @@ contains
          str(size(a,1))//'/'//str(size(b))//').')
     call dpotrf(ul_loc, size(b), a, size(b), err_stat)
     if (err_stat /= 0) &
-         & call error(file, line, 'Cholesky factorization failed (dpotrf).', &
-         & this_image())
+         & call error(file, line, 'Cholesky factorization failed (dpotrf).')
     call dpotrs(ul_loc, size(b), 1, a, size(b), b, size(b), err_stat)
     if (err_stat /= 0) &
          & call error(file, line, &
-         & 'Could not solve the linear system of equations (dpotrs).', &
-         & this_image())
+         & 'Could not solve the linear system of equations (dpotrs).')
   end subroutine potr_f08
   !!***
 end module linalg

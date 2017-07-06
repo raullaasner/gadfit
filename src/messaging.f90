@@ -1,26 +1,26 @@
 !!****m* GADfit/messaging
-!! 
+!!
 !! COPYRIGHT
-!! 
-!! Copyright (C) 2014-2016 Raul Laasner
+!!
+!! Copyright (C) 2014-2017 Raul Laasner
 !! This file is distributed under the terms of the GNU General Public
 !! License, see LICENSE in the root directory of the present
 !! distribution or http://gnu.org/copyleft/gpl.txt .
-!! 
+!!
 !! FUNCTION
-!! 
+!!
 !! Contains the error, warning, and comment procedures, the status
 !! check of err_stat, and some I/O helper procedures.
-!! 
+!!
 !! SOURCE
 module messaging
 
   implicit none
-  
+
   private
   public :: error, warning, comment, check_err, err_stat, err_msg, &
        & str, print_memory
-  
+
   integer, parameter :: MAX_ERROR_LENGTH = 200
   integer :: err_stat = 0
   character(MAX_ERROR_LENGTH) :: err_msg
@@ -36,16 +36,11 @@ contains
   !! sent to stderr. 'file' and 'line' should be determined by the
   !! preprocessor.
   !!
-  !! TODO
-  !!
-  !! img may be removed once gfortran supports critical.
-  !!
   !! SOURCE
-  subroutine error(file, line, msg, img)
+  subroutine error(file, line, msg)
     use, intrinsic :: iso_fortran_env, only: error_unit
     character(*), intent(in) :: file, msg
     integer, intent(in) :: line
-    integer, intent(in), optional :: img
     critical ! Often all images encounter an error at the same time.
       write(error_unit, '(/, *(g0))') file, ':', line, ':'
       call print_msg('ERROR', msg, error_unit)
@@ -53,7 +48,7 @@ contains
     end critical
   end subroutine error
   !!***
-  
+
   !!****f* messaging/warning
   !!
   !! FUNCTION
@@ -71,7 +66,7 @@ contains
     end critical
   end subroutine warning
   !!***
-  
+
   !!****f* messaging/comment
   !!
   !! FUNCTION
@@ -89,7 +84,7 @@ contains
     end critical
   end subroutine comment
   !!***
-  
+
   !!****f* messaging/print_msg
   !!
   !! FUNCTION
@@ -107,7 +102,7 @@ contains
   !! typ - type of the message that will be displayed as TYPE
   !! msg - contents of the message
   !! io_unit - I/O device
-  !!   
+  !!
   !! SOURCE
   recursive subroutine print_msg(typ, msg, io_unit)
     character(*), intent(in) :: typ, msg
@@ -135,7 +130,7 @@ contains
     end if
   end subroutine print_msg
   !!***
-  
+
   !!****f* misc/str
   !!
   !! FUNCTION
@@ -152,7 +147,7 @@ contains
     y = trim(tmp)
   end function str
   !!***
-  
+
   !!****f* messaging/check_err
   !!
   !! FUNCTION
@@ -161,7 +156,7 @@ contains
   !! procedure that has the status and error message specifiers, which
   !! have to point to err_stat and err_msg respectively. 'file' and
   !! 'line' should be determined by the preprocessor.
-  !! 
+  !!
   !! SOURCE
   subroutine check_err(file, line)
     character(*), intent(in) :: file

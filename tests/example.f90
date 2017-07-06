@@ -44,7 +44,7 @@ end module test_f
 
   use test_f ! Include the above-defined fitting function
   use gadfit ! and the main library.
-  
+
   implicit none
 
   type(exponential) :: f ! An instance of the fitting function

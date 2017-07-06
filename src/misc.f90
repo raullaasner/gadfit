@@ -1,8 +1,8 @@
 !!****m* GADfit/misc
 !!
 !! COPYRIGHT
-!! 
-!! Copyright (C) 2014-2016 Raul Laasner
+!!
+!! Copyright (C) 2014-2017 Raul Laasner
 !! This file is distributed under the terms of the GNU General Public
 !! License, see LICENSE in the root directory of the present
 !! distribution or http://gnu.org/copyleft/gpl.txt .
@@ -21,7 +21,7 @@ module misc
   use messaging
 
   implicit none
-  
+
   private
   public :: string, len, swap, timer, safe_deallocate, safe_close
 #if !defined HAS_CO_SUM || defined QUAD_PRECISION
@@ -133,7 +133,7 @@ contains
   !!
   !! Find the cpu and wall times of a code segment. The code segment
   !! should be wrapped between two calls to time.
-  !!           
+  !!
   !! SOURCE
   subroutine time(this)
     class(timer), intent(in out) :: this
@@ -153,7 +153,7 @@ contains
     end if
   end subroutine time
   !!***
-  
+
   !!****f* misc/co_
   !!
   !! FUNCTION
@@ -176,7 +176,7 @@ contains
     sync all
     a = tmp
   end subroutine co_sum_0d
-  
+
   subroutine co_sum_1d(a)
     real(kp), intent(in out) :: a(:)[*]
     real(kp) :: tmp (size(a))
@@ -189,7 +189,7 @@ contains
     sync all
     a = tmp
   end subroutine co_sum_1d
-  
+
   subroutine co_sum_2d(a)
     real(kp), intent(in out) :: a(:,:)[*]
     real(kp) :: tmp(size(a,1),size(a,2))
@@ -204,7 +204,7 @@ contains
   end subroutine co_sum_2d
 #endif
   !!***
-  
+
   !!****f* misc/safe_deallocate
   !!
   !! FUNCTION

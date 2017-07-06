@@ -1,14 +1,14 @@
 !!****m* GADfit/gauss_konrod_parameters
-!! 
+!!
 !! COPYRIGHT
-!! 
-!! Copyright (C) 2014-2016 Raul Laasner
+!!
+!! Copyright (C) 2014-2017 Raul Laasner
 !! This file is distributed under the terms of the GNU General Public
 !! License, see LICENSE in the root directory of the present
 !! distribution or http://gnu.org/copyleft/gpl.txt .
-!! 
+!!
 !! FUNCTION
-!! 
+!!
 !! Contains the 2n+1 nodes of the Legendre polynomials, weights
 !! corresponding to the n-point Gaussian rule, and weights
 !! corresponding to the (2n+1)-point Kronrod rule. 2n+1 can be 15, 21,
@@ -28,7 +28,7 @@ module gauss_kronrod_parameters
   ! Bell Labs, Nov. 1981.
 
   ! 7-point Gauss rule with 15-point Kronrod rule
-  real(kp), parameter :: roots_15p(15) = [ &
+  real(kp), parameter :: roots_15p(*) = [ &
       -0.991455371120812639206854697526329_kp, &
       -0.949107912342758524526189684047851_kp, &
       -0.864864423359769072789712788640926_kp, &
@@ -44,8 +44,8 @@ module gauss_kronrod_parameters
        0.586087235467691130294144838258730_kp, &
        0.405845151377397166906606412076961_kp, &
        0.207784955007898467600689403773245_kp]
-       
-  real(kp), parameter :: weights_gauss_7p(7) = [ &
+
+  real(kp), parameter :: weights_gauss_7p(*) = [ &
        0.129484966168869693270611432679082_kp, &
        0.279705391489276667901467771423780_kp, &
        0.381830050505118944950369775488975_kp, &
@@ -54,7 +54,7 @@ module gauss_kronrod_parameters
        0.279705391489276667901467771423780_kp, &
        0.381830050505118944950369775488975_kp]
 
-  real(kp), parameter :: weights_kronrod_15p(15) = [ &
+  real(kp), parameter :: weights_kronrod_15p(*) = [ &
        0.022935322010529224963732008058970_kp, &
        0.063092092629978553290700663189204_kp, &
        0.104790010322250183839876322541518_kp, &
@@ -72,7 +72,7 @@ module gauss_kronrod_parameters
        0.204432940075298892414161999234649_kp]
 
   ! 10-point Gauss rule with 21-point Kronrod rule
-  real(kp), parameter :: roots_21p(21) = [ &
+  real(kp), parameter :: roots_21p(*) = [ &
       -0.995657163025808080735527280689003_kp, &
       -0.973906528517171720077964012084452_kp, &
       -0.930157491355708226001207180059508_kp, &
@@ -95,7 +95,7 @@ module gauss_kronrod_parameters
        0.148874338981631210884826001129720_kp, &
        0.000000000000000000000000000000000_kp]
 
-  real(kp), parameter :: weights_gauss_10p(10) = [ &
+  real(kp), parameter :: weights_gauss_10p(*) = [ &
        0.066671344308688137593568809893332_kp, &
        0.149451349150580593145776339657697_kp, &
        0.219086362515982043995534934228163_kp, &
@@ -106,8 +106,8 @@ module gauss_kronrod_parameters
        0.219086362515982043995534934228163_kp, &
        0.269266719309996355091226921569469_kp, &
        0.295524224714752870173892994651338_kp]
-  
-  real(kp), parameter :: weights_kronrod_21p(21) = [ &
+
+  real(kp), parameter :: weights_kronrod_21p(*) = [ &
        0.011694638867371874278064396062192_kp, &
        0.032558162307964727478818972459390_kp, &
        0.054755896574351996031381300244580_kp, &
@@ -131,7 +131,7 @@ module gauss_kronrod_parameters
        0.149445554002916905664936468389821_kp]
 
   ! 15-point Gauss rule with 31-point Kronrod rule
-  real(kp), parameter :: roots_31p(31) = [ &
+  real(kp), parameter :: roots_31p(*) = [ &
       -0.998002298693397060285172840152271_kp, &
       -0.987992518020485428489565718586613_kp, &
       -0.967739075679139134257347978784337_kp, &
@@ -164,7 +164,7 @@ module gauss_kronrod_parameters
        0.201194093997434522300628303394596_kp, &
        0.101142066918717499027074231447392_kp]
 
-  real(kp), parameter :: weights_gauss_15p(15) = [ &
+  real(kp), parameter :: weights_gauss_15p(*) = [ &
        0.030753241996117268354628393577204_kp, &
        0.070366047488108124709267416450667_kp, &
        0.107159220467171935011869546685869_kp, &
@@ -181,7 +181,7 @@ module gauss_kronrod_parameters
        0.186161000015562211026800561866423_kp, &
        0.198431485327111576456118326443839_kp]
 
-  real(kp), parameter :: weights_kronrod_31p(31) = [ &
+  real(kp), parameter :: weights_kronrod_31p(*) = [ &
        0.005377479872923348987792051430128_kp, &
        0.015007947329316122538374763075807_kp, &
        0.025460847326715320186874001019653_kp, &
@@ -215,7 +215,7 @@ module gauss_kronrod_parameters
        0.100769845523875595044946662617570_kp]
 
   ! 20-point Gauss rule with 41-point Kronrod rule
-  real(kp), parameter :: roots_41p(41) = [ &
+  real(kp), parameter :: roots_41p(*) = [ &
       -0.998859031588277663838315576545863_kp, &
       -0.993128599185094924786122388471320_kp, &
       -0.981507877450250259193342994720217_kp, &
@@ -258,7 +258,7 @@ module gauss_kronrod_parameters
        0.076526521133497333754640409398838_kp, &
        0.000000000000000000000000000000000_kp]
 
-  real(kp), parameter :: weights_gauss_20p(20) = [ &
+  real(kp), parameter :: weights_gauss_20p(*) = [ &
        0.017614007139152118311861962351853_kp, &
        0.040601429800386941331039952274932_kp, &
        0.062672048334109063569506535187042_kp, &
@@ -280,7 +280,7 @@ module gauss_kronrod_parameters
        0.149172986472603746787828737001969_kp, &
        0.152753387130725850698084331955098_kp]
 
-  real(kp), parameter :: weights_kronrod_41p(41) = [ &
+  real(kp), parameter :: weights_kronrod_41p(*) = [ &
        0.003073583718520531501218293246031_kp, &
        0.008600269855642942198661787950102_kp, &
        0.014626169256971252983787960308868_kp, &
@@ -324,7 +324,7 @@ module gauss_kronrod_parameters
        0.076600711917999656445049901530102_kp]
 
   ! 25-point Gauss rule with 51-point Kronrod rule
-  real(kp), parameter :: roots_51p(51) = [ &
+  real(kp), parameter :: roots_51p(*) = [ &
       -0.999262104992609834193457486540341_kp, &
       -0.995556969790498097908784946893902_kp, &
       -0.988035794534077247637331014577406_kp, &
@@ -377,7 +377,7 @@ module gauss_kronrod_parameters
        0.122864692610710396387359818808037_kp, &
        0.061544483005685078886546392366797_kp]
 
-  real(kp), parameter :: weights_gauss_25p(25) = [ &
+  real(kp), parameter :: weights_gauss_25p(*) = [ &
        0.011393798501026287947902964113235_kp, &
        0.026354986615032137261901815295299_kp, &
        0.040939156701306312655623487711646_kp, &
@@ -404,7 +404,7 @@ module gauss_kronrod_parameters
        0.119455763535784772228178126512901_kp, &
        0.122242442990310041688959518945852_kp]
 
-  real(kp), parameter :: weights_kronrod_51p(51) = [ &
+  real(kp), parameter :: weights_kronrod_51p(*) = [ &
        0.001987383892330315926507851882843_kp, &
        0.005561932135356713758040236901066_kp, &
        0.009473973386174151607207710523655_kp, &
@@ -458,7 +458,7 @@ module gauss_kronrod_parameters
        0.061471189871425316661544131965264_kp]
 
   ! 30-point Gauss rule with 61-point Kronrod rule
-  real(kp), parameter :: roots_61p(61) = [ &
+  real(kp), parameter :: roots_61p(*) = [ &
       -0.999484410050490637571325895705811_kp, &
       -0.996893484074649540271630050918695_kp, &
       -0.991630996870404594858628366109486_kp, &
@@ -520,8 +520,8 @@ module gauss_kronrod_parameters
        0.102806937966737030147096751318001_kp, &
        0.051471842555317695833025213166723_kp, &
        0.000000000000000000000000000000000_kp]
-       
-  real(kp), parameter :: weights_gauss_30p(30) = [ &
+
+  real(kp), parameter :: weights_gauss_30p(*) = [ &
        0.007968192496166605615465883474674_kp, &
        0.018466468311090959142302131912047_kp, &
        0.028784707883323369349719179611292_kp, &
@@ -553,7 +553,7 @@ module gauss_kronrod_parameters
        0.101762389748405504596428952168554_kp, &
        0.102852652893558840341285636705415_kp]
 
-  real(kp), parameter :: weights_kronrod_61p(61) = [ &
+  real(kp), parameter :: weights_kronrod_61p(*) = [ &
        0.001389013698677007624551591226760_kp, &
        0.003890461127099884051267201844516_kp, &
        0.006630703915931292173319826369750_kp, &

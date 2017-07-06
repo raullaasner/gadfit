@@ -68,6 +68,20 @@ Documentation
 * **Note.** When modifying the source code, don't forget to update the user guide accordingly!
 
 
+Git
+---
+
+Use the following rules for creating Git commit messages:
+* Separate subject from body with a blank line
+* Limit the subject line to 50 characters
+* Capitalize the subject line
+* Do not end the subject line with a period
+* Use the imperative mood in the subject line
+* Wrap the body at 72 characters
+* Use the body to explain what and why vs. how
+Read the detailed instructions here: https://chris.beams.io/posts/git-commit
+
+
 TODO
 ----
 

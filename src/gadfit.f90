@@ -1,8 +1,8 @@
 !!****m* GADfit/gadfit
-!! 
+!!
 !! COPYRIGHT
-!! 
-!! Copyright (C) 2014-2016 Raul Laasner
+!!
+!! Copyright (C) 2014-2017 Raul Laasner
 !! This file is distributed under the terms of the GNU General Public
 !! License, see LICENSE in the root directory of the present
 !! distribution or http://gnu.org/copyleft/gpl.txt .
@@ -38,7 +38,7 @@ module gadfit
   use numerical_integration
 
   implicit none
-  
+
   private
   protected :: fitfuncs
   public :: gadf_init, gadf_add_dataset, gadf_set, gadf_set_errors, &
@@ -57,7 +57,7 @@ module gadfit
   end interface gadf_set
 
   ! FITTING FUNCTION
-  
+
   ! The are as many instances of the fitting function as there are
   ! datasets.
 #ifdef POLYM_ARRAY_SUPPORT
@@ -105,9 +105,9 @@ module gadfit
   logical :: &
        & show_timing, show_memory, show_workloads, show_delta1, show_delta2, &
        & show_cos_phi, show_grad_chi2, show_uphill, show_acc
-  
+
   ! TIMING
-  
+
   type(timer) :: Jacobian_timer[*], chi2_timer[*], linalg_timer[*]
   type(timer) :: omega_timer[*], main_loop_timer[*]
 
@@ -150,7 +150,7 @@ contains
          & num_datasets, sweep_size, trace_size, const_size, ws_size, &
          & ws_size_inner, integration_rule
     character(*), intent(in), optional :: ad_memory
-    real(kp), intent(in), optional :: rel_error_inner, rel_error 
+    real(kp), intent(in), optional :: rel_error_inner, rel_error
     integer :: i
     if (present(num_datasets)) then
        allocate(fitfuncs(num_datasets), mold=f, stat=err_stat, errmsg=err_msg)
@@ -299,7 +299,7 @@ contains
   !! FUNCTION
   !!
   !! Same as set_int_global_real except val is single precision real.
-  !! 
+  !!
   !! SOURCE
   subroutine set_int_global_real32(par, val, active)
     integer, intent(in) :: par
@@ -481,7 +481,7 @@ contains
     end do
   end subroutine read_data
   !!***
-  
+
   !!****f* gadfit/init_weights
   !!
   !! SOURCE
@@ -984,7 +984,7 @@ contains
              if (any(abs(delta1(Jacobian_indices(:,j))/ &
                   & fitfunc_tmp%pars(active_pars)%val) > rel_error)) &
                   & flag = .true.
-#endif   
+#endif
           end do
           if (.not. flag) then
              if (this_image() == 1) &
@@ -1028,7 +1028,7 @@ contains
     if (show_timing)    call print_timing(out_unit)
   contains
     !!***
-    
+
     !!****f* gadfit/gadf_fit/re_initialize
     !!
     !! FUNCTION
@@ -1124,7 +1124,7 @@ contains
       end associate
     end subroutine re_initialize
     !!***
-    
+
     !!****f* gadfit/gadf_fit/chi2
     !!
     !! FUNCTION
@@ -1277,14 +1277,14 @@ contains
          & 'Total  ', total_cpu_time, 1d0*main_loop_timer%wall_time/count_rate
   end subroutine print_timing
   !!***
-  
+
   !!****f* gadfit/print_info
   !!
   !! FUNCTION
   !!
   !! Prints the results of the last iteration. Arguments have the same
   !! meaning as in gadf_fit.
-  !! 
+  !!
   !! SOURCE
   subroutine print_info(io_unit, chi2_DOF, lambda, iterations, delta1, delta2, &
        & Jacobian_indices)

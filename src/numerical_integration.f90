@@ -1,12 +1,12 @@
 !!****m* GADfit/numerical_integration
-!! 
+!!
 !! COPYRIGHT
-!! 
-!! Copyright (C) 2014-2016 Raul Laasner
+!!
+!! Copyright (C) 2014-2017 Raul Laasner
 !! This file is distributed under the terms of the GNU General Public
 !! License, see LICENSE in the root directory of the present
 !! distribution or http://gnu.org/copyleft/gpl.txt .
-!! 
+!!
 !! FUNCTION
 !!
 !! AD implementation of adaptive numerical integration based on the
@@ -20,7 +20,7 @@ module numerical_integration
   use gauss_kronrod_parameters
   use messaging
   use misc,           only: swap
-  
+
   implicit none
 
   private
@@ -72,7 +72,7 @@ module numerical_integration
   ! Maximum value of current_index during any integration
   ! procedure. For memory report.
   integer :: max_ws(2)[*]
-  
+
 contains
   !!***
 
@@ -323,7 +323,7 @@ contains
        end if
     end do main
     call error(__FILE__, __LINE__, 'Number of iterations was insufficient. &
-         &Increase either workspace size or the error bound(s).', this_image())
+         &Increase either workspace size or the error bound(s).')
   end function integrate_real_real
   !!
   !! FUNCTION
@@ -624,7 +624,7 @@ contains
           dummy = f(upper%val, pars)
           y%dd = y%dd + upper%dd*dummy%val + &
                & upper%d*(dir_deriv_finite(f, upper, pars)+dummy%d)
-          if (y%index == 0) y%index = 1          
+          if (y%index == 0) y%index = 1
        end if
     end if
   end function integrate_inf_advar
