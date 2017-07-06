@@ -50,8 +50,8 @@ if (NOT OPEN_COARRAYS AND CMAKE_Fortran_COMPILER_ID MATCHES "GNU" AND
     OpenCoarrays-fallback
     EXCLUDE_FROM_ALL 1
     URL
-    https://github.com/sourceryinstitute/opencoarrays/archive/1.7.2.tar.gz
-    URL_MD5 abb4646a20ad101ae5702f7ef3c1de6e
+    https://github.com/sourceryinstitute/opencoarrays/archive/1.9.0.tar.gz
+    URL_MD5 7f10181d52a382cb256a3f93659d2e0d
     CMAKE_CACHE_ARGS
     -DCMAKE_Fortran_COMPILER:STRING=${CMAKE_Fortran_COMPILER}
     -DCMAKE_C_COMPILER:STRING=${CMAKE_C_COMPILER}
@@ -62,6 +62,13 @@ if (NOT OPEN_COARRAYS AND CMAKE_Fortran_COMPILER_ID MATCHES "GNU" AND
     )
   link_directories(${CMAKE_CURRENT_BINARY_DIR})
   set(LIBS ${LIBS} caf_mpi)
+endif()
+
+# The custom command for running the tests must start with "mpirun"
+# when using GFortran. With Intel, the Coarray executable is run
+# directly.
+if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
+  set(MPIRUN mpirun)
 endif()
 
 # Example input
@@ -75,12 +82,12 @@ endif()
 target_link_libraries(example0 ${LIBS})
 set(SRC ${CMAKE_CURRENT_SOURCE_DIR})
 set(BLD ${CMAKE_CURRENT_BINARY_DIR})
-add_custom_target(example 
+add_custom_target(example
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
   ${SRC}/example_data1 ${BLD}/example_data1
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
   ${SRC}/example_data2 ${BLD}/example_data2
-  COMMAND ${BLD}/example0 DEPENDS example0)
+  COMMAND ${MPIRUN} ${BLD}/example0 DEPENDS example0)
 
 # Tests
 foreach(f ${TESTS})
@@ -91,9 +98,9 @@ foreach(f ${TESTS})
   if (TARGET OpenCoarrays-fallback)
     add_dependencies(${f} OpenCoarrays-fallback)
   endif()
-  add_test(${f} ${CMAKE_CURRENT_BINARY_DIR}/${f})
+  add_test(NAME ${f} COMMAND ${MPIRUN} ${CMAKE_CURRENT_BINARY_DIR}/${f})
   target_link_libraries(${f} ${LIBS})
-  set_tests_properties(${f} PROPERTIES FAIL_REGULAR_EXPRESSION 
+  set_tests_properties(${f} PROPERTIES FAIL_REGULAR_EXPRESSION
     "(Error|BAD TERMINATION)")
 endforeach()
 
