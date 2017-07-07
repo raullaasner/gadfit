@@ -607,7 +607,6 @@ contains
     real(kp) :: acc_ratio, beta
     real(kp), save :: tmp[*]
     type(advar) :: dummy
-    logical :: flag
     integer :: active_pars_tmp(size(active_pars)), shift
     integer :: i, j
     if (.not. allocated(fitfuncs)) &
@@ -972,26 +971,24 @@ contains
           end if
        end if
        if (present(rel_error)) then
-          flag = .false.
-          do j = 1, size(fitfuncs)
+          test_rel_change: block
+            do j = 1, size(fitfuncs)
 #ifdef POLYM_ARRAY_SUPPORT
-             if (any(abs(delta1(Jacobian_indices(:,j))/ &
-                  & fitfuncs(j)%pars(active_pars)%val) > rel_error)) &
-                  & flag = .true.
+               if (any(abs(delta1(Jacobian_indices(:,j))/ &
+                    & fitfuncs(j)%pars(active_pars)%val) > rel_error)) &
 #else
-             fitfunc_tmp => fitfuncs(j)
-             if (any(abs(delta1(Jacobian_indices(:,j))/ &
-                  & fitfunc_tmp%pars(active_pars)%val) > rel_error)) &
-                  & flag = .true.
+               fitfunc_tmp => fitfuncs(j)
+               if (any(abs(delta1(Jacobian_indices(:,j))/ &
+                    & fitfunc_tmp%pars(active_pars)%val) > rel_error)) &
 #endif
-          end do
-          if (.not. flag) then
-             if (this_image() == 1) &
-                  & write(out_unit, '(/, 1x, *(g0))') &
-                  & 'Relative change in all parameters was less than ', &
-                  & rel_error
-             exit main
-          end if
+                    & exit test_rel_change
+            end do
+            if (this_image() == 1) &
+                 & write(out_unit, '(/, 1x, *(g0))') &
+                 & 'Relative change in all parameters was less than ', &
+                 & rel_error
+            exit main
+          end block test_rel_change
        end if
        if (present(rel_error_global)) then
 #ifdef POLYM_ARRAY_SUPPORT
