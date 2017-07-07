@@ -12,16 +12,15 @@
 
 module gadf_constants
 
-#ifdef QUAD_PRECISION
-  use, intrinsic :: iso_fortran_env, only: kp => real128
-#else
-  use, intrinsic :: iso_fortran_env, only: kp => real64
-#endif
-
   implicit none
 
   public
 
+#ifdef QUAD_PRECISION
+  integer, parameter :: kp = selected_real_kind(33, 4931)
+#else
+  integer, parameter :: kp = selected_real_kind(15, 307)
+#endif
   ! Zwillinger, D., Standard Mathematical Tables and Formulae, 31st
   ! Ed. Boca Raton, FL: Chapman and Hall/CRC Press LLC, 2003
   real(kp), parameter :: pi = 3.14159265358979323846264338327950_kp
