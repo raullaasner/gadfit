@@ -6,7 +6,7 @@
 % distribution or http://gnu.org/copyleft/gpl.txt .
 
 \documentclass{article}
-\def\version{1.2.3}
+\def\version{1.2.4}
 
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -31,7 +31,7 @@ citecolor=blue,filecolor=blue,linkcolor=blue,urlcolor=black,pdftex}
 \DeclareMathOperator{\Li2}{Li_2}
 
 \title{User guide for GADfit version \version}
-\date{September 2016}
+\date{July 2017}
 
 \begin{document}
 
@@ -556,12 +556,12 @@ If the derivatives were calculated with finite differences, using \texttt{do con
 In order to compile a Coarray program with GFortran, the compiler flag \texttt{-fcoarray=lib} must be used. For GFortran, the Coarray support is provided by the OpenCoarrays project. It can be automatically downloaded and built with \texttt{make example} or \texttt{make check}. The Coarray communication library, \verb+libcaf_mpi.a+, is installed in \verb+~gadfit/tests+. Alternatively, one may issue, e.g.,
 \begin{verbatim}
   wget https://github.com/sourceryinstitute/opencoarrays/\
-  archive/1.7.2.tar.gz
-  tar xf 1.7.2.tar.gz
-  mkdir opencoarrays-1.7.2/build && cd opencoarrays-1.7.2/build
+  archive/1.9.0.tar.gz
+  tar xf 1.9.0.tar.gz
+  mkdir OpenCoarrays-1.9.0/build && cd OpenCoarrays-1.9.0/build
   cmake -DCMAKE_Fortran_COMPILER=mpif90 ..
   make -j caf_mpi # libcaf_mpi.a is in
-                  # ./opencoarrays-1.7.2/build/src/mpi
+                  # OpenCoarrays-1.9.0/build/src/mpi
 \end{verbatim}
 and set the \verb+OPEN_COARRAYS+ variable in the GADfit configuration to the full path of \verb+libcaf_mpi.a+. When the Intel compiler, there is no such external dependency.
 

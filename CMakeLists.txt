@@ -4,10 +4,10 @@
 # distribution or http://gnu.org/copyleft/gpl.txt .
 
 # CMAKE
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.5.1)
 
 # PROJECT
-project(GADfit VERSION 1.2.3 LANGUAGES Fortran C)
+project(GADfit VERSION 1.2.4 LANGUAGES Fortran C)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 
@@ -22,15 +22,8 @@ if ("${CMAKE_Fortran_FLAGS_RELEASE}" STREQUAL
     ${CMAKE_Fortran_FLAGS_RELEASE_INIT})
   if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
     unset(CMAKE_Fortran_FLAGS_RELEASE CACHE)
-    if (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS "5.1.0")
-      set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -fstack-arrays -fcoarray=lib"
-	CACHE STRING "GFortran Release flags")
-    else()
-      # Multi-image support starts with GCC 5
-      set(CAF_SINGLE_RELEASE TRUE)
-      set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -fstack-arrays -fcoarray=single"
-	CACHE STRING "GFortran Release flags")
-    endif()
+    set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -fstack-arrays -fcoarray=lib"
+      CACHE STRING "GFortran Release flags")
   elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
     unset(CMAKE_Fortran_FLAGS_RELEASE CACHE)
     set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -ipo -xHost -coarray=shared"
@@ -41,12 +34,7 @@ endif()
 if ("${CMAKE_Fortran_FLAGS_DEBUG}" STREQUAL ${CMAKE_Fortran_FLAGS_DEBUG_INIT})
   if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
     unset(CMAKE_Fortran_FLAGS_DEBUG CACHE)
-    if (NOT CMAKE_Fortran_COMPILER_VERSION VERSION_LESS "5.1.0")
-      set(CMAKE_Fortran_FLAGS_DEBUG "-O3 -g -Wall -Wno-maybe-uninitialized -Wextra -pedantic -fcheck=all -ffpe-trap=zero,overflow -fbacktrace -fcoarray=lib -std=f2008ts" CACHE STRING "GFortran Debug flags")
-    else()
-      set(CAF_SINGLE_DEBUG TRUE)
-      set(CMAKE_Fortran_FLAGS_DEBUG "-O3 -g -Wall -Wno-maybe-uninitialized -Wextra -pedantic -fcheck=all -ffpe-trap=zero,overflow -fbacktrace -fcoarray=single -std=f2008ts" CACHE STRING "GFortran Debug flags")
-    endif()
+    set(CMAKE_Fortran_FLAGS_DEBUG "-O3 -g -Wall -Wno-maybe-uninitialized -Wextra -pedantic -fcheck=all -ffpe-trap=zero,overflow -fbacktrace -fcoarray=lib -std=f2008ts" CACHE STRING "GFortran Debug flags")
   elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
     unset(CMAKE_Fortran_FLAGS_DEBUG CACHE)
     set(CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -debug all -check all -fpe0 -traceback -warn -coarray=shared -std08" CACHE STRING "IFORT Debug flags")
