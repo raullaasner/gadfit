@@ -50,20 +50,13 @@ macro(determine_current_flags)
     set(CURRENT_Fortran_FLAGS
       "${CURRENT_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_DEBUG}")
   endif()
+  string(STRIP ${CURRENT_Fortran_FLAGS} CURRENT_Fortran_FLAGS)
 endmacro()
 determine_current_flags()
 # Make sure the required flags are present
 if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-  foreach(flag -cpp -ffree-line-length-0)
-    if (NOT CURRENT_Fortran_FLAGS MATCHES ${flag})
-      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${flag}")
-    endif()
-  endforeach()
-endif()
-if (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
-  if ((NOT CURRENT_Fortran_FLAGS MATCHES "-fpp") AND
-      (NOT CURRENT_Fortran_FLAGS MATCHES "-cpp"))
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fpp")
+  if (NOT CURRENT_Fortran_FLAGS MATCHES -ffree-line-length-0)
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${flag}")
   endif()
 endif()
 set(CMAKE_Fortran_FLAGS ${CMAKE_Fortran_FLAGS} CACHE STRING

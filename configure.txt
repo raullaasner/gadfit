@@ -18,8 +18,8 @@
 
 # Flags for the Fortran compiler.
 #set (CMAKE_Fortran_FLAGS "" CACHE STRING "")
-#set (CMAKE_Fortran_FLAGS_RELEASE "-O3 -funroll-all-loops -fstack-arrays -fcoarray=single" CACHE STRING "")
-#set (CMAKE_Fortran_FLAGS_DEBUG "-O3 -g -Wall -Wno-maybe-uninitialized -Wextra -pedantic -fcheck=all -ffpe-trap=zero,overflow -fbacktrace -fcoarray=single -std=f2008ts" CACHE STRING "")
+#set (CMAKE_Fortran_FLAGS_RELEASE "-O3 -funroll-all-loops -fstack-arrays -fcoarray=lib -ffree-line-length-0" CACHE STRING "")
+#set (CMAKE_Fortran_FLAGS_DEBUG "-O3 -g -Wall -Wno-maybe-uninitialized -Wextra -pedantic -fcheck=all -ffpe-trap=zero,overflow -fbacktrace -fcoarray=lib -std=f2008ts -ffree-line-length-0" CACHE STRING "")
 
 # Whether to build in Release or Debug configuration.
 set (CMAKE_BUILD_TYPE Release CACHE STRING "")
@@ -36,8 +36,7 @@ set (CMAKE_INSTALL_PREFIX /usr/local/gadfit CACHE STRING "")
 # differences are still available.
 set (USE_AD ON CACHE BOOL "")
 
-# Whether to use quadruple or double precision. With GFortran this is
-# actually 80-bit precision.
+# Whether to use quadruple or double precision.
 set (QUAD_PRECISION OFF CACHE BOOL "")
 
 # If the code contains calls to the GSL library, then GSL_DIR should
