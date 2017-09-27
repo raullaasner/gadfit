@@ -1,19 +1,11 @@
-!!****m* GADfit/misc
-!!
-!! COPYRIGHT
-!!
-!! This Source Code Form is subject to the terms of the GNU General
-!! Public License, v. 3.0. If a copy of the GPL was not distributed
-!! with this file, You can obtain one at
-!! http://gnu.org/copyleft/gpl.txt.
-!!
-!! FUNCTION
-!!
-!! Provides some commonly used types and helper procedures.
-!!
-!! SOURCE
+! This Source Code Form is subject to the terms of the GNU General
+! Public License, v. 3.0. If a copy of the GPL was not distributed
+! with this file, You can obtain one at
+! http://gnu.org/copyleft/gpl.txt.
+
 #include <config.h>
 
+! Provides some commonly used types and helper procedures.
 module misc
 
   use, intrinsic :: iso_fortran_env, only: int64, real64, real128
@@ -70,21 +62,13 @@ module misc
   end interface safe_deallocate
 
 contains
-  !!***
 
-  !!****f* misc/string%assign_character
-  !!
-  !! SOURCE
   impure elemental subroutine assign_character(this, x)
     class(string), intent(out) :: this
     character(*), intent(in) :: x
     this%name = x
   end subroutine assign_character
-  !!***
 
-  !!****f* misc/string%equals_character
-  !!
-  !! SOURCE
   logical function equals_character(this, x) result(y)
     class(string), intent(in) :: this
     character(*), intent(in) :: x
@@ -94,30 +78,18 @@ contains
        y = .false.
     end if
   end function equals_character
-  !!***
 
-  !!****f* misc/len_string
-  !!
-  !! SOURCE
   elemental integer function len_string(x) result(y)
     type(string), intent(in) :: x
     y = len(x%name)
   end function len_string
-  !!***
 
-  !!****f* misc/swap
-  !!
-  !! SOURCE
   elemental subroutine swap(a, b)
     integer, intent(in out) :: a, b
     integer :: tmp
     tmp = a; a = b; b = tmp
   end subroutine swap
-  !!***
 
-  !!****f* misc/timer%reset
-  !!
-  !! SOURCE
   subroutine reset(this)
     class(timer), intent(out) :: this
     this%cpu_time = 0d0
@@ -125,16 +97,9 @@ contains
     this%num_calls = 0
     this%timing = .false.
   end subroutine reset
-  !!***
 
-  !!****f* misc/timer%time
-  !!
-  !! FUNCTION
-  !!
-  !! Find the cpu and wall times of a code segment. The code segment
-  !! should be wrapped between two calls to time.
-  !!
-  !! SOURCE
+  ! Find the cpu and wall times of a code segment. The code segment
+  ! should be wrapped between two calls to time.
   subroutine time(this)
     class(timer), intent(in out) :: this
     real(real64) :: cpu_tmp
@@ -152,17 +117,9 @@ contains
        this%timing = .false.
     end if
   end subroutine time
-  !!***
 
-  !!****f* misc/co_
-  !!
-  !! FUNCTION
-  !!
-  !! Simple implementations of some of the "co_" procedures in case
-  !! the compiler lacks intrinsic support.
-  !!
-  !! SOURCE
-  !!***
+  ! Simple implementations of some of the "co_" procedures in case the
+  ! compiler lacks intrinsic support.
 #if !defined HAS_CO_SUM || defined QUAD_PRECISION
   subroutine co_sum_0d(a)
     real(kp), intent(in out) :: a[*]
@@ -203,17 +160,10 @@ contains
     a = tmp
   end subroutine co_sum_2d
 #endif
-  !!***
 
-  !!****f* misc/safe_deallocate
-  !!
-  !! FUNCTION
-  !!
-  !! Deallocates an array. It is always safe to call these
-  !! prcedures. 'file' and 'line' should be determined by the
-  !! preprocessor.
-  !!
-  !! SOURCE
+  ! Deallocates an array. It is always safe to call these
+  ! prcedures. 'file' and 'line' should be determined by the
+  ! preprocessor.
   subroutine safe_deallocate_real64(file, line, array)
     character(*), intent(in) :: file
     integer, intent(in) :: line
@@ -283,22 +233,14 @@ contains
        call check_err(file, line)
     end if
   end subroutine safe_deallocate_logical
-  !!***
 
-  !!****f* misc/safe_close
-  !!
-  !! FUNCTION
-  !!
-  !! Closes an I/O device and checks the success of that
-  !! operation. 'file' and 'line' should be determined by the
-  !! preprocessor.
-  !!
-  !! SOURCE
+  ! Closes an I/O device and checks the success of that
+  ! operation. 'file' and 'line' should be determined by the
+  ! preprocessor.
   subroutine safe_close(file, line, io_unit)
     character(*), intent(in) :: file
     integer, intent(in) :: line, io_unit
     close(io_unit, iostat=err_stat, iomsg=err_msg)
     call check_err(file, line)
   end subroutine safe_close
-  !!***
 end module misc

@@ -1,18 +1,12 @@
-!!****m* GADfit/messaging
-!!
-!! COPYRIGHT
-!!
-!! This Source Code Form is subject to the terms of the GNU General
-!! Public License, v. 3.0. If a copy of the GPL was not distributed
-!! with this file, You can obtain one at
-!! http://gnu.org/copyleft/gpl.txt.
-!!
-!! FUNCTION
-!!
-!! Contains the error, warning, and comment procedures, the status
-!! check of err_stat, and some I/O helper procedures.
-!!
-!! SOURCE
+! This Source Code Form is subject to the terms of the GNU General
+! Public License, v. 3.0. If a copy of the GPL was not distributed
+! with this file, You can obtain one at
+! http://gnu.org/copyleft/gpl.txt.
+
+#include <config.h>
+
+! Contains the error, warning, and comment procedures, the status
+! check of err_stat, and some I/O helper procedures.
 module messaging
 
   implicit none
@@ -26,17 +20,10 @@ module messaging
   character(MAX_ERROR_LENGTH) :: err_msg
 
 contains
-  !!***
 
-  !!****f* messaging/error
-  !!
-  !! FUNCTION
-  !!
-  !! Prints an error message. Stops execution on all images. Output is
-  !! sent to stderr. 'file' and 'line' should be determined by the
-  !! preprocessor.
-  !!
-  !! SOURCE
+  ! Prints an error message. Stops execution on all images. Output is
+  ! sent to stderr. 'file' and 'line' should be determined by the
+  ! preprocessor.
   subroutine error(file, line, msg)
     use, intrinsic :: iso_fortran_env, only: error_unit
     character(*), intent(in) :: file, msg
@@ -47,15 +34,8 @@ contains
       error stop
     end critical
   end subroutine error
-  !!***
 
-  !!****f* messaging/warning
-  !!
-  !! FUNCTION
-  !!
-  !! Same as error but the execution continues.
-  !!
-  !! SOURCE
+  ! Same as error but the execution continues.
   subroutine warning(file, line, msg)
     use, intrinsic :: iso_fortran_env, only: error_unit
     character(*), intent(in) :: file, msg
@@ -65,15 +45,8 @@ contains
       call print_msg('WARNING', msg, error_unit)
     end critical
   end subroutine warning
-  !!***
 
-  !!****f* messaging/comment
-  !!
-  !! FUNCTION
-  !!
-  !! Same as warning but output is sent to stdout.
-  !!
-  !! SOURCE
+  ! Same as warning but output is sent to stdout.
   subroutine comment(file, line, msg)
     use, intrinsic :: iso_fortran_env, only: output_unit
     character(*), intent(in) :: file, msg
@@ -83,27 +56,18 @@ contains
       call print_msg('COMMENT', msg, output_unit)
     end critical
   end subroutine comment
-  !!***
 
-  !!****f* messaging/print_msg
-  !!
-  !! FUNCTION
-  !!
-  !! Prints a message with the format
-  !!   TYPE: <line with a max length of MAX_LINE_LEN>
-  !!         <line with a max length of MAX_LINE_LEN>
-  !!         ...
-  !! The message can be split only at spaces or at the position
-  !! MAX_LINE_LEN if there are no spaces. The indent is correctly kept
-  !! for all lines.
-  !!
-  !! INPUTS
-  !!
-  !! typ - type of the message that will be displayed as TYPE
-  !! msg - contents of the message
-  !! io_unit - I/O device
-  !!
-  !! SOURCE
+  ! Prints a message with the format
+  !   TYPE: <line with a max length of MAX_LINE_LEN>
+  !         <line with a max length of MAX_LINE_LEN>
+  !         ...
+  ! The message can be split only at spaces or at the position
+  ! MAX_LINE_LEN if there are no spaces. The indent is correctly kept
+  ! for all lines.
+  !
+  ! typ - type of the message that will be displayed as TYPE
+  ! msg - contents of the message
+  ! io_unit - I/O device
   recursive subroutine print_msg(typ, msg, io_unit)
     character(*), intent(in) :: typ, msg
     integer, intent(in) :: io_unit
@@ -129,16 +93,8 @@ contains
        first_line = .true. ! Reset for the next caller
     end if
   end subroutine print_msg
-  !!***
 
-  !!****f* misc/str
-  !!
-  !! FUNCTION
-  !!
-  !! Integer to string.
-  !!
-  !! SOURCE
-  !!***
+  ! Integer to string.
   pure function str(x) result(y)
     integer, intent(in) :: x
     character(:), allocatable :: y
@@ -146,37 +102,21 @@ contains
     write(tmp, '(g0)') x
     y = trim(tmp)
   end function str
-  !!***
 
-  !!****f* messaging/check_err
-  !!
-  !! FUNCTION
-  !!
-  !! Prints an error message if err_stat /= 0. It can be used with any
-  !! procedure that has the status and error message specifiers, which
-  !! have to point to err_stat and err_msg respectively. 'file' and
-  !! 'line' should be determined by the preprocessor.
-  !!
-  !! SOURCE
+  ! Prints an error message if err_stat /= 0. It can be used with any
+  ! procedure that has the status and error message specifiers, which
+  ! have to point to err_stat and err_msg respectively. 'file' and
+  ! 'line' should be determined by the preprocessor.
   subroutine check_err(file, line)
     character(*), intent(in) :: file
     integer, intent(in) :: line
     if (err_stat /= 0) call error(file, line, trim(err_msg))
   end subroutine check_err
-  !!***
 
-  !!****f* messaging/print_memory
-  !!
-  !! FUNCTION
-  !!
-  !! Prints memory in units of B, kB, MB, or GB depending on the size.
-  !!
-  !! INPUTS
-  !!
-  !! io_unit - I/O device
-  !! x - amount of memory in bytes
-  !!
-  !! SOURCE
+  ! Prints memory in units of B, kB, MB, or GB depending on the size.
+  !
+  ! io_unit - I/O device
+  ! x - amount of memory in bytes
   subroutine print_memory(io_unit, x)
     integer, intent(in) :: io_unit, x
     character(9) :: memory
@@ -194,5 +134,4 @@ contains
        write(io_unit, '(*(g0))', advance='no') trim(adjustl(memory)), ' GB'
     end if
   end subroutine print_memory
-  !!***
 end module messaging

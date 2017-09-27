@@ -61,8 +61,6 @@ Format
 Documentation
 -------------
 
-* **Format.** This project uses a special format that can be processed by Robodoc. Each module should be documented as a module in Robodoc notation (`****m*`). All procedures should be documented as functions (`****f*`). The marker `****f*` should be followed by `<module>/<procedure>` for an ordinary procedure, `<module>/<type>%<procedure>` for a type-bound procedure, or `<module>/<procedure>/<procedure>` when dealing with a sub-sub-procedure. Procedures corresponding to the same generic name should be under the same `****f*`. The header typically addresses the function of the procedure, copyright (modules only), and input/output variables with explanation. This is followed by the source code which, for modules, starts with the module name and ends with the `contains` keyword. Source code is contained between `!!SOURCE` and `!!***`. Some of these keywords can be omitted in cases where it's obvious.
-
 * **In-code comments.** In general, comments should explain what the code does, not how it does it. In-code comments can be used to comment data or to explain the purpose of a code segment if not immediately clear from the context. Excessive in-code commenting suggests that the procedure probably needs to be redesigned.
 
 * **Note.** When modifying the source code, don't forget to update the user guide accordingly!

@@ -1,17 +1,11 @@
-!!****m* GADfit/linalg
-!!
-!! COPYRIGHT
-!!
-!! This Source Code Form is subject to the terms of the GNU General
-!! Public License, v. 3.0. If a copy of the GPL was not distributed
-!! with this file, You can obtain one at
-!! http://gnu.org/copyleft/gpl.txt.
-!!
-!! FUNCTION
-!!
-!! Wrappers for linear algebra routines.
-!!
-!! SOURCE
+! This Source Code Form is subject to the terms of the GNU General
+! Public License, v. 3.0. If a copy of the GPL was not distributed
+! with this file, You can obtain one at
+! http://gnu.org/copyleft/gpl.txt.
+
+#include <config.h>
+
+! Wrappers for linear algebra routines.
 module linalg
 
   use, intrinsic :: iso_fortran_env, only: real64
@@ -23,26 +17,17 @@ module linalg
   public :: potr_f08
 
 contains
-  !!***
 
-  !!****f* gadfit/potr_f08
-  !!
-  !! FUNCTION
-  !!
-  !! Solves A*X=B with A a real symmetric positive definite matrix in
-  !! two steps: first by computing the Cholesky factorization of the
-  !! form U^T*U or L*L^T of A, and then solving the linear system of
-  !! equations U*X=B or L*X=B.
-  !!
-  !! INPUTS
-  !!
-  !! file, line - caller's location
-  !! a - a real symmetric positive definite matrix
-  !! b - on entry this is B, on exit contains the solution X
-  !! ul (optional) - whether to store the upper ('u') or the lower
-  !!                 ('l') triangle of 'a'
-  !!
-  !! SOURCE
+  ! Solves A*X=B with A a real symmetric positive definite matrix in
+  ! two steps: first by computing the Cholesky factorization of the
+  ! form U^T*U or L*L^T of A, and then solving the linear system of
+  ! equations U*X=B or L*X=B.
+  !
+  ! file, line - caller's location
+  ! a - a real symmetric positive definite matrix
+  ! b - on entry this is B, on exit contains the solution X
+  ! ul (optional) - whether to store the upper ('u') or the lower
+  !                 ('l') triangle of 'a'
   subroutine potr_f08(file, line, a, b, ul)
     ! 'file' and 'line' should be determined by the preprocessor.
     character(*), intent(in) :: file
@@ -66,5 +51,4 @@ contains
          & call error(file, line, &
          & 'Could not solve the linear system of equations (dpotrs).')
   end subroutine potr_f08
-  !!***
 end module linalg
