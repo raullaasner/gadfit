@@ -1,18 +1,12 @@
-!!****m* GADfit/numerical_integration
-!!
-!! COPYRIGHT
-!!
-!! This Source Code Form is subject to the terms of the GNU General
-!! Public License, v. 3.0. If a copy of the GPL was not distributed
-!! with this file, You can obtain one at
-!! http://gnu.org/copyleft/gpl.txt.
-!!
-!! FUNCTION
-!!
-!! AD implementation of adaptive numerical integration based on the
-!! Gauss-Kronrod rules.
-!!
-!! SOURCE
+! This Source Code Form is subject to the terms of the GNU General
+! Public License, v. 3.0. If a copy of the GPL was not distributed
+! with this file, You can obtain one at
+! http://gnu.org/copyleft/gpl.txt.
+
+#include <config.h>
+
+! AD implementation of adaptive numerical integration based on the
+! Gauss-Kronrod rules.
 module numerical_integration
 
   use ad
@@ -74,16 +68,9 @@ module numerical_integration
   integer :: max_ws(2)[*]
 
 contains
-  !!***
 
-  !!****f* numerical_integration/workspace%workspace_init
-  !!
-  !! FUNCTION
-  !!
-  !! Allocates lower(size), upper(size), sums(size), and
-  !! abs_error(size).
-  !!
-  !! SOURCE
+  ! Allocates lower(size), upper(size), sums(size), and
+  ! abs_error(size).
   subroutine workspace_init(this, size)
     class(workspace), intent(in out) :: this
     integer, intent(in), optional :: size
@@ -100,11 +87,7 @@ contains
          & this%abs_error(size_loc), stat=err_stat, errmsg=err_msg)
     call check_err(__FILE__, __LINE__)
   end subroutine workspace_init
-  !!***
 
-  !!****f* numerical_integration/workspace%workspace_destroy
-  !!
-  !! SOURCE
   impure elemental subroutine workspace_destroy(this)
     class(workspace), intent(in out) :: this
     call safe_deallocate(__FILE__, __LINE__, this%lower)
@@ -112,26 +95,17 @@ contains
     call safe_deallocate(__FILE__, __LINE__, this%sums)
     call safe_deallocate(__FILE__, __LINE__, this%abs_error)
   end subroutine workspace_destroy
-  !!***
 
-  !!****f* numerical_integration/init_integration
-  !!
-  !! FUNCTION
-  !!
-  !! Sets the default relative integration error, initializes a
-  !! workspace, and sets the integration rule.
-  !!
-  !! INPUTS
-  !!
-  !! All optional
-  !!
-  !! rel_error - Relative error. This can be overridden by an optional
-  !!             argument to 'integrate'.
-  !! workspace_size - workspace_init is called with this argument. The
-  !!                  actual workspace size is 4*workspace_size.
-  !! integration_rule - set_integration_rule is called with this rule
-  !!
-  !! SOURCE
+  ! Sets the default relative integration error, initializes a
+  ! workspace, and sets the integration rule.
+  !
+  ! Inputs all optional
+  !
+  ! rel_error - Relative error. This can be overridden by an optional
+  !             argument to 'integrate'.
+  ! workspace_size - workspace_init is called with this argument. The
+  !                  actual workspace size is 4*workspace_size.
+  ! integration_rule - set_integration_rule is called with this rule
   subroutine init_integration(rel_error, workspace_size, integration_rule)
     real(kp), intent(in), optional :: rel_error
     integer, intent(in), optional :: workspace_size, integration_rule
@@ -142,16 +116,9 @@ contains
     call set_integration_rule(integration_rule)
     max_ws = 0
   end subroutine init_integration
-  !!***
 
-  !!****f* numerical_integration/init_integration_dbl
-  !!
-  !! FUNCTION
-  !!
-  !! Same as init_integration except that two workspaces are
-  !! initialized and two relative errors defined.
-  !!
-  !! SOURCE
+  ! Same as init_integration except that two workspaces are
+  ! initialized and two relative errors defined.
   subroutine init_integration_dbl(rel_error_inner, rel_error_outer, &
        & ws_size_inner, ws_size_outer, integration_rule)
     real(kp), intent(in), optional :: rel_error_inner, rel_error_outer
@@ -161,16 +128,9 @@ contains
     call ws(2)%init(ws_size_inner)
     call init_integration(rel_error_outer, ws_size_outer, integration_rule)
   end subroutine init_integration_dbl
-  !!***
 
-  !!****f* numerical_integration/set_integration_rule
-  !!
-  !! FUNCTION
-  !!
-  !! Initializes roots, gauss_weights, and kronrod_weights as
-  !! specified by the integration rule.
-  !!
-  !! SOURCE
+  ! Initializes roots, gauss_weights, and kronrod_weights as specified
+  ! by the integration rule.
   subroutine set_integration_rule(rule)
     integer, intent(in), optional :: rule
     integer :: rule_loc
@@ -204,36 +164,27 @@ contains
       roots = r; weights_gauss = wg; weights_kronrod = wk
     end subroutine init
   end subroutine set_integration_rule
-  !!***
 
-  !!****f* numerical_integration/integrate
-  !!
-  !! FUNCTION
-  !!
-  !! Performs adaptive integration for a user defined function. The
-  !! integration interval is divided into subintervals, and on each
-  !! iteration the subinterval with the largest error is
-  !! processed. During the search for the optimal set of subintervals,
-  !! AD is switched off by making all parameters passive. When
-  !! convergence has been achieved, AD is switched on and the
-  !! Gauss-Kronrod algorithm is applied once more with the final set
-  !! of subintervals. integrate_real_real is the main engine under the
-  !! 'integrate' interface. The other procedures contain calls to
-  !! integrate_real_real.
-  !!
-  !! INPUTS
-  !!
-  !! Arguments of all members of the 'integrate' interface have the
-  !! same meaning.
-  !!
-  !! f - the integrand
-  !! pars - parameters of f
-  !! lower - lower integration bound
-  !! upper - upper integration bound
-  !! rel_error (optional) - relative error bound
-  !! abs_error (optional) - absolute error bound
-  !!
-  !! SOURCE
+  ! Performs adaptive integration for a user defined function. The
+  ! integration interval is divided into subintervals, and on each
+  ! iteration the subinterval with the largest error is
+  ! processed. During the search for the optimal set of subintervals,
+  ! AD is switched off by making all parameters passive. When
+  ! convergence has been achieved, AD is switched on and the
+  ! Gauss-Kronrod algorithm is applied once more with the final set of
+  ! subintervals. integrate_real_real is the main engine under the
+  ! 'integrate' interface. The other procedures contain calls to
+  ! integrate_real_real.
+  !
+  ! Arguments of all members of the 'integrate' interface have the
+  ! same meaning.
+  !
+  ! f - the integrand
+  ! pars - parameters of f
+  ! lower - lower integration bound
+  ! upper - upper integration bound
+  ! rel_error (optional) - relative error bound
+  ! abs_error (optional) - absolute error bound
   type(advar) recursive function integrate_real_real(f, pars, lower, upper, &
        & rel_error, abs_error) result(y)
     interface
@@ -325,16 +276,12 @@ contains
     call error(__FILE__, __LINE__, 'Number of iterations was insufficient. &
          &Increase either workspace size or the error bound(s).')
   end function integrate_real_real
-  !!
-  !! FUNCTION
-  !!
-  !! Same as integrate_real_real except the upper bound is -INFINITY
-  !! or INFINITY. For INFINITY the integral over (a,infinity) is
-  !! mapped into the semi-open interval (0,1] using the transformation
-  !! x=a+(1-t)/t. For -INFINITY -integrate_inf_real is called with the
-  !! appropriate bounds.
-  !!
-  !! SOURCE
+
+  ! Same as integrate_real_real except the upper bound is -INFINITY or
+  ! INFINITY. For INFINITY the integral over (a,infinity) is mapped
+  ! into the semi-open interval (0,1] using the transformation
+  ! x=a+(1-t)/t. For -INFINITY -integrate_inf_real is called with the
+  ! appropriate bounds.
   type(advar) recursive function integrate_real_inf(f, pars, lower, upper, &
        & rel_error, abs_error) result(y)
     interface
@@ -364,14 +311,10 @@ contains
       y = f(lower - 1 + 1/x, pars)/x**2
     end function f_transformed
   end function integrate_real_inf
-  !!
-  !! FUNCTION
-  !!
-  !! Similar to integrate_real_inf except the lower bound is -INFINITY
-  !! or INFINITY. For the case of -INFINITY, -integrate_real_inf is
-  !! called with the appropriate bounds.
-  !!
-  !! SOURCE
+
+  ! Similar to integrate_real_inf except the lower bound is -INFINITY
+  ! or INFINITY. For the case of -INFINITY, -integrate_real_inf is
+  ! called with the appropriate bounds.
   type(advar) recursive function integrate_inf_real(f, pars, lower, upper, &
        & rel_error, abs_error) result(y)
     interface
@@ -401,8 +344,7 @@ contains
       y = f(upper + 1 - 1/x, pars)/x**2
     end function f_transformed
   end function integrate_inf_real
-  !!
-  !! SOURCE
+
   type(advar) recursive function integrate_inf_inf(f, pars, lower, upper, &
        & rel_error, abs_error) result(y)
     interface
@@ -419,17 +361,13 @@ contains
     y = integrate_inf_real(f, pars, lower, 0.0_kp, rel_error, abs_error) + &
          & integrate_real_inf(f, pars, 0.0_kp, upper, rel_error, abs_error)
   end function integrate_inf_inf
-  !!
-  !! FUNCTION
-  !!
-  !! Similar to integrate_real_real except that both bounds are of
-  !! type(advar). If either the integrand or either bound is active
-  !! (nonzero index), then in the reverse mode, the operation is
-  !! recorded for the return sweep by appending to trace,
-  !! forward_values, and ad_constants (see the AD module). In the
-  !! forward mode the derivatives are calculated on the fly.
-  !!
-  !! SOURCE
+
+  ! Similar to integrate_real_real except that both bounds are of
+  ! type(advar). If either the integrand or either bound is active
+  ! (nonzero index), then in the reverse mode, the operation is
+  ! recorded for the return sweep by appending to trace,
+  ! forward_values, and ad_constants (see the AD module). In the
+  ! forward mode the derivatives are calculated on the fly.
   type(advar) recursive function integrate_advar_advar(f, pars, lower, upper, &
        & rel_error, abs_error) result(y)
     interface
@@ -484,14 +422,10 @@ contains
        end if
     end if
   end function integrate_advar_advar
-  !!
-  !! FUNCTION
-  !!
-  !! Similar to integrate_advar_advar except that the upper bound is a
-  !! real number. integrate_advar_advar calls this with a passive
-  !! upper bound.
-  !!
-  !! SOURCE
+
+  ! Similar to integrate_advar_advar except that the upper bound is a
+  ! real number. integrate_advar_advar calls this with a passive upper
+  ! bound.
   type(advar) recursive function integrate_advar_real(f, pars, lower, upper, &
        & rel_error, abs_error) result(y)
     interface
@@ -533,12 +467,8 @@ contains
        end if
     end if
   end function integrate_advar_real
-  !!
-  !! FUNCTION
-  !!
-  !! Same as integrate_advar_real except the lower bound is real.
-  !!
-  !! SOURCE
+
+  ! Same as integrate_advar_real except the lower bound is real.
   type(advar) recursive function integrate_real_advar(f, pars, lower, upper, &
        & rel_error, abs_error) result(y)
     interface
@@ -580,13 +510,8 @@ contains
        end if
     end if
   end function integrate_real_advar
-  !!
-  !! FUNCTION
-  !!
-  !! Same as integrate_real_advar except the lower bound is
-  !! +-INFINITY.
-  !!
-  !! SOURCE
+
+  ! Same as integrate_real_advar except the lower bound is +-INFINITY.
   type(advar) recursive function integrate_inf_advar(f, pars, lower, upper, &
        & rel_error, abs_error) result(y)
     interface
@@ -628,13 +553,8 @@ contains
        end if
     end if
   end function integrate_inf_advar
-  !!
-  !! FUNCTION
-  !!
-  !! Same as integrate_advar_real except the upper bound is
-  !! +-INFINITY.
-  !!
-  !! SOURCE
+
+  ! Same as integrate_advar_real except the upper bound is +-INFINITY.
   type(advar) recursive function integrate_advar_inf(f, pars, lower, upper, &
        & rel_error, abs_error) result(y)
     interface
@@ -676,20 +596,11 @@ contains
        end if
     end if
   end function integrate_advar_inf
-  !!***
 
-  !!****f* numerical_integration/gauss_kronrod
-  !!
-  !! FUNCTION
-  !!
-  !! Main integration algorithm.
-  !!
-  !! INPUTS
-  !!
-  !! Those that are present have the same meaning as for
-  !! integrate_real_real.
-  !!
-  !! SOURCE
+  ! Main integration algorithm.
+  !
+  ! Those that are present have the same meaning as for
+  ! integrate_real_real.
   type(advar) recursive function gauss_kronrod(f, pars, lower, upper, &
        & abs_error) result(y)
     interface
@@ -717,30 +628,16 @@ contains
     y = scale*y
     abs_error = abs(y%val - scale*sum_gauss)
   end function gauss_kronrod
-  !!***
 
-  !!****f* numerical_integration/dir_deriv_finite
-  !!
-  !! FUNCTION
-  !!
-  !! The directional derivative of the integrand f(b(p),p) with
-  !! respect to the parameter vector p, where b is either the lower or
-  !! upper bound of integration. It is taken along the direction
-  !! pars%d. It is explained in the user guide why we use finite
-  !! differences here.
-  !!
-  !! INPUTS
-  !!
-  !! f - integrand
-  !! b - lower or upper bound
-  !! pars - parameters of f
-  !!
-  !! OUTPUT
-  !!
-  !! y - directional derivative
-  !!
-  !! SOURCE
-  !!***
+  ! The directional derivative of the integrand f(b(p),p) with respect
+  ! to the parameter vector p, where b is either the lower or upper
+  ! bound of integration. It is taken along the direction pars%d. It
+  ! is explained in the user guide why we use finite differences here.
+  !
+  ! f - integrand
+  ! b - lower or upper bound
+  ! pars - parameters of f
+  ! y - directional derivative
   real(kp) function dir_deriv_finite(f, b, pars) result(y)
     interface
        type(advar) function f(x, pars)
@@ -764,17 +661,10 @@ contains
     pars%val = saved_values
     call swap(saved_indices, pars%index)
   end function dir_deriv_finite
-  !!***
 
-  !!****f* numerical_integration/numerical_integration_memory_report
-  !!
-  !! FUNCTION
-  !!
-  !! Prints the size(s) of the workspace(s) according to what was
-  !! requested and actual usage. The results represent maxima over all
-  !! images.
-  !!
-  !! SOURCE
+  ! Prints the size(s) of the workspace(s) according to what was
+  ! requested and actual usage. The results represent maxima over all
+  ! images.
   subroutine numerical_integration_memory_report(io_unit)
     use, intrinsic :: iso_fortran_env, only: output_unit
     integer, intent(in), optional :: io_unit
@@ -819,16 +709,11 @@ contains
     end if
     write(io_unit, '(g0)')
   end subroutine numerical_integration_memory_report
-  !!***
 
-  !!****f* numerical_integration/free_integration
-  !!
-  !! SOURCE
   subroutine free_integration()
     call safe_deallocate(__FILE__, __LINE__, roots)
     call safe_deallocate(__FILE__, __LINE__, weights_gauss)
     call safe_deallocate(__FILE__, __LINE__, weights_kronrod)
     call ws%destroy()
   end subroutine free_integration
-  !!***
 end module numerical_integration

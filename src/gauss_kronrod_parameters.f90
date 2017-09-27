@@ -1,20 +1,14 @@
-!!****m* GADfit/gauss_konrod_parameters
-!!
-!! COPYRIGHT
-!!
-!! This Source Code Form is subject to the terms of the GNU General
-!! Public License, v. 3.0. If a copy of the GPL was not distributed
-!! with this file, You can obtain one at
-!! http://gnu.org/copyleft/gpl.txt.
-!!
-!! FUNCTION
-!!
-!! Contains the 2n+1 nodes of the Legendre polynomials, weights
-!! corresponding to the n-point Gaussian rule, and weights
-!! corresponding to the (2n+1)-point Kronrod rule. 2n+1 can be 15, 21,
-!! 31, 41, 51, or 61.
-!!
-!! SOURCE
+! This Source Code Form is subject to the terms of the GNU General
+! Public License, v. 3.0. If a copy of the GPL was not distributed
+! with this file, You can obtain one at
+! http://gnu.org/copyleft/gpl.txt.
+
+#include <config.h>
+
+! Contains the 2n+1 nodes of the Legendre polynomials, weights
+! corresponding to the n-point Gaussian rule, and weights
+! corresponding to the (2n+1)-point Kronrod rule. 2n+1 can be 15, 21,
+! 31, 41, 51, or 61.
 module gauss_kronrod_parameters
 
   use gadf_constants, only: kp
@@ -616,4 +610,3 @@ module gauss_kronrod_parameters
        0.051426128537459025933862879215781_kp, &
        0.051494729429451567558340433647099_kp]
 end module gauss_kronrod_parameters
-!!***

@@ -1,28 +1,20 @@
-!!****m* GADfit/gadfit
-!!
-!! COPYRIGHT
-!!
-!! This Source Code Form is subject to the terms of the GNU General
-!! Public License, v. 3.0. If a copy of the GPL was not distributed
-!! with this file, You can obtain one at
-!! http://gnu.org/copyleft/gpl.txt.
-!!
-!! FUNCTION
-!!
-!! Procedures for reading in data, performing the fitting procedure,
-!! and printing the results. As a small guide, the following
-!! constructs are often encountered in the code:
-!!   Loop over all datasets:
-!!     do i = 1, size(fitfuncs)
-!!   Loop over all data points:
-!!     do i = 1, size(x_data)
-!!   Loop over data points attributed to this image:
-!!     do i = 1, size(fitfuncs)
-!!       do j = img_bounds(i), img_bounds(i+1)-1
-!!
-!! SOURCE
+! This Source Code Form is subject to the terms of the GNU General
+! Public License, v. 3.0. If a copy of the GPL was not distributed
+! with this file, You can obtain one at
+! http://gnu.org/copyleft/gpl.txt.
+
 #include <config.h>
 
+! Procedures for reading in data, performing the fitting procedure,
+! and printing the results. As a small guide, the following constructs
+! are often encountered in the code:
+!   Loop over all datasets:
+!     do i = 1, size(fitfuncs)
+!   Loop over all data points:
+!     do i = 1, size(x_data)
+!   Loop over data points attributed to this image:
+!     do i = 1, size(fitfuncs)
+!       do j = img_bounds(i), img_bounds(i+1)-1
 module gadfit
 
   use, intrinsic :: iso_fortran_env, only: real32, real64
@@ -112,35 +104,26 @@ module gadfit
   type(timer) :: omega_timer[*], main_loop_timer[*]
 
 contains
-  !!***
 
-  !!****f* gadfit/gadf_init
-  !!
-  !! FUNCTION
-  !!
-  !! Initializes the fitting functions and other work variables and
-  !! reserves memory for AD and numerical integration.
-  !!
-  !! INPUTS
-  !!
-  !! f - fitting function
-  !! num_datasets (optional) - number of datasets
-  !!
-  !! These are passed directly to ad_init:
-  !! ad_memory  (optional)
-  !! sweep_size (optional)
-  !! trace_size (optional)
-  !! const_size (optional)
-  !!
-  !! These are passed directly to init_integration or
-  !! init_integration_dbl:
-  !! rel_error        (optional)
-  !! rel_error_inner  (optional)
-  !! ws_size          (optional)
-  !! ws_size_inner    (optional)
-  !! integration_rule (optional)
-  !!
-  !! SOURCE
+  ! Initializes the fitting functions and other work variables and
+  ! reserves memory for AD and numerical integration.
+  !
+  ! f - fitting function
+  ! num_datasets (optional) - number of datasets
+  !
+  ! These are passed directly to ad_init:
+  ! ad_memory  (optional)
+  ! sweep_size (optional)
+  ! trace_size (optional)
+  ! const_size (optional)
+  !
+  ! These are passed directly to init_integration or
+  ! init_integration_dbl:
+  ! rel_error        (optional)
+  ! rel_error_inner  (optional)
+  ! ws_size          (optional)
+  ! ws_size_inner    (optional)
+  ! integration_rule (optional)
   subroutine gadf_init(f, num_datasets, sweep_size, trace_size, &
        & const_size, ws_size, ws_size_inner, integration_rule, ad_memory, &
        & rel_error_inner, rel_error)
@@ -188,17 +171,10 @@ contains
     show_grad_chi2 = .false.; show_uphill = .false.; show_acc       = .false.
     out_unit = output_unit
   end subroutine gadf_init
-  !!***
 
-  !!****f* gadfit/gadf_add_dataset
-  !!
-  !! FUNCTION
-  !!
-  !! Opens a data file and determines the number of data points. If
-  !! successful, the I/O device number is saved and the actual reading
-  !! takes place in read_data.
-  !!
-  !! SOURCE
+  ! Opens a data file and determines the number of data points. If
+  ! successful, the I/O device number is saved and the actual reading
+  ! takes place in read_data.
   subroutine gadf_add_dataset(path)
     use, intrinsic :: iso_fortran_env, only: iostat_end
     character(*), intent(in) :: path
@@ -231,23 +207,14 @@ contains
        end if slot_available
     end do main
   end subroutine gadf_add_dataset
-  !!***
 
-  !!****f* gadfit/gadf_set
-  !!
-  !! FUNCTION
-  !!
-  !! Defines the parameter as local, sets its value, and marks it
-  !! either active or passive.
-  !!
-  !! INPUTS
-  !!
-  !! dataset_i - dataset index
-  !! par - parameter index (fitfuncs(dataset_i)%pars(par))
-  !! val - parameter value
-  !! active (optional) - if .true., marks the variable as active
-  !!
-  !! SOURCE
+  ! Defines the parameter as local, sets its value, and marks it
+  ! either active or passive.
+  !
+  ! dataset_i - dataset index
+  ! par - parameter index (fitfuncs(dataset_i)%pars(par))
+  ! val - parameter value
+  ! active (optional) - if .true., marks the variable as active
   subroutine set_int_local_real(dataset_i, par, val, active)
     integer, intent(in) :: dataset_i, par
     real(kp), intent(in) :: val
@@ -267,24 +234,16 @@ contains
     end if
     set_count = set_count + 1
   end subroutine set_int_local_real
-  !!
-  !! FUNCTION
-  !!
-  !! Same as set_int_local_real except val is single precision real.
-  !!
-  !! SOURCE
+
+  ! Same as set_int_local_real except val is single precision real.
   subroutine set_int_local_real32(dataset_i, par, val, active)
     integer, intent(in) :: dataset_i, par
     real(real32), intent(in) :: val
     logical, intent(in), optional :: active
     call set_int_local_real(dataset_i, par, real(val, kp), active)
   end subroutine set_int_local_real32
-  !!
-  !! FUNCTION
-  !!
-  !! Same as set_int_local_real except defines a global parameter.
-  !!
-  !! SOURCE
+
+  ! Same as set_int_local_real except defines a global parameter.
   subroutine set_int_global_real(par, val, active)
     integer, intent(in) :: par
     real(kp), intent(in) :: val
@@ -295,25 +254,17 @@ contains
     end do
     is_global(par) = .true.
   end subroutine set_int_global_real
-  !!
-  !! FUNCTION
-  !!
-  !! Same as set_int_global_real except val is single precision real.
-  !!
-  !! SOURCE
+
+  ! Same as set_int_global_real except val is single precision real.
   subroutine set_int_global_real32(par, val, active)
     integer, intent(in) :: par
     real(real32), intent(in) :: val
     logical, intent(in), optional :: active
     call set_int_global_real(par, real(val, kp), active)
   end subroutine set_int_global_real32
-  !!
-  !! FUNCTION
-  !!
-  !! Same as set_int_local_real except the parameter is identified by
-  !! its name instead of the index.
-  !!
-  !! SOURCE
+
+  ! Same as set_int_local_real except the parameter is identified by
+  ! its name instead of the index.
   subroutine set_char_local_real(dataset_i, par, val, active)
     integer, intent(in) :: dataset_i
     character(*), intent(in) :: par
@@ -324,12 +275,8 @@ contains
          & 'Number of datasets is undetermined. Call gadf_init first.')
     call set_int_local_real(dataset_i, fitfuncs(1)%get_index(par), val, active)
   end subroutine set_char_local_real
-  !!
-  !! FUNCTION
-  !!
-  !! Same as set_char_local_real except val is single precision real.
-  !!
-  !! SOURCE
+
+  ! Same as set_char_local_real except val is single precision real.
   subroutine set_char_local_real32(dataset_i, par, val, active)
     integer, intent(in) :: dataset_i
     character(*), intent(in) :: par
@@ -337,12 +284,8 @@ contains
     logical, intent(in), optional :: active
     call set_char_local_real(dataset_i, par, real(val, kp), active)
   end subroutine set_char_local_real32
-  !!
-  !! FUNCTION
-  !!
-  !! Same as set_char_local_real except defines a global parameter.
-  !!
-  !! SOURCE
+
+  ! Same as set_char_local_real except defines a global parameter.
   subroutine set_char_global_real(par, val, active)
     character(*), intent(in) :: par
     real(kp), intent(in) :: val
@@ -352,41 +295,27 @@ contains
          & 'Number of datasets is undetermined. Call gadf_init first.')
     call set_int_global_real(fitfuncs(1)%get_index(par), val, active)
   end subroutine set_char_global_real
-  !!
-  !! FUNCTION
-  !!
-  !! Same as set_char_global_real except val is single precision real.
-  !!
-  !! SOURCE
+
+  ! Same as set_char_global_real except val is single precision real.
   subroutine set_char_global_real32(par, val, active)
     character(*), intent(in) :: par
     real(real32), intent(in) :: val
     logical, intent(in), optional :: active
     call set_char_global_real(par, real(val, kp), active)
   end subroutine set_char_global_real32
-  !!***
 
-  !!****f* gadfit/gadf_set_verbosity
-  !!
-  !! FUNCTION
-  !!
-  !! Gives the user some control over how the output is
-  !! displayed. These variables have no effect in gadf_print.
-  !!
-  !! INPUTS
-  !!
-  !! All optional (see gadf_init for the default values)
-  !!
-  !! show_scope - whether to display global and/or local
-  !!              parameters.
-  !! show_digits - number of significant digits in the results
-  !! for x in {timing, memory, workloads, delta1, delta2, cos_phi, \
-  !!           grad_chi2, uphill, acc}; do
-  !!   show_$x - whether to show $x
-  !! done
-  !! output - where the output is directed
-  !!
-  !! SOURCE
+  ! Gives the user some control over how the output is
+  ! displayed. These variables have no effect in gadf_print.
+  !
+  ! All inputs optional (see gadf_init for the default values)
+  !
+  ! show_scope - whether to display global and/or local parameters.
+  ! show_digits - number of significant digits in the results
+  ! for x in {timing, memory, workloads, delta1, delta2, cos_phi, \
+  !           grad_chi2, uphill, acc}; do
+  !   show_$x - whether to show $x
+  ! done
+  ! output - where the output is directed
   subroutine gadf_set_verbosity(scope, digits, timing, memory, workloads, &
        & delta1, delta2, cos_phi, grad_chi2, uphill, acc, output)
     integer, intent(in), optional :: scope, digits
@@ -417,37 +346,21 @@ contains
        call check_err(__FILE__, __LINE__)
     end if
   end subroutine gadf_set_verbosity
-  !!***
 
-  !!****f* gadfit/gadf_set_errors
-  !!
-  !! FUNCTION
-  !!
-  !! Specifies the data point errors. The weights array, built from
-  !! the inverse of the error estimates, will be initialized in
-  !! gadf_fit with a call to init_weights.
-  !!
-  !! INPUTS
-  !!
-  !! e - The error type. Allowed values are given by the enumerator.
-  !!
-  !! SOURCE
+  ! Specifies the data point errors. The weights array, built from the
+  ! inverse of the error estimates, will be initialized in gadf_fit
+  ! with a call to init_weights.
+  !
+  ! e - The error type. Allowed values are given by the enumerator.
   subroutine gadf_set_errors(e)
     integer, intent(in) :: e
     data_error_type = e
   end subroutine gadf_set_errors
-  !!***
 
-  !!****f* gadfit/read_data
-  !!
-  !! FUNCTION
-  !!
-  !! Reads data from data_units, which was constructed with call(s) to
-  !! gadf_add_dataset. The position of each dataset in x_data, y_data,
-  !! and weights begins at data_positions(i) and ends at
-  !! data_positions(i+1)-1.
-  !!
-  !! SOURCE
+  ! Reads data from data_units, which was constructed with call(s) to
+  ! gadf_add_dataset. The position of each dataset in x_data, y_data,
+  ! and weights begins at data_positions(i) and ends at
+  ! data_positions(i+1)-1.
   subroutine read_data()
     integer :: i, j
     if (any(data_positions(2:) == 1)) &
@@ -480,11 +393,7 @@ contains
        call safe_close(__FILE__, __LINE__, data_units(i))
     end do
   end subroutine read_data
-  !!***
 
-  !!****f* gadfit/init_weights
-  !!
-  !! SOURCE
   subroutine init_weights()
     select case(data_error_type)
     case(NONE)
@@ -513,45 +422,36 @@ contains
            & trim(adjustl(err_msg))//' for '//error_type//' weighting.')
     end subroutine minval_error
   end subroutine init_weights
-  !!***
 
-  !!****f* gadfit/gadf_fit
-  !!
-  !! FUNCTION
-  !!
-  !! Performs the fitting procedure. See the user guide for a full
-  !! description of the arguments.
-  !!
-  !! INPUTS
-  !!
-  !! All optional
-  !!
-  !! lambda - damping parameter
-  !! lam_up - factor by which lambda is increased
-  !! lam_down - factor by which lambda is decreased
-  !! accth - relative acceleration threshold
-  !! grad_chi2 - tolerance for the norm of the gradient
-  !! cos_phi - toleraconce for cosine of the angle between the
-  !!           residual vector and the range of the Jacobian
-  !! rel_error - tolerance for the relative change in any fitting
-  !!             parameter
-  !! rel_error_global - same but applies only to global parameters
-  !! chi2_rel - tolerance for the relative change in the value of chi2
-  !! chi2_abs - tolerance for the value of chi2/degrees_of_freedom
-  !! DTD_min - minimum values of DTD
-  !! lam_incs - number of times lambda is allowed to increase
-  !!            consecutively without terminating the procedure
-  !! uphill - the exponent 'b' for allowing uphill steps
-  !! max_iter - iteration limit
-  !! damp_max - whether the damping matrix is updated with the largest
-  !!            diagonal entries of JTJ yet encounted
-  !! nielsen - whether to restrict the decreasing of lambda so that
-  !!           that algorithm always stays within the trust region
-  !! umnigh - whether to update lambda according to Umrigar and
-  !!          Nightingale
-  !! ap - whether to use adaptive parallelism
-  !!
-  !! SOURCE
+  ! Performs the fitting procedure. See the user guide for a full
+  ! description of the arguments.
+  !
+  ! All inputs optional
+  !
+  ! lambda - damping parameter
+  ! lam_up - factor by which lambda is increased
+  ! lam_down - factor by which lambda is decreased
+  ! accth - relative acceleration threshold
+  ! grad_chi2 - tolerance for the norm of the gradient
+  ! cos_phi - toleraconce for cosine of the angle between the residual
+  !           vector and the range of the Jacobian
+  ! rel_error - tolerance for the relative change in any fitting
+  !             parameter
+  ! rel_error_global - same but applies only to global parameters
+  ! chi2_rel - tolerance for the relative change in the value of chi2
+  ! chi2_abs - tolerance for the value of chi2/degrees_of_freedom
+  ! DTD_min - minimum values of DTD
+  ! lam_incs - number of times lambda is allowed to increase
+  !            consecutively without terminating the procedure
+  ! uphill - the exponent 'b' for allowing uphill steps
+  ! max_iter - iteration limit
+  ! damp_max - whether the damping matrix is updated with the largest
+  !            diagonal entries of JTJ yet encounted
+  ! nielsen - whether to restrict the decreasing of lambda so that
+  !           that algorithm always stays within the trust region
+  ! umnigh - whether to update lambda according to Umrigar and
+  !          Nightingale
+  ! ap - whether to use adaptive parallelism
   subroutine gadf_fit(lambda, lam_up, lam_down, accth, grad_chi2, cos_phi, &
        & rel_error, rel_error_global, chi2_rel, chi2_abs, DTD_min, lam_incs, &
        & uphill, max_iter, damp_max, nielsen, umnigh, ap)
@@ -1023,24 +923,17 @@ contains
     if (show_workloads) call print_workloads(out_unit)
     if (show_timing)    call print_timing(out_unit)
   contains
-    !!***
 
-    !!****f* gadfit/gadf_fit/re_initialize
-    !!
-    !! FUNCTION
-    !!
-    !! Initializes all work variables that depend on the relative
-    !! workloads. There are two main steps: determination of the image
-    !! weights and the construction of img_bounds. The weights are
-    !! determined by the amount of cpu time each image spent in the
-    !! parallel parts of the main loop during the previous
-    !! iteration. The weights determine the length of the work region
-    !! (my_size) that is attributed to each image in img_bounds (see
-    !! above for img_bounds). If adaptive parallelism is not used, the
-    !! determination of the weights is straightforward and this
-    !! procedure is called only once.
-    !!
-    !! SOURCE
+    ! Initializes all work variables that depend on the relative
+    ! workloads. There are two main steps: determination of the image
+    ! weights and the construction of img_bounds. The weights are
+    ! determined by the amount of cpu time each image spent in the
+    ! parallel parts of the main loop during the previous
+    ! iteration. The weights determine the length of the work region
+    ! (my_size) that is attributed to each image in img_bounds (see
+    ! above for img_bounds). If adaptive parallelism is not used, the
+    ! determination of the weights is straightforward and this
+    ! procedure is called only once.
     subroutine re_initialize()
       integer :: my_size, prev_size, cur_length, tmp
       call safe_deallocate(__FILE__, __LINE__, Jacobian)
@@ -1119,15 +1012,8 @@ contains
         JacobianT = 0.0_kp
       end associate
     end subroutine re_initialize
-    !!***
 
-    !!****f* gadfit/gadf_fit/chi2
-    !!
-    !! FUNCTION
-    !!
-    !! The sum of squares over all datasets.
-    !!
-    !! SOURCE
+    ! The sum of squares over all datasets.
     real(kp) function chi2() result(y)
       real(kp), save :: sum[*]
       integer :: saved_indices(size(fitfuncs(1)%pars))
@@ -1157,12 +1043,8 @@ contains
       call co_sum(sum)
       y = sum
     end function chi2
-    !!***
   end subroutine gadf_fit
 
-  !!****f* gadfit/print_memory_usage
-  !!
-  !! SOURCE
   subroutine print_memory_usage(io_unit)
     integer, intent(in) :: io_unit
     if (this_image() /= 1) return
@@ -1170,11 +1052,7 @@ contains
     call numerical_integration_memory_report(io_unit)
     call ad_memory_report(io_unit)
   end subroutine print_memory_usage
-  !!***
 
-  !!****f* gadfit/print_workloads
-  !!
-  !! SOURCE
   subroutine print_workloads(io_unit)
     integer, intent(in) :: io_unit
     real(real64) :: img_weights(num_images())
@@ -1193,11 +1071,7 @@ contains
        end do
     end if
   end subroutine print_workloads
-  !!***
 
-  !!****f* gadfit/print_timing
-  !!
-  !! SOURCE
   subroutine print_timing(io_unit)
     use, intrinsic :: iso_fortran_env, only: int64
     integer, intent(in) :: io_unit
@@ -1272,16 +1146,9 @@ contains
     write(io_unit, '(2x, g0, f13.1, f9.1)') &
          & 'Total  ', total_cpu_time, 1d0*main_loop_timer%wall_time/count_rate
   end subroutine print_timing
-  !!***
 
-  !!****f* gadfit/print_info
-  !!
-  !! FUNCTION
-  !!
-  !! Prints the results of the last iteration. Arguments have the same
-  !! meaning as in gadf_fit.
-  !!
-  !! SOURCE
+  ! Prints the results of the last iteration. Arguments have the same
+  ! meaning as in gadf_fit.
   subroutine print_info(io_unit, chi2_DOF, lambda, iterations, delta1, delta2, &
        & Jacobian_indices)
     integer, intent(in) :: io_unit
@@ -1385,36 +1252,27 @@ contains
 #endif
     end function len_aux
   end subroutine print_info
-  !!***
 
-  !!****f* gadfit/gadf_print
-  !!
-  !! FUNCTION
-  !!
-  !! If a fitting procedure has been performed, 3 files are created:
-  !! one containing the function values that are calculated using the
-  !! optimized fitting parameters, one containing the optimized
-  !! parameters, and a log file containing the summary of the
-  !! resources used. If a fitting procedure has not been performed,
-  !! only the function values are printed with the user defined
-  !! initial parameters.
-  !!
-  !! INPUTS
-  !!
-  !! All optional
-  !!
-  !! begin - the lower x-bound
-  !! end - the upper x-bound
-  !! points - number of points printed per curve
-  !! output - I/O device
-  !! grouped - whether to put all (x,y)-values into a single file
-  !! logplot - whether to produce results suitable for a log(x),y-plot
-  !! begin_kp - same as begin but with double/quad precision;
-  !!            overrides 'begin'
-  !! end_kp - same as end but with double/quad precision; overrides
-  !!          'end'
-  !!
-  !! SOURCE
+  ! If a fitting procedure has been performed, 3 files are created:
+  ! one containing the function values that are calculated using the
+  ! optimized fitting parameters, one containing the optimized
+  ! parameters, and a log file containing the summary of the resources
+  ! used. If a fitting procedure has not been performed, only the
+  ! function values are printed with the user defined initial
+  ! parameters.
+  !
+  ! All inputs optional
+  !
+  ! begin - the lower x-bound
+  ! end - the upper x-bound
+  ! points - number of points printed per curve
+  ! output - I/O device
+  ! grouped - whether to put all (x,y)-values into a single file
+  ! logplot - whether to produce results suitable for a log(x),y-plot
+  ! begin_kp - same as begin but with double/quad precision; overrides
+  !            'begin'
+  ! end_kp - same as end but with double/quad precision; overrides
+  !          'end'
   subroutine gadf_print(begin, end, points, output, grouped, logplot, &
        & begin_kp, end_kp)
     real(real32), intent(in), optional :: begin, end
@@ -1564,16 +1422,9 @@ contains
            & time(5:6), ' ', date(7:8), '.', date(5:6), '.', date(1:4)
     end subroutine print_header
   end subroutine gadf_print
-  !!***
 
-  !!****f* gadfit/gadf_close
-  !!
-  !! FUNCTION
-  !!
-  !! Deallocates all the remaining work arrays. After this, it is safe
-  !! to call gadf_init again.
-  !!
-  !! SOURCE
+  ! Deallocates all the remaining work arrays. After this, it is safe
+  ! to call gadf_init again.
   subroutine gadf_close()
     use, intrinsic :: iso_fortran_env, only: output_unit
     if (out_unit /= output_unit) call safe_close(__FILE__, __LINE__, out_unit)
@@ -1588,5 +1439,4 @@ contains
     call free_integration()
     call ad_close()
   end subroutine gadf_close
-  !!***
 end module gadfit

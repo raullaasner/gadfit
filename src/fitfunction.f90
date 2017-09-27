@@ -1,23 +1,15 @@
-!!****m* GADfit/fitfunction
-!!
-!! COPYRIGHT
-!!
-!! This Source Code Form is subject to the terms of the GNU General
-!! Public License, v. 3.0. If a copy of the GPL was not distributed
-!! with this file, You can obtain one at
-!! http://gnu.org/copyleft/gpl.txt.
-!!
-!! FUNCTION
-!!
-!! Defines and provides basic functionality for an abstract type for
-!! the fitting function, from which all user defined types are
-!! derived. Initialization and the value function are deferred to user
-!! defined types. Provides procedures for the gradient and second
-!! directional derivative using finite differences. For the
-!! calculation of derivatives using automatic differentiation, see
-!! automatic_differentiation.f90.
-!!
-!! SOURCE
+! This Source Code Form is subject to the terms of the GNU General
+! Public License, v. 3.0. If a copy of the GPL was not distributed
+! with this file, You can obtain one at
+! http://gnu.org/copyleft/gpl.txt.
+
+! Defines and provides basic functionality for an abstract type for
+! the fitting function, from which all user defined types are
+! derived. Initialization and the value function are deferred to user
+! defined types. Provides procedures for the gradient and second
+! directional derivative using finite differences. For the calculation
+! of derivatives using automatic differentiation, see
+! automatic_differentiation.f90.
 module fitfunction
 
   use ad
@@ -71,26 +63,15 @@ module fitfunction
   end interface safe_deallocate
 
 contains
-  !!***
 
-  !!****f* fitfunction/fitfunc%init_parnames
-  !!
-  !! SOURCE
   subroutine init_parnames(this)
     class(fitfunc), intent(in out) :: this
     allocate(this%parnames(size(this%pars)), stat=err_stat, errmsg=err_msg)
     call check_err(__FILE__, __LINE__)
     this%parnames = ''
   end subroutine init_parnames
-  !!***
 
-  !!****f* fitfunction/fitfunc%set
-  !!
-  !! FUNCTION
-  !!
-  !! Sets the value of the parameter par_i to val.
-  !!
-  !! SOURCE
+  ! Sets the value of the parameter par_i to val.
   subroutine set_par_value_int_real(this, par_i, val)
     class(fitfunc), intent(in out) :: this
     integer, intent(in) :: par_i
@@ -105,20 +86,15 @@ contains
     ! print procedures.
     if (.not. allocated(this%parnames)) call this%init_parnames()
   end subroutine set_par_value_int_real
-  !!
-  !! FUNCTION
-  !!
-  !! Sets the value of the parameter named 'name' to val.
-  !!
-  !! SOURCE
+
+  ! Sets the value of the parameter named 'name' to val.
   subroutine set_par_value_char_real(this, name, val)
     class(fitfunc), intent(in out) :: this
     character(*), intent(in) :: name
     real(kp), intent(in) :: val
     call set_par_value_int_real(this, this%get_index(name), val)
   end subroutine set_par_value_char_real
-  !!
-  !! SOURCE
+
   subroutine set_par_name(this, par_i, name)
     class(fitfunc), intent(in out) :: this
     integer, intent(in) :: par_i
@@ -132,11 +108,7 @@ contains
     end do
     this%parnames(par_i) = name
   end subroutine set_par_name
-  !!***
 
-  !!****f* fitfunction/fitfunc%get_index
-  !!
-  !! SOURCE
   integer function get_index(this, name) result(y)
     class(fitfunc), intent(in out) :: this
     character(*), intent(in) :: name
@@ -156,36 +128,23 @@ contains
     call error(__FILE__, __LINE__, 'There is no parameter called "'//name// &
          & '". Allowed names are'//name_list//'.')
   end function get_index
-  !!***
 
-  !!****f* fitfunction/fitfunc%get_name
-  !!
-  !! SOURCE
   elemental type(string) function get_name(this, par_i) result(y)
     class(fitfunc), intent(in) :: this
     integer, intent(in) :: par_i
     y = this%parnames(par_i)
   end function get_name
-  !!***
 
-  !!****f* fitfunction/fitfunc%grad_finite
-  !!
-  !! FUNCTION
-  !!
-  !! Calculates the gradient of the function with respect to the
-  !! active parameters given by active_pars using finite
-  !! differences. The result is put into grad(:n), where n is the
-  !! number of active parameters. It is the caller's responsibility to
-  !! ensure that size(grad) >= n.
-  !!
-  !! INPUTS
-  !!
-  !! this
-  !! x - argument at which to evaluate the gradient
-  !! active_pars - indices of the active parameters
-  !! grad - the gradient vector
-  !!
-  !! SOURCE
+  ! Calculates the gradient of the function with respect to the active
+  ! parameters given by active_pars using finite differences. The
+  ! result is put into grad(:n), where n is the number of active
+  ! parameters. It is the caller's responsibility to ensure that
+  ! size(grad) >= n.
+  !
+  ! this
+  ! x - argument at which to evaluate the gradient
+  ! active_pars - indices of the active parameters
+  ! grad - the gradient vector
   subroutine grad_finite(this, x, active_pars, grad)
     class(fitfunc), intent(in out) :: this
     real(kp), intent(in) :: x
@@ -206,30 +165,19 @@ contains
        grad(i) = (grad(i) - this%eval(x))/step
     end do
   end subroutine grad_finite
-  !!***
 
-  !!****f* fitfunction/fitfunc%dir_deriv_2nd_finite
-  !!
-  !! FUNCTION
-  !!
-  !! Calculates the 2nd directional derivative of the function with
-  !! respect to the active parameters given by active_pars using
-  !! finite differences. y = \partial_[m]\partial_[n] f b^[m]b^[n]
-  !! (Einstein summation), where b is the vector along which to
-  !! evaluate the derivative.
-  !!
-  !! INPUTS
-  !!
-  !! this
-  !! x - argument at which to evaluate the derivative
-  !! active_pars - indices of the active parameters
-  !! dir - vector along which the derivative is calculated
-  !!
-  !! OUTPUT
-  !!
-  !! y - the directional derivative
-  !!
-  !! SOURCE
+  ! Calculates the 2nd directional derivative of the function with
+  ! respect to the active parameters given by active_pars using finite
+  ! differences. y = \partial_[m]\partial_[n] f b^[m]b^[n] (Einstein
+  ! summation), where b is the vector along which to evaluate the
+  ! derivative.
+  !
+  ! this
+  ! x - argument at which to evaluate the derivative
+  ! active_pars - indices of the active parameters
+  ! dir - vector along which the derivative is calculated
+  !
+  ! y - the directional derivative
   real(kp) function dir_deriv_2nd_finite(this, x, active_pars, dir) result(y)
     class(fitfunc), intent(in out) :: this
     real(kp), intent(in) :: x, dir(:)
@@ -246,16 +194,9 @@ contains
     y = y - 2*this%eval(x)
     y = y/sqrt(epsilon(1.0_kp))
   end function dir_deriv_2nd_finite
-  !!***
 
-  !!****f* fitfunction/fitfunc%info
-  !!
-  !! FUNCTION
-  !!
-  !! Prints the names and values of all parameters and whether they
-  !! are active or passive.
-  !!
-  !! SOURCE
+  ! Prints the names and values of all parameters and whether they are
+  ! active or passive.
   subroutine info(this)
     use, intrinsic :: iso_fortran_env, only: output_unit
     class(fitfunc), intent(in out) :: this
@@ -274,21 +215,12 @@ contains
        end do
     end if
   end subroutine info
-  !!***
 
-  !!****f* fitfunction/fitfunc%destroy
-  !!
-  !! SOURCE
   impure elemental subroutine destroy(this)
     class(fitfunc), intent(in out) :: this
     call safe_deallocate(__FILE__, __LINE__, this%pars)
     call safe_deallocate(__FILE__, __LINE__, this%parnames)
   end subroutine destroy
-  !!***
-
-  !!****f* fitfunction/safe_deallocate_fitfunc
-  !!
-  !! SOURCE
   subroutine safe_deallocate_fitfunc(file, line, array)
     ! 'file' and 'line' should be determined by the preprocessor.
     character(*), intent(in) :: file
@@ -300,5 +232,4 @@ contains
        call check_err(file, line)
     end if
   end subroutine safe_deallocate_fitfunc
-  !!***
 end module fitfunction

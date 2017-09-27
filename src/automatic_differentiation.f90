@@ -1,26 +1,18 @@
-!!****m* GADfit/automatic_differentiation
-!!
-!! COPYRIGHT
-!!
-!! This Source Code Form is subject to the terms of the GNU General
-!! Public License, v. 3.0. If a copy of the GPL was not distributed
-!! with this file, You can obtain one at
-!! http://gnu.org/copyleft/gpl.txt.
-!!
-!! FUNCTION
-!!
-!! Procedures for finding the gradient of a function using the reverse
-!! mode of automatic differentiation (AD), and procedures for finding
-!! the first and second directional derivatives using the forward
-!! mode. This includes the implementation of all elemental operations,
-!! except numerical integration, which is given in
-!! numerical_integration.f90. Also provides the definition of
-!! type(advar) (the AD variable), which is the central variable used
-!! in GADfit. See the user guide for details about the AD algorithm.
-!!
-!! SOURCE
+! This Source Code Form is subject to the terms of the GNU General
+! Public License, v. 3.0. If a copy of the GPL was not distributed
+! with this file, You can obtain one at
+! http://gnu.org/copyleft/gpl.txt.
+
 #include <config.h>
 
+! Procedures for finding the gradient of a function using the reverse
+! mode of automatic differentiation (AD), and procedures for finding
+! the first and second directional derivatives using the forward
+! mode. This includes the implementation of all elemental operations,
+! except numerical integration, which is given in
+! numerical_integration.f90. Also provides the definition of
+! type(advar) (the AD variable), which is the central variable used in
+! GADfit. See the user guide for details about the AD algorithm.
 module ad
 
   use, intrinsic :: iso_c_binding,   only: c_double
@@ -260,37 +252,28 @@ module ad
   integer :: max_trace_count[*], max_index_count[*], max_const_count[*]
 
 contains
-  !!***
 
-  !!****f* automatic_differentiation/ad_init_reverse
-  !!
-  !! FUNCTION
-  !!
-  !! Initializes the main work variables of the reverse mode. One can
-  !! specify either 'memory' or, for optimal use of memory,
-  !! sweep_size, trace_size, and const_size separately. If all four
-  !! are present, 'memory' takes precedence. With no arguments a call
-  !! to init_ad_reverse allocates forward_values(DEFAULT_SWEEP_SIZE),
-  !! adjoints(DEFAULT_SWEEP_SIZE), trace(4*DEFAULT_SWEEP_SIZE), and
-  !! ad_constants(0.5*DEFAULT_SWEEP_SIZE). For a better understading
-  !! of memory usage call ad_memory_report() after the
-  !! calculation. Sets the default mode to be the reverse mode.
-  !!
-  !! INPUTS
-  !!
-  !! All optional
-  !!
-  !! memory - allocates forward_values(x), adjoints(x), trace(4*x),
-  !!          and ad_constants(x/2), where x is such that the total
-  !!          memory reserved is equal to the amount specified by
-  !!          'memory', whose format is 'integer unit', where 'unit'
-  !!          is 'B', 'kB', 'MB', or 'GB' (also acceptable are 'b',
-  !!          'kb', 'mb', or 'gb').
-  !! sweep_size - size of forward_values and adjoints
-  !! trace_size - size of trace
-  !! const_size - size of ad_constants
-  !!
-  !! SOURCE
+  ! Initializes the main work variables of the reverse mode. One can
+  ! specify either 'memory' or, for optimal use of memory, sweep_size,
+  ! trace_size, and const_size separately. If all four are present,
+  ! 'memory' takes precedence. With no arguments a call to
+  ! init_ad_reverse allocates forward_values(DEFAULT_SWEEP_SIZE),
+  ! adjoints(DEFAULT_SWEEP_SIZE), trace(4*DEFAULT_SWEEP_SIZE), and
+  ! ad_constants(0.5*DEFAULT_SWEEP_SIZE). For a better understading of
+  ! memory usage call ad_memory_report() after the calculation. Sets
+  ! the default mode to be the reverse mode.
+  !
+  ! All inputs optional
+  !
+  ! memory - allocates forward_values(x), adjoints(x), trace(4*x), and
+  !          ad_constants(x/2), where x is such that the total memory
+  !          reserved is equal to the amount specified by 'memory',
+  !          whose format is 'integer unit', where 'unit' is 'B',
+  !          'kB', 'MB', or 'GB' (also acceptable are 'b', 'kb', 'mb',
+  !          or 'gb').
+  ! sweep_size - size of forward_values and adjoints
+  ! trace_size - size of trace
+  ! const_size - size of ad_constants
   subroutine ad_init_reverse(memory, sweep_size, trace_size, const_size)
     character(*), intent(in), optional :: memory
     integer, intent(in), optional :: sweep_size, trace_size, const_size
@@ -333,11 +316,7 @@ contains
     index_count = 0; max_index_count = 0; trace = 0
     const_count = 0; max_const_count = 0; reverse_mode = .true.
   end subroutine ad_init_reverse
-  !!***
 
-  !!****f* automatic_differentiation/operator(>)(<)
-  !!
-  !! SOURCE
   elemental logical function advar_gt_advar(x1, x2) result(y)
     type(advar), intent(in) :: x1, x2
     y = x1%val > x2%val
@@ -419,18 +398,11 @@ contains
     type(advar), intent(in) :: x2
     y = x1 < x2%val
   end function real128_lt_advar
-  !!***
 
-  !!****f* automatic_differentiation/advar%assignment(=)
-  !!
-  !! FUNCTION
-  !!
-  !! Conversion from real to type(advar) copies the real value to the
-  !! val field; the result is a passive variable
-  !! (index=d=dd=0). Conversion from type(advar) to real copies the
-  !! val field.
-  !!
-  !! SOURCE
+  ! Conversion from real to type(advar) copies the real value to the
+  ! val field; the result is a passive variable
+  ! (index=d=dd=0). Conversion from type(advar) to real copies the val
+  ! field.
   impure elemental subroutine assign_advar_integer(this, x)
     class(advar), intent(out) :: this
     integer, intent(in) :: x
@@ -478,19 +450,12 @@ contains
     class(advar), intent(in) :: this
     x = real(this%val, real128)
   end subroutine assign_real128_advar
-  !!***
 
   ! AD ELEMENTAL OPERATIONS BEGIN
 
-  !!****f* automatic_differentiation/elemental_operations
-  !!
-  !! FUNCTION
-  !!
-  !! In the reverse mode, each elemental operation appends to trace,
-  !! forward_values, and (optionally) ad_constants. In the forward
-  !! mode, the derivatives are calculated on the fly.
-  !!
-  !! SOURCE
+  ! In the reverse mode, each elemental operation appends to trace,
+  ! forward_values, and (optionally) ad_constants. In the forward
+  ! mode, the derivatives are calculated on the fly.
   type(advar) function add_advar_advar(x1, x2) result(y)
     type(advar), intent(in) :: x1, x2
     if (x1%index /= 0 .and. x2%index /= 0) then
@@ -1533,29 +1498,20 @@ contains
   end function Li2_advar
 #endif
   ! For numerical integration see numerical_integration.f90
-  !!***
 
   ! AD ELEMENTAL OPERATIONS END
 
-  !!****f* automatic_differentiation/ad_grad
-  !!
-  !! FUNCTION
-  !!
-  !! The return sweep of the reverse mode. Assumes that the forward
-  !! sweep has been performed with function evaluation. The adjoints
-  !! array is reinitialized to zero each time before the sweep. Note
-  !! that after the sweep, forward_values need not be reinitialized
-  !! since it can simply be overwritten.
-  !!
-  !! INPUTS
-  !!
-  !! num_parameters - Number of active parameters. After the return
-  !!                  sweep, index_count will be reset to this
-  !!                  number. If there are, e.g., 2 active parameters,
-  !!                  then during the next forward sweep the new
-  !!                  indices should start at 3.
-  !!
-  !! SOURCE
+  ! The return sweep of the reverse mode. Assumes that the forward
+  ! sweep has been performed with function evaluation. The adjoints
+  ! array is reinitialized to zero each time before the sweep. Note
+  ! that after the sweep, forward_values need not be reinitialized
+  ! since it can simply be overwritten.
+  !
+  ! num_parameters - Number of active parameters. After the return
+  !                  sweep, index_count will be reset to this
+  !                  number. If there are, e.g., 2 active parameters,
+  !                  then during the next forward sweep the new
+  !                  indices should start at 3.
   subroutine ad_grad(num_parameters)
     integer, intent(in) :: num_parameters
     integer :: op_id
@@ -1748,19 +1704,12 @@ contains
     end do
     index_count = num_parameters
   end subroutine ad_grad
-  !!***
 
-  !!****f* automatic_differentiation/ad_memory_report
-  !!
-  !! FUNCTION
-  !!
-  !! Prints the size of adjoints, trace, and const in terms of both
-  !! the number of elements and the amount of memory used. The latter
-  !! is different for double and quad precision. The sizes, which
-  !! represent the maxima over all images, are shown as requested
-  !! during initialization and how much was actually used.
-  !!
-  !! SOURCE
+  ! Prints the size of adjoints, trace, and const in terms of both the
+  ! number of elements and the amount of memory used. The latter is
+  ! different for double and quad precision. The sizes, which
+  ! represent the maxima over all images, are shown as requested
+  ! during initialization and how much was actually used.
   subroutine ad_memory_report(io_unit)
     use, intrinsic :: iso_fortran_env, only: output_unit
     integer, intent(in), optional :: io_unit
@@ -1805,11 +1754,7 @@ contains
          & kind(1)*max_trace)
     write(io_unit_loc, '(g0)')
   end subroutine ad_memory_report
-  !!***
 
-  !!****f* automatic_differentiation/safe_deallocate_advar
-  !!
-  !! SOURCE
   subroutine safe_deallocate_advar(file, line, array)
     ! 'file' and 'line' should be determined by the preprocessor.
     character(*), intent(in) :: file
@@ -1820,16 +1765,11 @@ contains
        call check_err(file, line)
     end if
   end subroutine safe_deallocate_advar
-  !!***
 
-  !!****f* automatic_differentiation/ad_close
-  !!
-  !! SOURCE
   subroutine ad_close()
     call safe_deallocate(__FILE__, __LINE__, forward_values)
     call safe_deallocate(__FILE__, __LINE__, adjoints)
     call safe_deallocate(__FILE__, __LINE__, trace)
     call safe_deallocate(__FILE__, __LINE__, ad_constants)
   end subroutine ad_close
-  !!***
 end module ad

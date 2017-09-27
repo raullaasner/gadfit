@@ -1,13 +1,8 @@
-!!****m* GADfit/gadf_constants
-!!
-!! COPYRIGHT
-!!
-!! This Source Code Form is subject to the terms of the GNU General
-!! Public License, v. 3.0. If a copy of the GPL was not distributed
-!! with this file, You can obtain one at
-!! http://gnu.org/copyleft/gpl.txt.
-!!
-!! SOURCE
+! This Source Code Form is subject to the terms of the GNU General
+! Public License, v. 3.0. If a copy of the GPL was not distributed
+! with this file, You can obtain one at
+! http://gnu.org/copyleft/gpl.txt.
+
 #include <config.h>
 
 module gadf_constants
@@ -29,4 +24,3 @@ module gadf_constants
   real(kp), parameter :: sqrtpi = 1.77245385090551602729816748334115_kp
   real(kp), parameter :: euler = 2.71828182845904523536028747135266_kp
 end module gadf_constants
-!!***
