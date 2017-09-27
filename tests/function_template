@@ -3,7 +3,7 @@ module <module_name>
   use ad
   use fitfunction
   use gadf_constants
-  
+
   implicit none
 
   type, extends(fitfunc) :: <function_name>

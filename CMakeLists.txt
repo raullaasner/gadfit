@@ -1,7 +1,7 @@
-# Copyright (C) 2014-2017 Raul Laasner
-# This file is distributed under the terms of the GNU General Public
-# License, see LICENSE in the root directory of the present
-# distribution or http://gnu.org/copyleft/gpl.txt .
+# This Source Code Form is subject to the terms of the GNU General
+# Public License, v. 3.0. If a copy of the GPL was not distributed
+# with this file, You can obtain one at
+# http://gnu.org/copyleft/gpl.txt.
 
 # CMAKE
 cmake_minimum_required(VERSION 3.5.1)
