@@ -40,7 +40,7 @@ Format
   <procedures>
   end module <module_name>
   ```
-  
+
   Protected variables should not be listed after the `public` statement, but declared public elsewhere. Also, the default `private` attribute is preferred, but it might not always make sense.
 
 * **Order of arguments.** The order of arguments to a subprogram is preferably the following: the `pass` argument, `intent(in)` arguments, `intent(in out)` arguments, `intent(out)` arguments, `optional` arguments.
@@ -51,7 +51,7 @@ Format
 
 * **Spaces.** Use spaces where allowed (`in out`, `end do`, etc.). Use one space around most binary operators.
 
-* **Kind.** Do not use syntax such as `real*8` or `real(8)`. Make use of system constants such as `real64`.
+* **Kind.** Do not use syntax such as `real*8` or `real(8)`. Make use of constants such as `dp` or `kp`.
 
 * **Line length.** Try to limit the line length to 80 symbols. Not only is it good for readability, but the compiler can be more informative about the line number where the error occured. For continuation use ampersand on both lines.
 
@@ -76,8 +76,7 @@ Use the following rules for creating Git commit messages:
 * Do not end the subject line with a period
 * Use the imperative mood in the subject line
 * Wrap the body at 72 characters
-* Use the body to explain what and why vs. how
-Read the detailed instructions here: https://chris.beams.io/posts/git-commit
+* Use the body to explain the *what* and *why* and not the *how* (see this post https://chris.beams.io/posts/git-commit)
 
 
 TODO
