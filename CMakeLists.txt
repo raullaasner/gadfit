@@ -120,16 +120,10 @@ set(POLYM_ARRAY_SUPPORT       TRUE)
 set(HAS_CO_SUM                TRUE)
 # GNU
 if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-  if (NOT CURRENT_Fortran_FLAGS MATCHES "-fcoarray=")
-    message(FATAL_ERROR "Missing a Coarray flag (-fcoarray=)")
-  endif()
   set(POLYM_ARRAY_SUPPORT FALSE)
 endif()
 # Intel
 if (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
-  if (NOT CURRENT_Fortran_FLAGS MATCHES "-coarray=")
-    message(FATAL_ERROR "Missing a Coarray flag (-coarray=)")
-  endif()
   set(HAS_CO_SUM FALSE)
 endif()
 
