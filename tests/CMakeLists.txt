@@ -101,7 +101,7 @@ macro(test_if_mpirun_exists_post target)
 endmacro()
 
 # Example input
-add_executable(example0 EXCLUDE_FROM_ALL example.f90)
+add_executable(example0 EXCLUDE_FROM_ALL example.F90)
 add_dependencies(example0 gadfit)
 if (TARGET lapack-fallback)
   add_dependencies(example0 lapack-fallback)
@@ -124,7 +124,7 @@ test_if_mpirun_exists_post(example0)
 
 # Tests
 foreach(f ${TESTS})
-  add_executable(${f} EXCLUDE_FROM_ALL ${f}.f90)
+  add_executable(${f} EXCLUDE_FROM_ALL ${f}.F90)
   if (TARGET lapack-fallback)
     add_dependencies(${f} lapack-fallback)
   endif()
