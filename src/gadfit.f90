@@ -50,7 +50,7 @@ module gadfit
 
   ! FITTING FUNCTION
 
-  ! The are as many instances of the fitting function as there are
+  ! There are as many instances of the fitting function as there are
   ! datasets.
 #ifdef POLYM_ARRAY_SUPPORT
   class(fitfunc), allocatable, public :: fitfuncs(:)
@@ -1389,7 +1389,7 @@ contains
           i = show_scope
           j = show_digits
           show_scope = GLOBAL_AND_LOCAL
-          show_digits = -int(log10(epsilon(1.0_kp)), kind(1))
+          show_digits = -int(log10(epsilon(1.0_kp)))
           open(newunit=io_unit, file=output_loc//'_parameters', &
                & action='write', form='formatted', &
                & iostat=err_stat, iomsg=err_msg)
