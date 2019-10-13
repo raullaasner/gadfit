@@ -21,7 +21,7 @@ module gadfit
   use ad
   use fitfunction,    only: fitfunc, safe_deallocate
   use gadf_constants, only: kp
-  use linalg,         only: potr_f08 ! A*X=B with A symmetric
+  use gadfit_linalg,  only: potr_f08 ! A*X=B with A symmetric
   use messaging
   use misc,           only: string, len, swap, timer, safe_close
 #if !defined HAS_CO_SUM || defined QUAD_PRECISION

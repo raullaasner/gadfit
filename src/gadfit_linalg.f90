@@ -6,7 +6,7 @@
 #include <config.h>
 
 ! Wrappers for linear algebra routines.
-module linalg
+module gadfit_linalg
 
   use, intrinsic :: iso_fortran_env, only: real64
   use messaging, only: str, error, err_stat
@@ -51,4 +51,4 @@ contains
          & call error(file, line, &
          & 'Could not solve the linear system of equations (dpotrs).')
   end subroutine potr_f08
-end module linalg
+end module gadfit_linalg
