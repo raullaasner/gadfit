@@ -945,7 +945,7 @@ logical, optional :: memory
 \begin{verbatim}
 logical, optional :: workloads
 \end{verbatim}
-  Whether to show the workload of each image. If the loads are very uneven, it is worth considering using adaptive parallelism.
+  Whether to show the workload of each image. If the loads are very uneven, it is worth considering using load balancing.
 
   Default: \verb+.false.+.
 \item
@@ -1141,9 +1141,9 @@ logical, optional :: umnigh
   Default: \texttt{.false.}.
 \item
 \begin{verbatim}
-logical, optional :: ap
+logical, optional :: load_balancing
 \end{verbatim}
-  Whether to use adaptive parallelism. If \verb+.true.+, the input data is redistributed among the images in an effort to achieve equal workloads. The redistribution is based on the workloads of the previous iteration and is repeated after each iteration. Adaptive parallelism makes sense with integrals and other constructs whose cost heavily depends on the argument.
+  Whether to use load balancing. If \verb+.true.+, the input data is redistributed among the images in an effort to achieve equal workloads. The redistribution is based on the workloads of the previous iteration and is repeated after each iteration. Load balancing makes sense with integrals and other constructs whose cost heavily depends on the argument.
 
   Default: \verb+.false.+.
 \end{itemize}

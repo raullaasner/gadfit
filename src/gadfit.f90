@@ -451,17 +451,17 @@ contains
   !           that algorithm always stays within the trust region
   ! umnigh - whether to update lambda according to Umrigar and
   !          Nightingale
-  ! ap - whether to use adaptive parallelism
+  ! load_balancing - whether to use load balancing
   subroutine gadf_fit(lambda, lam_up, lam_down, accth, grad_chi2, cos_phi, &
        & rel_error, rel_error_global, chi2_rel, chi2_abs, DTD_min, lam_incs, &
-       & uphill, max_iter, damp_max, nielsen, umnigh, ap)
+       & uphill, max_iter, damp_max, nielsen, umnigh, load_balancing)
     ! INPUT
     real(real32), intent(in), optional :: lambda, lam_up, lam_down, accth, &
          & grad_chi2, cos_phi, rel_error, rel_error_global, chi2_rel, chi2_abs
     real(kp), intent(in), optional :: DTD_min(:)
     integer, intent(in), optional :: lam_incs, uphill, max_iter
     logical, intent(in), optional :: damp_max, nielsen, umnigh
-    logical, value, optional :: ap
+    logical, value, optional :: load_balancing
     ! MAIN WORK VARIABLES
     real(kp) :: lambda_loc, lam_up_loc, lam_down_loc
     real(kp) :: new_chi2, old_chi2, old_old_chi2
@@ -591,7 +591,11 @@ contains
     call re_initialize()
     delta2 = 0d0
     DTD = 0d0
-    if (present(DTD_min)) forall (i=1:size(DTD,1)) DTD(i,i) = DTD_min(i)
+    if (present(DTD_min)) then
+       do i = 1, size(DTD,1)
+          DTD(i,i) = DTD_min(i)
+       end do
+    end if
     ! Degrees of freedom
     degrees_of_freedom = size(x_data) - size(Jacobian,2)
     if (degrees_of_freedom < 0) then
@@ -622,7 +626,8 @@ contains
     call main_loop_timer%time()
     old_chi2 = chi2()
     main: do
-       if (present(ap) .and. ap .and. num_images() > 1) call re_initialize()
+       if (present(load_balancing) .and. load_balancing .and. &
+            & num_images() > 1) call re_initialize()
        ! STEP 1 - Jacobian and the residuals
        call Jacobian_timer%time()
        do j = 1, size(fitfuncs)
@@ -657,10 +662,13 @@ contains
        call co_sum(JTJ)
        call co_sum(JTres)
        if (present(damp_max) .and. .not. damp_max) then
-          forall (i=1:size(DTD,1)) DTD(i,i) = real(JTJ(i,i), real64)
+          do i = 1, size(DTD,1)
+             DTD(i,i) = real(JTJ(i,i), real64)
+          end do
        else
-          forall (i=1:size(DTD,1)) &
-               & DTD(i,i) = max(DTD(i,i), real(JTJ(i,i),real64))
+          do i = 1, size(DTD,1)
+             DTD(i,i) = max(DTD(i,i), real(JTJ(i,i),real64))
+          end do
        end if
        delta1 = real(JTres, real64)
        linalg_tmp = real(JTJ + lambda_loc*DTD, real64)
@@ -967,7 +975,7 @@ contains
                  & call comment(__FILE__, __LINE__, &
                  & 'The calculation is too fast for adaptive &
                  &parallelism (AP) to be effective. AP is now switched off.')
-            ap = .false.
+            load_balancing = .false.
             img_weights = 1d0
          else
             img_weights = 1d0/img_weights
