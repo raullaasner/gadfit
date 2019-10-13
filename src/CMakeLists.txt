@@ -9,7 +9,7 @@ target_sources(gadfit PRIVATE
   gadf_constants.f90
   gadfit.f90
   gauss_kronrod_parameters.f90
-  linalg.f90
+  gadfit_linalg.f90
   messaging.f90
   misc.f90
   numerical_integration.f90
