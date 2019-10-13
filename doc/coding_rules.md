@@ -10,7 +10,7 @@ This document contains a set of rules that a developer should follow when contri
 Programming principles
 ----------------------
 
-* **Standard-conforming code.** This project is committed to following the Fortran 2008 standard (F2008), which is a minor improvement over F2003, but a major improvement over the commonly used F90, making coding much more efficient. It is not possible to list here all the rules that the developer is expected to follow when writing modern Fortran. There is not always a unique answer anyway. Many rules are expected to be self-evident. Here we concentrate on rules specific to this project that are not standard in general for modern Fortran. A good place to start is to examine an existing module in addition to reading this document.
+* **Standard-conforming code.** This project is committed to following the Fortran 2008 standard (F2008), which is a minor improvement over the 2003 standard, but a major improvement over the commonly used Fortran 90, making coding much more efficient. It is not possible to list here all the rules that the developer is expected to follow when writing modern Fortran. There is not always a unique answer anyway. Many rules are expected to be self-evident. Here we concentrate on rules specific to this project and that are not standard in general for modern Fortran. A good place to start is to examine an existing module in addition to reading this document.
 
 * **Exception handling.** Use `check_err` after allocate and open statements. `safe_close` is optional and depends on factors such as the amount of data written. For deallocation use `safe_deallocate` and, if necessary, define a new subroutine for the `safe_deallocate` interface. For reporting errors, warnings, and comments, use the appropriate procedures from the messaging module.
 
@@ -41,7 +41,7 @@ Format
   end module <module_name>
   ```
 
-  Protected variables should not be listed after the `public` statement, but declared public elsewhere. Also, the default `private` attribute is preferred, but it might not always make sense.
+  Protected variables should not be listed after the `public` statement, but declared public elsewhere. Also, the default `private` attribute is preferred, but `public` is also acceptable where it make sense.
 
 * **Order of arguments.** The order of arguments to a subprogram is preferably the following: the `pass` argument, `intent(in)` arguments, `intent(in out)` arguments, `intent(out)` arguments, `optional` arguments.
 
@@ -53,7 +53,7 @@ Format
 
 * **Kind.** Do not use syntax such as `real*8` or `real(8)`. Make use of constants such as `dp` or `kp`.
 
-* **Line length.** Try to limit the line length to 80 symbols. Not only is it good for readability, but the compiler can be more informative about the line number where the error occured. For continuation use ampersand on both lines.
+* **Line length.** Limit the line length to 80 symbols. Not only is it good for readability, but the compiler can be more informative about the line number where the error occured. For continuation use ampersand on both lines.
 
 * **Indentation.** 3 spaces for `do` and `if` constructs.
 
@@ -63,7 +63,7 @@ Documentation
 
 * **In-code comments.** In general, comments should explain what the code does, not how it does it. In-code comments can be used to comment data or to explain the purpose of a code segment if not immediately clear from the context. Excessive in-code commenting suggests that the procedure probably needs to be redesigned.
 
-* **Note.** When modifying the source code, don't forget to update the user guide accordingly!
+* **Note.** When modifying the source code, don't forget to bupdate the user guide accordingly!
 
 
 Git
@@ -77,9 +77,3 @@ Use the following rules for creating Git commit messages:
 * Use the imperative mood in the subject line
 * Wrap the body at 72 characters
 * Use the body to explain the *what* and *why* and not the *how* (see this post https://chris.beams.io/posts/git-commit)
-
-
-TODO
-----
-
-Some rule about procedure ordering in the contains section.
