@@ -4,15 +4,15 @@
 # http://gnu.org/copyleft/gpl.txt.
 
 target_sources(gadfit PRIVATE
-  automatic_differentiation.f90
-  fitfunction.f90
-  gadf_constants.f90
-  gadfit.f90
-  gauss_kronrod_parameters.f90
-  gadfit_linalg.f90
+  automatic_differentiation.F90
+  fitfunction.F90
+  gadf_constants.F90
+  gadfit.F90
+  gauss_kronrod_parameters.F90
+  gadfit_linalg.F90
   messaging.f90
-  misc.f90
-  numerical_integration.f90
+  misc.F90
+  numerical_integration.F90
   )
 
 install(TARGETS gadfit EXPORT gadfitConfig)

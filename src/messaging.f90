@@ -3,8 +3,6 @@
 ! with this file, You can obtain one at
 ! http://gnu.org/copyleft/gpl.txt.
 
-#include <config.h>
-
 ! Contains the error, warning, and comment procedures, the status
 ! check of err_stat, and some I/O helper procedures.
 module messaging
