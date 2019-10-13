@@ -57,7 +57,7 @@ module fitfunction
   end interface
 
   ! Most interfaces for safe_deallocate are in misc.f90. Adding this
-  ! to misc.f90 would produce a circular dependence
+  ! to misc.f90 would produce a circular dependence.
   interface safe_deallocate
      module procedure safe_deallocate_fitfunc
   end interface safe_deallocate
