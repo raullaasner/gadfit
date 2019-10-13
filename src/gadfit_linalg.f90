@@ -8,8 +8,8 @@
 ! Wrappers for linear algebra routines.
 module gadfit_linalg
 
-  use, intrinsic :: iso_fortran_env, only: real64
-  use messaging, only: str, error, err_stat
+  use gadf_constants, only: dp
+  use messaging,      only: str, error, err_stat
 
   implicit none
 
@@ -32,7 +32,7 @@ contains
     ! 'file' and 'line' should be determined by the preprocessor.
     character(*), intent(in) :: file
     integer, intent(in) :: line
-    real(real64), intent(in out) :: a(:,:), b(:)
+    real(dp), intent(in out) :: a(:,:), b(:)
     character(*), intent(in), optional :: ul
     character(1) :: ul_loc
     ul_loc = 'u'

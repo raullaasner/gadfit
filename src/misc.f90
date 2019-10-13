@@ -8,8 +8,8 @@
 ! Provides some commonly used types and helper procedures.
 module misc
 
-  use, intrinsic :: iso_fortran_env, only: int64, real64, real128
-  use gadf_constants, only: kp
+  use, intrinsic :: iso_fortran_env, only: int64
+  use gadf_constants, only: dp, kp, qp
   use messaging
 
   implicit none
@@ -31,13 +31,13 @@ module misc
 
   type :: timer
      ! Total cpu and wall times
-     real(real64) :: cpu_time
+     real(dp) :: cpu_time
      integer(int64) :: wall_time
      ! Number of times a code segment has been called
      integer :: num_calls
      ! whether timing is currently in progress
      logical, private :: timing
-     real(real64), private :: cpu_time_tmp
+     real(dp), private :: cpu_time_tmp
      integer(int64), private :: wall_time_tmp
    contains
      procedure :: reset
@@ -55,8 +55,8 @@ module misc
   end interface len
 
   interface safe_deallocate
-     module procedure safe_deallocate_real64, safe_deallocate_real128, &
-          & safe_deallocate_real64_2d, safe_deallocate_real128_2d, &
+     module procedure safe_deallocate_dp, safe_deallocate_qp, &
+          & safe_deallocate_dp_2d, safe_deallocate_qp_2d, &
           & safe_deallocate_integer, safe_deallocate_string, &
           & safe_deallocate_logical
   end interface safe_deallocate
@@ -102,7 +102,7 @@ contains
   ! should be wrapped between two calls to time.
   subroutine time(this)
     class(timer), intent(in out) :: this
-    real(real64) :: cpu_tmp
+    real(dp) :: cpu_tmp
     integer(int64) :: wall_tmp
     if (.not. this%timing) then
        call cpu_time(this%cpu_time_tmp)
@@ -164,45 +164,45 @@ contains
   ! Deallocates an array. It is always safe to call these
   ! prcedures. 'file' and 'line' should be determined by the
   ! preprocessor.
-  subroutine safe_deallocate_real64(file, line, array)
+  subroutine safe_deallocate_dp(file, line, array)
     character(*), intent(in) :: file
     integer, intent(in) :: line
-    real(real64), allocatable, intent(in out) :: array(:)
+    real(dp), allocatable, intent(in out) :: array(:)
     if (allocated(array)) then
        deallocate(array, stat=err_stat, errmsg=err_msg)
        call check_err(file, line)
     end if
-  end subroutine safe_deallocate_real64
+  end subroutine safe_deallocate_dp
 
-  subroutine safe_deallocate_real128(file, line, array)
+  subroutine safe_deallocate_qp(file, line, array)
     character(*), intent(in) :: file
     integer, intent(in) :: line
-    real(real128), allocatable, intent(in out) :: array(:)
+    real(qp), allocatable, intent(in out) :: array(:)
     if (allocated(array)) then
        deallocate(array, stat=err_stat, errmsg=err_msg)
        call check_err(file, line)
     end if
-  end subroutine safe_deallocate_real128
+  end subroutine safe_deallocate_qp
 
-  subroutine safe_deallocate_real64_2d(file, line, array)
+  subroutine safe_deallocate_dp_2d(file, line, array)
     character(*), intent(in) :: file
     integer, intent(in) :: line
-    real(real64), allocatable, intent(in out) :: array(:,:)
+    real(dp), allocatable, intent(in out) :: array(:,:)
     if (allocated(array)) then
        deallocate(array, stat=err_stat, errmsg=err_msg)
        call check_err(file, line)
     end if
-  end subroutine safe_deallocate_real64_2d
+  end subroutine safe_deallocate_dp_2d
 
-  subroutine safe_deallocate_real128_2d(file, line, array)
+  subroutine safe_deallocate_qp_2d(file, line, array)
     character(*), intent(in) :: file
     integer, intent(in) :: line
-    real(real128), allocatable, intent(in out) :: array(:,:)
+    real(qp), allocatable, intent(in out) :: array(:,:)
     if (allocated(array)) then
        deallocate(array, stat=err_stat, errmsg=err_msg)
        call check_err(file, line)
     end if
-  end subroutine safe_deallocate_real128_2d
+  end subroutine safe_deallocate_qp_2d
 
   subroutine safe_deallocate_integer(file, line, array)
     character(*), intent(in) :: file

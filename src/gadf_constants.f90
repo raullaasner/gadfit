@@ -11,10 +11,13 @@ module gadf_constants
 
   public
 
+  integer, parameter :: dp = selected_real_kind(15, 307)
+  integer, parameter :: qp = selected_real_kind(33, 4931)
+
 #ifdef QUAD_PRECISION
-  integer, parameter :: kp = selected_real_kind(33, 4931)
+  integer, parameter :: kp = qp
 #else
-  integer, parameter :: kp = selected_real_kind(15, 307)
+  integer, parameter :: kp = dp
 #endif
   ! Zwillinger, D., Standard Mathematical Tables and Formulae, 31st
   ! Ed. Boca Raton, FL: Chapman and Hall/CRC Press LLC, 2003
