@@ -606,6 +606,33 @@ mpirun -np 4 ./main # GNU
 \end{verbatim}
 This may need to be modified to reflect the user's environment. If \verb+libcaf_mpi.a+ was built automatically (see Sec.~\ref{sec:parallelism}), then its location is \verb+~gadfit/tests+. If GADfit was built in serial, \verb+libcaf_mpi.a+ need not be linked.
 
+\subsection{Using GADfit in other CMake projects}
+
+If you have built and installed GADfit and want to use it in a CMake project, only two CMake statement are necessary. Assuming that GADfit has been installed at a standard system location and the target name you want to link against GADfit is \texttt{myproject}, include the lines
+\begin{verbatim}
+  find_package(gadfit)
+  target_link_libraries(myproject PRIVATE gadfit::gadfit)
+\end{verbatim}
+in that project. If GADfit is not installed in a standard location, use the \texttt{PATHS} argument to \verb+find_package+, e.g.,
+\begin{verbatim}
+  find_package(gadfit PATHS $ENV{HOME}/libs/gadfit)
+\end{verbatim}
+If additionally you need to ensure that GADfit is not older than a specific version, use
+\begin{verbatim}
+  find_package(gadfit 1.3 PATHS $ENV{HOME}/libs/gadfit)
+\end{verbatim}
+In this example, if the version of the installed copy is less than 1.3, CMake will exit with an error. Any version equal to or greater than 1.3 is fine. In order to see all the options of \verb+find_package+, run
+\begin{verbatim}
+  cmake --help find_package
+\end{verbatim}
+or consult the online documentation.
+
+If you want to link against GADfit without installing it first, the \texttt{PATHS} argument can point directly to the GADfit build directory:
+\begin{verbatim}
+  find_package(gadfit PATHS $ENV{HOME}/builds/gadfit)
+\end{verbatim}
+This is useful for developers.
+
 \subsection{\label{sec:example}Example input}
 
 Suppose we have made two measurements of a decay process, which are to be fitted against
