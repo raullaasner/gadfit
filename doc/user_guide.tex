@@ -1298,7 +1298,7 @@ The previous section was about the main commands that would normally be used. Th
 \paragraph{Basic usage of the \texttt{fitfunc} class.} As was mentioned earlier, the user can test the fitting function by calling \verb+gadf_print+ without performing a fitting procedure. It is, however, possible to work directly with the fitting function, which inherits from the \verb+fitfunc+ class. The following code snippet prints the value of a function with the argument 2.0. It is assumed that GADfit has been compiled with double precision.
 \begin{verbatim}
   type(test) :: f              ! 'test' extends fitfunc.
-  real(real64) :: dummy
+  real(dp) :: dummy
   !call init_integration()     ! if necessary or
   !call init_integration_dbl() ! if necessary.
   call f%init()
@@ -1313,7 +1313,7 @@ Here and elsewhere, a dummy variable must be used since a component of a functio
 If the only aim is to print the function value(s) at some point(s), then the code can be slightly reduced by using the procedures of Sec.~\ref{sec:input}. After calls to \verb+gadf_init+ and \verb+gadf_set+, multiple instances of the function, each with an independent set of parameters, are copied to the \verb+fitfuncs+ array, which is protected (read-only public). The above code then reduces to
 \begin{verbatim}
   type(test) :: f
-  real(real64) :: dummy
+  real(dp) :: dummy
   call gadf_init(f)
   call gadf_set(1, 1d0)
   dummy = fitfuncs(1)%eval(2d0)
@@ -1323,7 +1323,7 @@ If the only aim is to print the function value(s) at some point(s), then the cod
 Another reason for directly working with the \verb+fitfunc+ class is the calculation of derivatives using finite differences, which can be used for testing new AD elemental operations. In the next snippet, the derivatives are calculated with respect to parameters 1 and 3, while parameter 2 is passive.
 \begin{verbatim}
   type(test) :: f
-  real(real64) :: grad(2)
+  real(dp) :: grad(2)
   call f%init()
   call f%set(1, 1.2d0)
   call f%set(2, -0.1d0)
@@ -1373,7 +1373,7 @@ In order to calculate the 1st and 2nd directional derivatives in the $(0.3,0.7)$
 \paragraph{Basic usage of the AD reverse mode.} The reverse mode is a bit more difficult to use manually since the user has to be more acquainted with the internal work variables of \verb+automatic_differentiation.f90+. In particular, it is necessary to set \verb+index_count+ to the number of active parameters (index of the next AD variable will be \verb+index_count++1), and to initialize the array of intermediate values. The gradient calculation with respect to parameters 1 and 3, as in the previous examples, can then be achieved as follows.
 \begin{verbatim}
   type(test) :: f
-  real(real64) :: dummy
+  real(dp) :: dummy
   call ad_init_reverse()
   call f%init()
   f%pars = [1.2d0, -0.1d0, 1d17]

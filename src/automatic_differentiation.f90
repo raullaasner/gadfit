@@ -16,16 +16,16 @@
 module ad
 
   use, intrinsic :: iso_c_binding,   only: c_double
-  use, intrinsic :: iso_fortran_env, only: real32, real64, real128
-  use gadf_constants, only: kp, sqrtpi
+  use, intrinsic :: iso_fortran_env, only: real32
+  use gadf_constants, only: dp, kp, qp, sqrtpi
   use messaging
   use misc,           only: safe_deallocate
 
   implicit none
 
   public
-  private :: c_double, real32, real64, real128, kp, sqrtpi, &
-       & DEFAULT_SWEEP_SIZE, max_trace_count, max_index_count, max_const_count
+  private :: c_double, real32, dp, kp, qp, sqrtpi, DEFAULT_SWEEP_SIZE, &
+       & max_trace_count, max_index_count, max_const_count
 
   ! Operation codes
   enum, bind(c)
@@ -65,23 +65,23 @@ module ad
      procedure, pass(this) :: assign_integer_advar
      procedure :: assign_advar_real32
      procedure, pass(this) :: assign_real32_advar
-     procedure :: assign_advar_real64
-     procedure, pass(this) :: assign_real64_advar
-     procedure :: assign_advar_real128
-     procedure, pass(this) :: assign_real128_advar
+     procedure :: assign_advar_dp
+     procedure, pass(this) :: assign_dp_advar
+     procedure :: assign_advar_qp
+     procedure, pass(this) :: assign_qp_advar
      generic :: assignment(=) => assign_advar_integer, assign_integer_advar, &
-          & assign_advar_real32, assign_real32_advar, assign_advar_real64, &
-          & assign_real64_advar, assign_advar_real128, assign_real128_advar
+          & assign_advar_real32, assign_real32_advar, assign_advar_dp, &
+          & assign_dp_advar, assign_advar_qp, assign_qp_advar
   end type advar
 
   interface operator(>)
      module procedure advar_gt_advar, advar_gt_real32, real32_gt_advar, &
-          & advar_gt_real64, real64_gt_advar, advar_gt_real128, real128_gt_advar
+          & advar_gt_dp, dp_gt_advar, advar_gt_qp, qp_gt_advar
   end interface operator(>)
 
   interface operator(<)
      module procedure advar_lt_advar, advar_lt_real32, real32_lt_advar, &
-          & advar_lt_real64, real64_lt_advar, advar_lt_real128, real128_lt_advar
+          & advar_lt_dp, dp_lt_advar, advar_lt_qp, qp_lt_advar
   end interface operator(<)
 
   ! Most interfaces for safe_deallocate are in misc.f90. Adding this
@@ -92,7 +92,7 @@ module ad
 
   ! AD elemental operations. For most binary operations, all variants
   ! are present: (advar,advar), (advar,T), and (T,advar), where T can
-  ! be a real(real32), real(real64), real(real128), or an integer. T
+  ! be a real(real32), real(dp), real(qp), or an integer. T
   ! is a real(kp) in the main implementation, while the others are
   ! wrapper procedures with calls to it. An exception is
   ! exponentiation with an integral power, where the integer is not
@@ -103,9 +103,9 @@ module ad
           & add_advar_integer, add_integer_advar, add_real32_advar, &
           & add_advar_real32, &
 #ifdef QUAD_PRECISION
-          & add_advar_real64, add_real64_advar
+          & add_advar_dp, add_dp_advar
 #else
-          & add_advar_real128, add_real128_advar
+          & add_advar_qp, add_qp_advar
 #endif
   end interface operator(+)
 
@@ -115,9 +115,9 @@ module ad
           & subtract_integer_advar, subtract_advar_real32, &
           & subtract_real32_advar, &
 #ifdef QUAD_PRECISION
-          & subtract_advar_real64, subtract_real64_advar
+          & subtract_advar_dp, subtract_dp_advar
 #else
-          & subtract_advar_real128, subtract_real128_advar
+          & subtract_advar_qp, subtract_qp_advar
 #endif
   end interface operator(-)
 
@@ -127,9 +127,9 @@ module ad
           & multiply_integer_advar, multiply_advar_real32, &
           & multiply_real32_advar, &
 #ifdef QUAD_PRECISION
-          & multiply_advar_real64, multiply_real64_advar
+          & multiply_advar_dp, multiply_dp_advar
 #else
-          & multiply_advar_real128, multiply_real128_advar
+          & multiply_advar_qp, multiply_qp_advar
 #endif
   end interface operator(*)
 
@@ -138,9 +138,9 @@ module ad
           & divide_real_advar, divide_advar_integer, divide_integer_advar, &
           & divide_advar_real32, divide_real32_advar, &
 #ifdef QUAD_PRECISION
-          & divide_advar_real64, divide_real64_advar
+          & divide_advar_dp, divide_dp_advar
 #else
-          & divide_advar_real128, divide_real128_advar
+          & divide_advar_qp, divide_qp_advar
 #endif
   end interface operator(/)
 
@@ -149,9 +149,9 @@ module ad
           & power_advar_integer, power_integer_advar, power_advar_real32, &
           & power_real32_advar, &
 #ifdef QUAD_PRECISION
-          & power_advar_real64, power_real64_advar
+          & power_advar_dp, power_dp_advar
 #else
-          & power_advar_real128, power_real128_advar
+          & power_advar_qp, power_qp_advar
 #endif
   end interface operator(**)
 
@@ -334,29 +334,29 @@ contains
     y = x1 > x2%val
   end function real32_gt_advar
 
-  elemental logical function advar_gt_real64(x1, x2) result(y)
+  elemental logical function advar_gt_dp(x1, x2) result(y)
     type(advar), intent(in) :: x1
-    real(real64), intent(in) :: x2
+    real(dp), intent(in) :: x2
     y = x1%val > x2
-  end function advar_gt_real64
+  end function advar_gt_dp
 
-  elemental logical function real64_gt_advar(x1, x2) result(y)
-    real(real64), intent(in) :: x1
+  elemental logical function dp_gt_advar(x1, x2) result(y)
+    real(dp), intent(in) :: x1
     type(advar), intent(in) :: x2
     y = x1 > x2%val
-  end function real64_gt_advar
+  end function dp_gt_advar
 
-  elemental logical function advar_gt_real128(x1, x2) result(y)
+  elemental logical function advar_gt_qp(x1, x2) result(y)
     type(advar), intent(in) :: x1
-    real(real128), intent(in) :: x2
+    real(qp), intent(in) :: x2
     y = x1%val > x2
-  end function advar_gt_real128
+  end function advar_gt_qp
 
-  elemental logical function real128_gt_advar(x1, x2) result(y)
-    real(real128), intent(in) :: x1
+  elemental logical function qp_gt_advar(x1, x2) result(y)
+    real(qp), intent(in) :: x1
     type(advar), intent(in) :: x2
     y = x1 > x2%val
-  end function real128_gt_advar
+  end function qp_gt_advar
 
   elemental logical function advar_lt_advar(x1, x2) result(y)
     type(advar), intent(in) :: x1, x2
@@ -375,29 +375,29 @@ contains
     y = x1 < x2%val
   end function real32_lt_advar
 
-  elemental logical function advar_lt_real64(x1, x2) result(y)
+  elemental logical function advar_lt_dp(x1, x2) result(y)
     type(advar), intent(in) :: x1
-    real(real64), intent(in) :: x2
+    real(dp), intent(in) :: x2
     y = x1%val < x2
-  end function advar_lt_real64
+  end function advar_lt_dp
 
-  elemental logical function real64_lt_advar(x1, x2) result(y)
-    real(real64), intent(in) :: x1
+  elemental logical function dp_lt_advar(x1, x2) result(y)
+    real(dp), intent(in) :: x1
     type(advar), intent(in) :: x2
     y = x1 < x2%val
-  end function real64_lt_advar
+  end function dp_lt_advar
 
-  elemental logical function advar_lt_real128(x1, x2) result(y)
+  elemental logical function advar_lt_qp(x1, x2) result(y)
     type(advar), intent(in) :: x1
-    real(real128), intent(in) :: x2
+    real(qp), intent(in) :: x2
     y = x1%val < x2
-  end function advar_lt_real128
+  end function advar_lt_qp
 
-  elemental logical function real128_lt_advar(x1, x2) result(y)
-    real(real128), intent(in) :: x1
+  elemental logical function qp_lt_advar(x1, x2) result(y)
+    real(qp), intent(in) :: x1
     type(advar), intent(in) :: x2
     y = x1 < x2%val
-  end function real128_lt_advar
+  end function qp_lt_advar
 
   ! Conversion from real to type(advar) copies the real value to the
   ! val field; the result is a passive variable
@@ -415,17 +415,17 @@ contains
     this%val = real(x, kp)
   end subroutine assign_advar_real32
 
-  impure elemental subroutine assign_advar_real64(this, x)
+  impure elemental subroutine assign_advar_dp(this, x)
     class(advar), intent(out) :: this
-    real(real64), intent(in) :: x
+    real(dp), intent(in) :: x
     this%val = real(x, kp)
-  end subroutine assign_advar_real64
+  end subroutine assign_advar_dp
 
-  impure elemental subroutine assign_advar_real128(this, x)
+  impure elemental subroutine assign_advar_qp(this, x)
     class(advar), intent(out) :: this
-    real(real128), intent(in) :: x
+    real(qp), intent(in) :: x
     this%val = real(x, kp)
-  end subroutine assign_advar_real128
+  end subroutine assign_advar_qp
 
   elemental subroutine assign_integer_advar(x, this)
     integer, intent(out) :: x
@@ -439,17 +439,17 @@ contains
     x = real(this%val, real32)
   end subroutine assign_real32_advar
 
-  elemental subroutine assign_real64_advar(x, this)
-    real(real64), intent(out) :: x
+  elemental subroutine assign_dp_advar(x, this)
+    real(dp), intent(out) :: x
     class(advar), intent(in) :: this
-    x = real(this%val, real64)
-  end subroutine assign_real64_advar
+    x = real(this%val, dp)
+  end subroutine assign_dp_advar
 
-  elemental subroutine assign_real128_advar(x, this)
-    real(real128), intent(out) :: x
+  elemental subroutine assign_qp_advar(x, this)
+    real(qp), intent(out) :: x
     class(advar), intent(in) :: this
-    x = real(this%val, real128)
-  end subroutine assign_real128_advar
+    x = real(this%val, qp)
+  end subroutine assign_qp_advar
 
   ! AD ELEMENTAL OPERATIONS BEGIN
 
@@ -510,17 +510,17 @@ contains
     y = add_advar_real(x1, real(x2, kp))
   end function add_advar_real32
 
-  type(advar) function add_advar_real64(x1,x2) result(y)
+  type(advar) function add_advar_dp(x1,x2) result(y)
     type(advar), intent(in) :: x1
-    real(real64), intent(in) :: x2
+    real(dp), intent(in) :: x2
     y = add_advar_real(x1, real(x2, kp))
-  end function add_advar_real64
+  end function add_advar_dp
 
-  type(advar) function add_advar_real128(x1,x2) result(y)
+  type(advar) function add_advar_qp(x1,x2) result(y)
     type(advar), intent(in) :: x1
-    real(real128), intent(in) :: x2
+    real(qp), intent(in) :: x2
     y = add_advar_real(x1, real(x2, kp))
-  end function add_advar_real128
+  end function add_advar_qp
 
   type(advar) function add_advar_integer(x1,x2) result(y)
     type(advar), intent(in) :: x1
@@ -555,17 +555,17 @@ contains
     y = add_real_advar(real(x1, kp), x2)
   end function add_real32_advar
 
-  type(advar) function add_real64_advar(x1, x2) result(y)
-    real(real64), intent(in) :: x1
+  type(advar) function add_dp_advar(x1, x2) result(y)
+    real(dp), intent(in) :: x1
     type(advar), intent(in) :: x2
     y = add_real_advar(real(x1, kp), x2)
-  end function add_real64_advar
+  end function add_dp_advar
 
-  type(advar) function add_real128_advar(x1, x2) result(y)
-    real(real128), intent(in) :: x1
+  type(advar) function add_qp_advar(x1, x2) result(y)
+    real(qp), intent(in) :: x1
     type(advar), intent(in) :: x2
     y = add_real_advar(real(x1, kp), x2)
-  end function add_real128_advar
+  end function add_qp_advar
 
   type(advar) function add_integer_advar(x1, x2) result(y)
     integer, intent(in) :: x1
@@ -632,17 +632,17 @@ contains
     y = subtract_advar_real(x1, real(x2, kp))
   end function subtract_advar_real32
 
-  type(advar) function subtract_advar_real64(x1, x2) result(y)
+  type(advar) function subtract_advar_dp(x1, x2) result(y)
     type(advar), intent(in) :: x1
-    real(real64), intent(in) :: x2
+    real(dp), intent(in) :: x2
     y = subtract_advar_real(x1, real(x2, kp))
-  end function subtract_advar_real64
+  end function subtract_advar_dp
 
-  type(advar) function subtract_advar_real128(x1, x2) result(y)
+  type(advar) function subtract_advar_qp(x1, x2) result(y)
     type(advar), intent(in) :: x1
-    real(real128), intent(in) :: x2
+    real(qp), intent(in) :: x2
     y = subtract_advar_real(x1, real(x2, kp))
-  end function subtract_advar_real128
+  end function subtract_advar_qp
 
   type(advar) function subtract_advar_integer(x1, x2) result(y)
     type(advar), intent(in) :: x1
@@ -677,17 +677,17 @@ contains
     y = subtract_real_advar(real(x1, kp), x2)
   end function subtract_real32_advar
 
-  type(advar) function subtract_real64_advar(x1, x2) result(y)
-    real(real64), intent(in) :: x1
+  type(advar) function subtract_dp_advar(x1, x2) result(y)
+    real(dp), intent(in) :: x1
     type(advar), intent(in) :: x2
     y = subtract_real_advar(real(x1, kp), x2)
-  end function subtract_real64_advar
+  end function subtract_dp_advar
 
-  type(advar) function subtract_real128_advar(x1, x2) result(y)
-    real(real128), intent(in) :: x1
+  type(advar) function subtract_qp_advar(x1, x2) result(y)
+    real(qp), intent(in) :: x1
     type(advar), intent(in) :: x2
     y = subtract_real_advar(real(x1, kp), x2)
-  end function subtract_real128_advar
+  end function subtract_qp_advar
 
   type(advar) function subtract_integer_advar(x1, x2) result(y)
     integer, intent(in) :: x1
@@ -751,17 +751,17 @@ contains
     y = multiply_advar_real(x1, real(x2, kp))
   end function multiply_advar_real32
 
-  type(advar) function multiply_advar_real64(x1, x2) result(y)
+  type(advar) function multiply_advar_dp(x1, x2) result(y)
     type(advar), intent(in) :: x1
-    real(real64), intent(in) :: x2
+    real(dp), intent(in) :: x2
     y = multiply_advar_real(x1, real(x2, kp))
-  end function multiply_advar_real64
+  end function multiply_advar_dp
 
-  type(advar) function multiply_advar_real128(x1, x2) result(y)
+  type(advar) function multiply_advar_qp(x1, x2) result(y)
     type(advar), intent(in) :: x1
-    real(real128), intent(in) :: x2
+    real(qp), intent(in) :: x2
     y = multiply_advar_real(x1, real(x2, kp))
-  end function multiply_advar_real128
+  end function multiply_advar_qp
 
   type(advar) function multiply_advar_integer(x1, x2) result(y)
     type(advar), intent(in) :: x1
@@ -798,17 +798,17 @@ contains
     y = multiply_real_advar(real(x1, kp), x2)
   end function multiply_real32_advar
 
-  type(advar) function multiply_real64_advar(x1, x2) result(y)
-    real(real64), intent(in) :: x1
+  type(advar) function multiply_dp_advar(x1, x2) result(y)
+    real(dp), intent(in) :: x1
     type(advar), intent(in) :: x2
     y = multiply_real_advar(real(x1, kp), x2)
-  end function multiply_real64_advar
+  end function multiply_dp_advar
 
-  type(advar) function multiply_real128_advar(x1, x2) result(y)
-    real(real128), intent(in) :: x1
+  type(advar) function multiply_qp_advar(x1, x2) result(y)
+    real(qp), intent(in) :: x1
     type(advar), intent(in) :: x2
     y = multiply_real_advar(real(x1, kp), x2)
-  end function multiply_real128_advar
+  end function multiply_qp_advar
 
   type(advar) function multiply_integer_advar(x1, x2) result(y)
     integer, intent(in) :: x1
@@ -872,17 +872,17 @@ contains
     y = divide_advar_real(x1, real(x2, kp))
   end function divide_advar_real32
 
-  type(advar) function divide_advar_real64(x1, x2) result(y)
+  type(advar) function divide_advar_dp(x1, x2) result(y)
     type(advar), intent(in) :: x1
-    real(real64), intent(in) :: x2
+    real(dp), intent(in) :: x2
     y = divide_advar_real(x1, real(x2, kp))
-  end function divide_advar_real64
+  end function divide_advar_dp
 
-  type(advar) function divide_advar_real128(x1, x2) result(y)
+  type(advar) function divide_advar_qp(x1, x2) result(y)
     type(advar), intent(in) :: x1
-    real(real128), intent(in) :: x2
+    real(qp), intent(in) :: x2
     y = divide_advar_real(x1, real(x2, kp))
-  end function divide_advar_real128
+  end function divide_advar_qp
 
   type(advar) function divide_advar_integer(x1, x2) result(y)
     type(advar), intent(in) :: x1
@@ -919,17 +919,17 @@ contains
     y = divide_real_advar(real(x1, kp), x2)
   end function divide_real32_advar
 
-  type(advar) function divide_real64_advar(x1, x2) result(y)
-    real(real64), intent(in) :: x1
+  type(advar) function divide_dp_advar(x1, x2) result(y)
+    real(dp), intent(in) :: x1
     type(advar), intent(in) :: x2
     y = divide_real_advar(real(x1, kp), x2)
-  end function divide_real64_advar
+  end function divide_dp_advar
 
-  type(advar) function divide_real128_advar(x1, x2) result(y)
-    real(real128), intent(in) :: x1
+  type(advar) function divide_qp_advar(x1, x2) result(y)
+    real(qp), intent(in) :: x1
     type(advar), intent(in) :: x2
     y = divide_real_advar(real(x1, kp), x2)
-  end function divide_real128_advar
+  end function divide_qp_advar
 
   type(advar) function divide_integer_advar(x1, x2) result(y)
     integer, intent(in) :: x1
@@ -1014,17 +1014,17 @@ contains
     y = power_advar_real(x1, real(x2, kp))
   end function power_advar_real32
 
-  type(advar) function power_advar_real64(x1, x2) result(y)
+  type(advar) function power_advar_dp(x1, x2) result(y)
     type(advar), intent(in) :: x1
-    real(real64), intent(in) :: x2
+    real(dp), intent(in) :: x2
     y = power_advar_real(x1, real(x2, kp))
-  end function power_advar_real64
+  end function power_advar_dp
 
-  type(advar) function power_advar_real128(x1, x2) result(y)
+  type(advar) function power_advar_qp(x1, x2) result(y)
     type(advar), intent(in) :: x1
-    real(real128), intent(in) :: x2
+    real(qp), intent(in) :: x2
     y = power_advar_real(x1, real(x2, kp))
-  end function power_advar_real128
+  end function power_advar_qp
 
   type(advar) function power_advar_integer(x1, x2) result(y)
     type(advar), intent(in) :: x1
@@ -1081,17 +1081,17 @@ contains
     y = power_real_advar(real(x1, kp), x2)
   end function power_real32_advar
 
-  type(advar) function power_real64_advar(x1, x2) result(y)
-    real(real64), intent(in) :: x1
+  type(advar) function power_dp_advar(x1, x2) result(y)
+    real(dp), intent(in) :: x1
     type(advar), intent(in) :: x2
     y = power_real_advar(real(x1, kp), x2)
-  end function power_real64_advar
+  end function power_dp_advar
 
-  type(advar) function power_real128_advar(x1, x2) result(y)
-    real(real128), intent(in) :: x1
+  type(advar) function power_qp_advar(x1, x2) result(y)
+    real(qp), intent(in) :: x1
     type(advar), intent(in) :: x2
     y = power_real_advar(real(x1, kp), x2)
-  end function power_real128_advar
+  end function power_qp_advar
 
   type(advar) function power_integer_advar(x1, x2) result(y)
     integer, intent(in) :: x1
@@ -1475,7 +1475,7 @@ contains
 #ifdef GSL_DIR
   type(advar) function Li2_advar(x) result(y)
     type(advar), intent(in) :: x
-    y%val = Li2(real(x%val, real64))
+    y%val = Li2(real(x%val, dp))
     if (x%index /= 0) then
        if (reverse_mode) then
           index_count = index_count + 1

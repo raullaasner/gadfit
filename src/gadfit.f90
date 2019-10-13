@@ -17,10 +17,10 @@
 !       do j = img_bounds(i), img_bounds(i+1)-1
 module gadfit
 
-  use, intrinsic :: iso_fortran_env, only: real32, real64
+  use, intrinsic :: iso_fortran_env, only: real32
   use ad
   use fitfunction,    only: fitfunc, safe_deallocate
-  use gadf_constants, only: kp
+  use gadf_constants, only: dp, kp
   use gadfit_linalg,  only: potr_f08 ! A*X=B with A symmetric
   use messaging
   use misc,           only: string, len, swap, timer, safe_close
@@ -475,7 +475,7 @@ contains
     real(kp), allocatable :: JTomega(:)[:] ! JacobianT*omega
     real(kp), allocatable :: Jdelta(:)
     real(kp), allocatable :: old_pars(:,:)
-    real(real64), allocatable :: DTD(:,:), delta1(:), delta2(:), old_delta1(:)
+    real(dp), allocatable :: DTD(:,:), delta1(:), delta2(:), old_delta1(:)
     ! Tells how to position the derivatives in the Jacobian with
     ! multiple datasets. First index iterates over active parameters
     ! in a dataset, second index over the datasets. For the example
@@ -485,9 +485,9 @@ contains
     ! column in the Jacobian.
     integer, allocatable :: Jacobian_indices(:,:)
     ! PARALLELISM
-    real(real64) :: img_weights(num_images()), old_img_weights(num_images())
-    real(real64) :: old_Jac_cpu(num_images()), old_chi2_cpu(num_images())
-    real(real64) :: old_linalg_cpu(num_images()), old_omega_cpu(num_images())
+    real(dp) :: img_weights(num_images()), old_img_weights(num_images())
+    real(dp) :: old_Jac_cpu(num_images()), old_chi2_cpu(num_images())
+    real(dp) :: old_linalg_cpu(num_images()), old_omega_cpu(num_images())
     integer :: sizes(num_images())
     ! img_bounds defines the work regions for each image in x_data,
     ! y_data, and weights. In order to go through all data points
@@ -503,7 +503,7 @@ contains
     !   img_bounds = [55, 55, 81] ! Image 3
     integer, allocatable :: img_bounds(:)
     ! OTHER
-    real(real64), allocatable :: linalg_tmp(:,:)
+    real(dp), allocatable :: linalg_tmp(:,:)
     real(kp) :: acc_ratio, beta
     real(kp), save :: tmp[*]
     type(advar) :: dummy
@@ -663,15 +663,15 @@ contains
        call co_sum(JTres)
        if (present(damp_max) .and. .not. damp_max) then
           do i = 1, size(DTD,1)
-             DTD(i,i) = real(JTJ(i,i), real64)
+             DTD(i,i) = real(JTJ(i,i), dp)
           end do
        else
           do i = 1, size(DTD,1)
-             DTD(i,i) = max(DTD(i,i), real(JTJ(i,i),real64))
+             DTD(i,i) = max(DTD(i,i), real(JTJ(i,i),dp))
           end do
        end if
-       delta1 = real(JTres, real64)
-       linalg_tmp = real(JTJ + lambda_loc*DTD, real64)
+       delta1 = real(JTres, dp)
+       linalg_tmp = real(JTJ + lambda_loc*DTD, dp)
        call potr_f08(__FILE__, __LINE__, linalg_tmp, delta1)
        ! STEP 3 - omega and delta2
        calc_acc: if (present(accth) .and. accth > tiny(1.0)) then
@@ -699,8 +699,8 @@ contains
           reverse_mode = .true.
           JTomega = matmul(JacobianT, omega)
           call co_sum(JTomega)
-          delta2 = real(JTomega,real64)
-          linalg_tmp = real(JTJ + lambda_loc*DTD, real64)
+          delta2 = real(JTomega, dp)
+          linalg_tmp = real(JTJ + lambda_loc*DTD, dp)
           call potr_f08(__FILE__, __LINE__, linalg_tmp, delta2)
           ! Use acc if sqrt(delta2Ddelta2/delta1Ddelta1) < alpha
           acc_ratio = sqrt(dot_product(delta2, matmul(DTD,delta2))/ &
@@ -777,8 +777,8 @@ contains
                    fitfunc_tmp%pars(active_pars)%val = old_pars(:,j)
 #endif
                 end do
-                delta1 = real(JTres, real64)
-                linalg_tmp = real(JTJ + lambda_loc*DTD, real64)
+                delta1 = real(JTres, dp)
+                linalg_tmp = real(JTJ + lambda_loc*DTD, dp)
                 call potr_f08(__FILE__, __LINE__, linalg_tmp, delta1)
                 do j = 1, size(fitfuncs)
 #ifdef POLYM_ARRAY_SUPPORT
@@ -1063,7 +1063,7 @@ contains
 
   subroutine print_workloads(io_unit)
     integer, intent(in) :: io_unit
-    real(real64) :: img_weights(num_images())
+    real(dp) :: img_weights(num_images())
     integer :: i
     if (this_image() /= 1) return
     do i = 1, num_images()
@@ -1083,8 +1083,8 @@ contains
   subroutine print_timing(io_unit)
     use, intrinsic :: iso_fortran_env, only: int64
     integer, intent(in) :: io_unit
-    real(real64) :: Jac_ave_cpu, chi2_ave_cpu, linalg_ave_cpu, omega_ave_cpu
-    real(real64) :: total_cpu_time
+    real(dp) :: Jac_ave_cpu, chi2_ave_cpu, linalg_ave_cpu, omega_ave_cpu
+    real(dp) :: total_cpu_time
     integer(int64) :: count_rate
     integer :: i
     if (this_image() /= 1) return
@@ -1162,7 +1162,7 @@ contains
     integer, intent(in) :: io_unit
     real(kp), intent(in), optional :: chi2_DOF, lambda
     integer, intent(in), optional :: iterations
-    real(real64), intent(in), optional :: delta1(:), delta2(:)
+    real(dp), intent(in), optional :: delta1(:), delta2(:)
     integer, intent(in), optional :: Jacobian_indices(:,:)
     ! I/O work variables for prettier output
     character(:), allocatable, save :: fmt_name, fmt_value, par_digits
