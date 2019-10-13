@@ -38,7 +38,7 @@ citecolor=blue,filecolor=blue,linkcolor=blue,urlcolor=black,pdftex}
 
 \section{Introduction}
 
-GADfit is a Fortran implementation of \textbf{g}lobal nonlinear curve fitting based on \textbf{a}utomatic \textbf{d}ifferentiation (AD). Global fitting refers to fitting many datasets simultaneously with some parameters shared among the datasets (not necessarily finding the global minimum in parameter space). The optimization procedure is based on a modified Levenberg-Marquardt algorithm, which is well-suited for difficult large scale problems with a strong interdependence of parameters. The Jacobian and other quantities requiring differentiation are calculated using AD instead of finite differences, which ensures that the derivatives are always calculated with the same precision as function evaluation. The cost of calculating the derivatives is \textit{independent} of the number of fitting parameters and is a small constant of function evaluation, resulting in very efficient code. The method can be used for fitting functions of high complexity which, in the present implementation, includes nonlinear combinations of elementary and special functions, single or double integrals, and any control flow statements allowed by the programming language.
+GADfit is a Fortran implementation of \textbf{g}lobal nonlinear curve fitting based on \textbf{a}utomatic \textbf{d}ifferentiation (AD). Global fitting refers to fitting many data sets simultaneously with some parameters shared among the data sets (not necessarily finding the global minimum in parameter space). The optimization procedure is based on a modified Levenberg-Marquardt algorithm, which is well-suited for difficult large scale problems with a strong interdependence of parameters. The Jacobian and other quantities requiring differentiation are calculated using AD instead of finite differences, which ensures that the derivatives are always calculated with the same precision as function evaluation. The cost of calculating the derivatives is \textit{independent} of the number of fitting parameters and is a small constant of function evaluation, resulting in very efficient code. The method can be used for fitting functions of high complexity which, in the present implementation, includes nonlinear combinations of elementary and special functions, single or double integrals, and any control flow statements allowed by the programming language.
 
 GADfit is currently hosted by GitHub.
 
@@ -194,9 +194,9 @@ In addition to \eqref{eq:cos_phi}, most of the standard convergence criteria are
 
 \subsection{Global nonlinear optimization}
 
-When fitting many curves simultaneously with shared parameters, the datasets are stacked to form a single dataset, which is then fitted with a piecewise function. The fitting function in constructed so that some parameters only have an effect on a subset of data points (local parameters) whereas others are active over the whole data range (global parameters).
+When fitting many curves simultaneously with shared parameters, the data sets are stacked to form a single data set, which is then fitted with a piecewise function. The fitting function in constructed so that some parameters only have an effect on a subset of data points (local parameters) whereas others are active over the whole data range (global parameters).
 
-As an example, imagine two datasets with sizes $n$ and $m$ and a fitting function $f(x,\alpha,\beta)$, which depends on two parameters $\alpha$ and $\beta$. $\alpha$ is different for the two curves whereas $\beta$ is shared. For an exponential decay process, these could be different initial amplitudes but the same decay constant. The global Jacobian is then
+As an example, imagine two data sets with sizes $n$ and $m$ and a fitting function $f(x,\alpha,\beta)$, which depends on two parameters $\alpha$ and $\beta$. $\alpha$ is different for the two curves whereas $\beta$ is shared. For an exponential decay process, these could be different initial amplitudes but the same decay constant. The global Jacobian is then
 \begin{equation}
   \label{eq:globalJacob}
   \bm J =
@@ -217,7 +217,7 @@ As an example, imagine two datasets with sizes $n$ and $m$ and a fitting functio
       \frac{\partial f(x_{n+m}, \alpha, \beta)} {\partial\beta}
     \end{matrix} \right),
 \end{equation}
-where the notation is $\partial f / \partial\alpha_i \equiv \partial f / \partial\alpha |_{\alpha = \alpha_i}$. Similarly, with 4 datasets, each consisting of 100 points, and with 4 local and 2 global parameters, the Jacobian would have the dimensions $400\times18$. Sparsity of the Jacobian is not exploited. Since no conceptual change is introduced, the fitting procedure follows the same algorithm as with a single curve.
+where the notation is $\partial f / \partial\alpha_i \equiv \partial f / \partial\alpha |_{\alpha = \alpha_i}$. Similarly, with 4 data sets, each consisting of 100 points, and with 4 local and 2 global parameters, the Jacobian would have the dimensions $400\times18$. Sparsity of the Jacobian is not exploited. Since no conceptual change is introduced, the fitting procedure follows the same algorithm as with a single curve.
 
 \subsection{\label{sec:ad}Automatic differentiation}
 
@@ -689,7 +689,7 @@ contains
 end module test_f
 \end{verbatim}
 This might seem complicated at first, but have a look at \\
-\verb+~gadfit/tests/function_template+, which is a stripped-down version of the above. The angle-bracketed words need to be replaced by user-defined values and the only effort lies in the description of the function body. In order to test whether the function has been correctly defined, one can use the same code as in the next section, but comment out the call to \verb+gadf_fit+. If there are no datasets, then \verb+gadf_print+ must be explicitly supplied with the arguments \verb+begin+ and \verb+end+, which define the argument range.
+\verb+~gadfit/tests/function_template+, which is a stripped-down version of the above. The angle-bracketed words need to be replaced by user-defined values and the only effort lies in the description of the function body. In order to test whether the function has been correctly defined, one can use the same code as in the next section, but comment out the call to \verb+gadf_fit+. If there are no data sets, then \verb+gadf_print+ must be explicitly supplied with the arguments \verb+begin+ and \verb+end+, which define the argument range.
 
 The above is a very simple example highlighting only some of the functionality. For more complex examples, see the tests in \verb+~gadfit/tests+.
 
@@ -707,7 +707,7 @@ These are the commands necessary to run the example. For a complete overview of 
   type(exponential) :: f ! An instance of the fitting function
 
   ! Initialize GADfit with the fitting function and the number of
-  ! datasets.
+  ! data sets.
   call gadf_init(f, 2)
 
   ! Include both decay curves. The argument must be full or
@@ -717,14 +717,14 @@ These are the commands necessary to run the example. For a complete overview of 
   call gadf_add_dataset(TESTS_BLD//'/example_data2')
 
   ! The initial guess for all fitting parameters is 1.0. The
-  ! first argument denotes the dataset, the second argument the
+  ! first argument denotes the data set, the second argument the
   ! parameter, third argument its value, and fourth whether the
   ! parameter is allowed to vary or is kept fixed.
   call gadf_set(1, 1, 1.0, .true.) ! I01
   call gadf_set(2, 1, 1.0, .true.) ! I02
   call gadf_set(1, 3, 1.0, .true.) ! bgr1
   call gadf_set(2, 3, 1.0, .true.) ! bgr2
-  ! Global parameters don't have the dataset argument.
+  ! Global parameters don't have the data set argument.
   call gadf_set(2, 1.0, .true.)    ! tau
 
   ! The uncertainties of the data points determine their
@@ -809,7 +809,7 @@ class(fitfunc) :: f
 \begin{verbatim}
 integer, optional :: num_datasets
 \end{verbatim}
-  Number of datasets.
+  Number of data sets.
 
   Default: 1.
 \item
@@ -885,7 +885,7 @@ integer, optional :: integration_rule
 \begin{verbatim}
 gadf_add_dataset(path)
 \end{verbatim}
-Reads a dataset. This procedure must be called as many times as there are datasets, which is determined by the \verb+num_datasets+ argument to \verb+gadf_init+.
+Reads a data set. This procedure must be called as many times as there are data sets, which is determined by the \verb+num_datasets+ argument to \verb+gadf_init+.
 \begin{itemize}
 \item
 \begin{verbatim}
@@ -903,7 +903,7 @@ Defines the parameter as local, sets its value, and marks it either active or pa
 \begin{verbatim}
 integer :: dataset_i
 \end{verbatim}
-  The dataset index.
+  The data set index.
 \item
 \begin{verbatim}
 integer/character(*) :: par
@@ -926,7 +926,7 @@ logical, optional :: active
 \begin{verbatim}
 gadf_set(par, value, active)
 \end{verbatim}
-Similar to the other \verb+gadf_set+ except that this one defines either a global fitting parameter or a global constant. If only one dataset is used, it doesn't matter which procedure is used.
+Similar to the other \verb+gadf_set+ except that this one defines either a global fitting parameter or a global constant. If only one data set is used, it doesn't matter which procedure is used.
 
 \begin{verbatim}
 gadf_set_verbosity(scope, digits, timing, memory, workloads,
