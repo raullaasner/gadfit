@@ -42,7 +42,7 @@ set (QUAD_PRECISION OFF CACHE BOOL "")
 # If the code contains calls to the GSL library, then GSL_DIR should
 # point to the GSL install directory. If GSL_DIR is left empty or is
 # incorrect, GADfit will compile without the GSL related procedures.
-#set (GSL_DIR /usr/local/gsl ON CACHE BOOL "")
+#set (GSL_DIR /usr/local/gsl CACHE STRING "")
 
 # A linear algebra library is necessary when using GADfit or when
 # running the examples, but not while building the main library. If

@@ -4,82 +4,84 @@
 # http://gnu.org/copyleft/gpl.txt.
 
 # CMAKE
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.13)
 
 # PROJECT
-project(GADfit VERSION 1.2.4 LANGUAGES Fortran C)
+project(GADfit VERSION 1.3 LANGUAGES Fortran C)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 
-# FORTRAN COMPILER
-set(CMAKE_Fortran_COMPILER_VERSION ${CMAKE_Fortran_COMPILER_VERSION}
-  CACHE STRING "")
-mark_as_advanced(FORCE CMAKE_Fortran_COMPILER_VERSION)
-
-# COMPILER FLAGS
-# Redefine initial Release flags
-if ("${CMAKE_Fortran_FLAGS_RELEASE}" STREQUAL
-    ${CMAKE_Fortran_FLAGS_RELEASE_INIT})
-  if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-    unset(CMAKE_Fortran_FLAGS_RELEASE CACHE)
-    set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -fstack-arrays -fcoarray=lib"
-      CACHE STRING "GFortran Release flags")
-  elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
-    unset(CMAKE_Fortran_FLAGS_RELEASE CACHE)
-    set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -ipo -xHost -coarray=shared"
-      CACHE STRING "IFORT Release flags")
+# FIRST RUN
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
+  # Redefine initial Release flags
+  string(FIND "${CMAKE_Fortran_FLAGS_RELEASE_INIT}"
+    "${CMAKE_Fortran_FLAGS_RELEASE}" _flags_test)
+  if (_flags_test EQUAL 1)
+    if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
+      unset(CMAKE_Fortran_FLAGS_RELEASE CACHE)
+      set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -funroll-all-loops -fcoarray=lib"
+        CACHE STRING "GFortran Release flags" FORCE)
+    elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
+      unset(CMAKE_Fortran_FLAGS_RELEASE CACHE)
+      set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -ipo -xHost -coarray=shared"
+        CACHE STRING "IFORT Release flags" FORCE)
+    endif()
+  endif()
+  # Redefine initial Debug flags
+  string(FIND "${CMAKE_Fortran_FLAGS_DEBUG_INIT}"
+    "${CMAKE_Fortran_FLAGS_DEBUG}" _flags_test)
+  if (_flags_test EQUAL 1)
+    if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
+      unset(CMAKE_Fortran_FLAGS_DEBUG CACHE)
+      set(CMAKE_Fortran_FLAGS_DEBUG "-O3 -g -Wall -Wno-maybe-uninitialized -Wextra -pedantic -fcheck=all -ffpe-trap=zero,overflow -fbacktrace -fcoarray=lib -std=f2008ts" CACHE STRING "GFortran Debug flags")
+    elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
+      unset(CMAKE_Fortran_FLAGS_DEBUG CACHE)
+      set(CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -debug all -check all -fpe0 -traceback -warn -coarray=shared -std08" CACHE STRING "IFORT Debug flags")
+    endif()
+  endif()
+  if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+      "Choose the type of build: None Debug Release ..." FORCE)
   endif()
 endif()
-# Redefine initial Debug flags
-if ("${CMAKE_Fortran_FLAGS_DEBUG}" STREQUAL ${CMAKE_Fortran_FLAGS_DEBUG_INIT})
-  if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-    unset(CMAKE_Fortran_FLAGS_DEBUG CACHE)
-    set(CMAKE_Fortran_FLAGS_DEBUG "-O3 -g -Wall -Wno-maybe-uninitialized -Wextra -pedantic -fcheck=all -ffpe-trap=zero,overflow -fbacktrace -fcoarray=lib -std=f2008ts" CACHE STRING "GFortran Debug flags")
-  elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
-    unset(CMAKE_Fortran_FLAGS_DEBUG CACHE)
-    set(CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -debug all -check all -fpe0 -traceback -warn -coarray=shared -std08" CACHE STRING "IFORT Debug flags")
-  endif()
-endif()
-# Current flags
-macro(determine_current_flags)
-  set(CURRENT_Fortran_FLAGS ${CMAKE_Fortran_FLAGS})
-  if (CMAKE_BUILD_TYPE MATCHES "^Release$" OR NOT BUILD_SHARED)
-    set(CURRENT_Fortran_FLAGS
-      "${CURRENT_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_RELEASE}")
-  elseif (CMAKE_BUILD_TYPE MATCHES "^Debug$")
-    set(CURRENT_Fortran_FLAGS
-      "${CURRENT_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_DEBUG}")
-  endif()
-  string(STRIP ${CURRENT_Fortran_FLAGS} CURRENT_Fortran_FLAGS)
-endmacro()
-determine_current_flags()
-# Make sure the required flags are present
-if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-  if (NOT CURRENT_Fortran_FLAGS MATCHES -ffree-line-length-0)
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${flag}")
-  endif()
-endif()
-set(CMAKE_Fortran_FLAGS ${CMAKE_Fortran_FLAGS} CACHE STRING
-  "Flags for Fortran compiler." FORCE)
-determine_current_flags()
 
 # OPTIONS
 option(USE_AD
   "If enabled, uses automatic differentiation, else finite differences" ON)
-# Default is Release
-if (NOT BUILD_SHARED) # If this is the first run
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING
-    "Choose the build configuration (None, Debug, Release)" FORCE)
-endif()
-option(BUILD_SHARED "If enabled, builds a shared library, else static." ON)
-mark_as_advanced(CLEAR CMAKE_Fortran_COMPILER)
-mark_as_advanced(CLEAR CMAKE_Fortran_FLAGS)
-mark_as_advanced(CLEAR CMAKE_Fortran_FLAGS_DEBUG)
-mark_as_advanced(CLEAR CMAKE_Fortran_FLAGS_RELEASE)
-unset(CMAKE_Fortran_FLAGS_MINSIZEREL CACHE)
-unset(CMAKE_Fortran_FLAGS_RELWITHDEBINFO CACHE)
-set(GSL_DIR "" CACHE STRING
-  "GSL root directory (standard location is, e.g., /usr)")
+option(BUILD_SHARED_LIBS "If enabled, builds a shared library, else static." ON)
+set(LINALG_FLAVOR "" CACHE STRING
+  "Choose the linear algebra library (lapack, atlas, mkl)")
+set(INC_PATHS "" CACHE STRING
+  "Directories containing necessary header files")
+set(LIB_PATHS "" CACHE STRING
+  "Directories containing libraries to be linked against")
+set(LIBS "" CACHE STRING
+  "Libraries to be linked against")
+# Convert to list first
+foreach(_var LIBS LIB_PATHS INC_PATHS)
+  if (${_var})
+    list(LENGTH ${_var} _length)
+    if (_length EQUAL 1)
+      string(REPLACE " " ";" ${_var} ${${_var}})
+    endif()
+  endif()
+endforeach()
+# Turn entries of LIBS into targets
+foreach(_lib ${LIBS})
+  if (NOT TARGET ${_lib})
+    find_library(LIB_FULLPATH ${_lib} HINTS ${LIB_PATHS})
+    if (LIB_FULLPATH)
+      message(STATUS "Found ${LIB_FULLPATH}")
+      add_library(${_lib} UNKNOWN IMPORTED)
+      set_target_properties(${_lib} PROPERTIES
+        IMPORTED_LOCATION ${LIB_FULLPATH})
+      unset(LIB_FULLPATH CACHE)
+    else()
+      message(FATAL_ERROR "${Magenta}Could not find ${_lib}${ColorReset}")
+    endif()
+  endif()
+endforeach()
+set(GSL_DIR "" CACHE STRING "GSL install directory")
 if (GSL_DIR)
   unset(GSL_INCLUDE_DIR CACHE)
   unset(GSL_LIBRARY CACHE)
@@ -90,64 +92,56 @@ if (GSL_DIR)
   mark_as_advanced(GSL_INCLUDE_DIR GSL_LIBRARY GSLCBLAS_LIBRARY)
   if (GSL_INCLUDE_DIR AND GSL_LIBRARY AND GSLCBLAS_LIBRARY)
     message(STATUS "Found ${GSL_LIBRARY} ${GSLCBLAS_LIBRARY}")
-    include_directories(${GSL_INCLUDE_DIR})
-    set(LIBS ${GSL_LIBRARY} ${GSLCBLAS_LIBRARY})
+    list(APPEND LIBS ${GSL_LIBRARY} ${GSLCBLAS_LIBRARY})
   else()
     set(GSL_DIR FALSE)
   endif()
 endif()
-set(LINALG_FLAVOR "" CACHE STRING
-  "Choose the linear algebra library (lapack, atlas, mkl)")
-set(LINALG_LIB_PATH "" CACHE STRING
-  "Path to the linear algebra libraries")
-if (LINALG_LIB_PATH)
-  string(REPLACE " " ";" LINALG_LIB_PATH ${LINALG_LIB_PATH})
-  link_directories(${LINALG_LIB_PATH})
-endif()
-set(LINALG_LIBS "" CACHE STRING
-  "Linear algebra libraries (overrides LINALG_FLAVOR)")
-if (LINALG_LIBS)
-  string(REPLACE " " ";" LIBS "${LIBS} ${LINALG_LIBS}")
-endif()
 option(QUAD_PRECISION
   "If enabled, uses quadruple precision, else double precision" OFF)
 set(OPEN_COARRAYS "" CACHE STRING "Full path to libcaf_mpi.a")
-set(LIBS ${LIBS} ${OPEN_COARRAYS})
+list(APPEND LIBS ${OPEN_COARRAYS})
 
 # COMPILER CAPABILITIES
-# Default
-set(POLYM_ARRAY_SUPPORT       TRUE)
-set(HAS_CO_SUM                TRUE)
-# GNU
+set(POLYM_ARRAY_SUPPORT TRUE)
+set(HAS_CO_SUM TRUE)
 if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
   set(POLYM_ARRAY_SUPPORT FALSE)
 endif()
-# Intel
 if (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   set(HAS_CO_SUM FALSE)
 endif()
 
+# DEFINE TARGET
+add_library(gadfit "")
+set_target_properties(gadfit PROPERTIES
+  Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/include)
+target_include_directories(gadfit INTERFACE
+  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_link_libraries(gadfit PRIVATE ${LIBS})
+
 # CONFIG.H
 configure_file(${PROJECT_SOURCE_DIR}/config.h.in ${PROJECT_BINARY_DIR}/config.h)
-include_directories(${PROJECT_BINARY_DIR})
+target_include_directories(gadfit PRIVATE ${PROJECT_BINARY_DIR})
 
 # SUBDIRECTORIES
-add_subdirectory(doc/user_guide)
+add_subdirectory(doc)
 add_subdirectory(src)
 add_subdirectory(tests)
-
-# UNINSTALL
-configure_file( "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
-  "${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake" IMMEDIATE @ONLY)
- add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P
-  ${CMAKE_CURRENT_BINARY_DIR}/cmake/cmake_uninstall.cmake)
 
 # SUMMARY
 message("")
 message("Summary")
 message("=======")
 message("Fortran compiler: ${CMAKE_Fortran_COMPILER_ID} ${CMAKE_Fortran_COMPILER_VERSION}")
-message("Compiler flags: ${CURRENT_Fortran_FLAGS}")
+set(all_flags ${CMAKE_Fortran_FLAGS})
+if (CMAKE_BUILD_TYPE)
+  string(TOUPPER ${CMAKE_BUILD_TYPE} buildtype)
+  set(all_flags "${all_flags} ${CMAKE_Fortran_FLAGS_${buildtype}}")
+  string(STRIP ${all_flags} all_flags)
+  endif()
+message("Compiler flags: ${all_flags}")
 message("Build configuration: ${CMAKE_BUILD_TYPE}")
 if (BUILD_SHARED)
   message("Building a shared library")

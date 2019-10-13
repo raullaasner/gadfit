@@ -11,58 +11,64 @@ set(TESTS
 enable_testing()
 
 # Linear algebra libraries
-if (NOT LINALG_LIBS)
-  if (LINALG_FLAVOR MATCHES "lapack")
-    find_package(LAPACK REQUIRED)
-    set(LIBS ${LIBS} ${LAPACK_LIBRARIES})
-  elseif (LINALG_FLAVOR MATCHES "atlas")
-    find_package(Atlas REQUIRED)
-    include_directories(${Atlas_INCLUDE_DIR})
-    set(LIBS ${LIBS} ${Atlas_LIBRARIES})
-  elseif (LINALG_FLAVOR MATCHES "mkl")
-    find_package(MKL REQUIRED)
-    include_directories(${MKL_INCLUDE_DIR})
-    set(LIBS ${LIBS} ${MKL_LIBRARIES})
+if (LINALG_FLAVOR MATCHES "lapack")
+  find_package(LAPACK REQUIRED)
+  list(APPEND LIBS ${LAPACK_LIBRARIES})
+elseif (LINALG_FLAVOR MATCHES "atlas")
+  find_package(Atlas REQUIRED)
+  list(APPEND LIBS ${Atlas_LIBRARIES})
+elseif (LINALG_FLAVOR MATCHES "mkl")
+  find_package(MKL REQUIRED)
+  list(APPEND LIBS ${MKL_LIBRARIES})
+endif()
+set(_test_linalg FALSE)
+foreach(_var LINALG_FLAVOR LIB_PATHS LIBS)
+  if (DEFINED ${_var} AND NOT ${_var}_prev STREQUAL ${_var})
+    set(${_var}_prev "${${_var}}" CACHE INTERNAL "")
+    set(_test_linalg TRUE)
+  endif()
+endforeach()
+if (_test_linalg)
+  try_compile(LINALG_TEST ${CMAKE_CURRENT_BINARY_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/tests/Linalg.f90
+    CMAKE_FLAGS
+    "-DLINK_LIBRARIES=${LIBS}"
+    "-DLINK_DIRECTORIES=${LIB_PATHS}")
+  set(linalg_ok ${LINALG_TEST} CACHE INTERNAL "")
+  if (LINALG_TEST)
+    message(STATUS "Linear algebra library is OK")
+  else()
+    message(STATUS "Fallback linear algebra library is used for tests.")
   endif()
 endif()
-try_compile(LINALG_TEST ${CMAKE_CURRENT_BINARY_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/tests/Linalg.f90
-  CMAKE_FLAGS
-  "-DLINK_LIBRARIES=${LIBS}"
-  "-DLINK_DIRECTORIES=${LINALG_LIB_PATH}")
-if (LINALG_TEST)
-  message(STATUS "Linear algebra library is OK")
-else()
+if (NOT linalg_ok)
   add_library(lapack-fallback SHARED EXCLUDE_FROM_ALL lapack-fallback.f)
-  set(LIBS ${LIBS} lapack-fallback)
-  message(STATUS "Fallback linear algebra library is used for tests.")
+  list(APPEND LIBS lapack-fallback)
 endif()
 
-# GADfit
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/../src)
-set(LIBS ${LIBS} gadfit)
-
 # OpenCoarrays
-if (NOT OPEN_COARRAYS AND CMAKE_Fortran_COMPILER_ID MATCHES "GNU" AND
-    CURRENT_Fortran_FLAGS MATCHES "-fcoarray=lib")
+if (NOT OPEN_COARRAYS AND CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
   include(ExternalProject)
   ExternalProject_Add(
     OpenCoarrays-fallback
     EXCLUDE_FROM_ALL 1
     URL
-    https://github.com/sourceryinstitute/opencoarrays/archive/1.9.0.tar.gz
-    URL_MD5 7f10181d52a382cb256a3f93659d2e0d
+    https://github.com/sourceryinstitute/opencoarrays/archive/2.8.0.tar.gz
     CMAKE_CACHE_ARGS
     -DCMAKE_Fortran_COMPILER:STRING=${CMAKE_Fortran_COMPILER}
     -DCMAKE_C_COMPILER:STRING=${CMAKE_C_COMPILER}
     -DCMAKE_BUILD_TYPE:STRING=Release
-    BUILD_COMMAND ${CMAKE_COMMAND} --build . --target caf_mpi
+    CMAKE_GENERATOR "Unix Makefiles"
+    BUILD_COMMAND ${CMAKE_COMMAND} --build . --target caf_mpi_static
     INSTALL_COMMAND ${CMAKE_COMMAND} -E
-    copy src/mpi/libcaf_mpi.a ${CMAKE_CURRENT_BINARY_DIR}
+    copy lib/libcaf_mpi.a ${CMAKE_CURRENT_BINARY_DIR}
+    BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/libcaf_mpi.a
     )
-  link_directories(${CMAKE_CURRENT_BINARY_DIR})
-  set(LIBS ${LIBS} caf_mpi)
+  list(APPEND LIBS ${CMAKE_CURRENT_BINARY_DIR}/libcaf_mpi.a)
 endif()
+
+# GADfit
+list(APPEND LIBS gadfit)
 
 # With GFortran, if the user tries to run the "example" or any of the
 # tests and the -fcoarray=lib flag is present but the mpirun command
@@ -84,11 +90,11 @@ macro(test_if_mpirun_exists_post target)
       CURRENT_Fortran_FLAGS MATCHES "-fcoarray=lib")
     if (NOT MPIRUN)
       add_custom_command(TARGET ${target} PRE_LINK
-	COMMAND cmake -E echo
-	"ERROR: mpirun not found. Either obtain mpirun or"
-	COMMAND cmake -E echo
-	"       use -fcoarray=single for running the tests with GFortran."
-	COMMAND exit 1)
+        COMMAND cmake -E echo
+        "ERROR: mpirun not found. Either install mpirun or"
+        COMMAND cmake -E echo
+        "       use -fcoarray=single for running the tests with GFortran."
+        COMMAND exit 1)
     endif()
   endif()
   unset(MPIRUN CACHE)
@@ -96,12 +102,14 @@ endmacro()
 
 # Example input
 add_executable(example0 EXCLUDE_FROM_ALL example.f90)
+add_dependencies(example0 gadfit)
 if (TARGET lapack-fallback)
   add_dependencies(example0 lapack-fallback)
 endif()
 if (TARGET OpenCoarrays-fallback)
   add_dependencies(example0 OpenCoarrays-fallback)
 endif()
+target_include_directories(example0 PRIVATE ${PROJECT_BINARY_DIR})
 target_link_libraries(example0 ${LIBS})
 set(SRC ${CMAKE_CURRENT_SOURCE_DIR})
 set(BLD ${CMAKE_CURRENT_BINARY_DIR})
@@ -126,12 +134,13 @@ foreach(f ${TESTS})
   test_if_mpirun_exists_pre(${f})
   add_test(NAME ${f} COMMAND ${MPIRUN} ${CMAKE_CURRENT_BINARY_DIR}/${f})
   test_if_mpirun_exists_post(${f})
+  target_include_directories(${f} PRIVATE ${PROJECT_BINARY_DIR})
   target_link_libraries(${f} ${LIBS})
   set_tests_properties(${f} PROPERTIES FAIL_REGULAR_EXPRESSION
     "(Error|BAD TERMINATION)")
 endforeach()
 
-add_custom_target(check
+add_custom_target(test
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
   ${SRC}/1_gaussian_data ${BLD}/1_gaussian_data
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
