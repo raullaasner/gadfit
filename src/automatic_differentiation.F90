@@ -260,7 +260,7 @@ contains
   ! init_ad_reverse allocates forward_values(DEFAULT_SWEEP_SIZE),
   ! adjoints(DEFAULT_SWEEP_SIZE), trace(4*DEFAULT_SWEEP_SIZE), and
   ! ad_constants(0.5*DEFAULT_SWEEP_SIZE). For a better understading of
-  ! memory usage call ad_memory_report() after the calculation. Sets
+  ! memory usage, call ad_memory_report() after the calculation. Sets
   ! the default mode to be the reverse mode.
   !
   ! All inputs optional
@@ -283,13 +283,13 @@ contains
     if (present(memory)) then
        read(memory, *, iostat=err_stat, iomsg=err_msg) mem_size, unit
        call check_err(__FILE__, __LINE__)
-       if (unit == 'B' .or. unit == 'b') then
+       if (unit == 'B') then
           sweep_size_loc = int(real(mem_size, kp)/(2.5*kp + 4*kind(1)))
-       else if (unit == 'kB' .or. unit == 'kb') then
+       else if (unit == 'kB') then
           sweep_size_loc = int(real(mem_size, kp)/(2.5*kp + 4*kind(1))*1e3)
-       else if (unit == 'MB' .or. unit == 'mb') then
+       else if (unit == 'MB') then
           sweep_size_loc = int(real(mem_size, kp)/(2.5*kp + 4*kind(1))*1e6)
-       else if (unit == 'GB' .or. unit == 'gb') then
+       else if (unit == 'GB') then
           sweep_size_loc = int(real(mem_size, kp)/(2.5*kp + 4*kind(1))*1e9)
        else
           call error(__FILE__, __LINE__, 'Unrecognized unit: '//unit)

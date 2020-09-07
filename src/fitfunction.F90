@@ -221,6 +221,7 @@ contains
     call safe_deallocate(__FILE__, __LINE__, this%pars)
     call safe_deallocate(__FILE__, __LINE__, this%parnames)
   end subroutine destroy
+
   subroutine safe_deallocate_fitfunc(file, line, array)
     ! 'file' and 'line' should be determined by the preprocessor.
     character(*), intent(in) :: file
