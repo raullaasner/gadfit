@@ -21,8 +21,6 @@ Note that this might produce only a serial build.
 1. Prerequisites
 ----------------
 
-* If you are running Ubuntu, it should not be older than 14.04. Otherwise, newer versions of CMake and GFortran need to be installed manually. For multi-image support, GCC at least version 5.1 is required.*
-
 * **Fortran compiler (required)**. GADfit is expected to work with the latest GNU Fortran compiler (GFortran). In principle, any other F2008 compliant compiler should also work. On Ubuntu, GFortran, released under the GPL 3+ license, can be obtained by issuing
 
    ```
@@ -46,7 +44,7 @@ Note that this might produce only a serial build.
 2a. Linux
 ---------
 
-To begin with, issuing `./configure <options> && make && make install` does not work with GADfit, or in general with any CMake project. While it is possible to specify the build environment on the command line (`cmake <options> ...`), in analogy to Autotools, it is generally more convenient to use a CMake frontend or a separate file containing the CMake configuration variables. On Ubuntu, the two commonly use graphical front ends can be obtained by installing `cmake-curses-gui` and `cmake-qt-gui`.
+Note that issuing `./configure <options> && make && make install` does not work with GADfit, or in general with any CMake project. While it is possible to specify the build environment on the command line (`cmake <options> ...`), in analogy to Autotools, it is generally more convenient to use a CMake frontend or a separate file containing the CMake configuration variables. On Ubuntu, the two commonly use graphical front ends can be obtained by installing `cmake-curses-gui` and `cmake-qt-gui`.
 
 * Untar the source code and navigate into the build directory
 
@@ -55,7 +53,7 @@ To begin with, issuing `./configure <options> && make && make install` does not 
    mkdir build && cd build
    ```
 
-   While GADfit builds fine in the source directory, it would be preferred to do out-of-source builds instead in order to keep the source directory clean. In the following, the source and build directories are denoted `~gadfit` and `~build`.
+   While GADfit builds fine in the source directory, it is preferred to do out-of-source builds instead in order to keep the source directory clean. In the following, the source and build directories are denoted `~gadfit` and `~build`.
 
 * In order to use the CMake frontend `ccmake`, issue
 
@@ -72,7 +70,7 @@ To begin with, issuing `./configure <options> && make && make install` does not 
    cmake --build . --target install
    ```
 
-   `test` runs the tests found in `~gadfit/tests`. Tests can also be built individually by issuing `make <test>`, where `<test>` is the test name without the f90 extension. `make doc` generates the user guide, but a prebuilt one also available [here](https://raullaasner.github.io/gadfit/doc/user_guide/user_guide.pdf).
+   Tests can also be built individually by issuing `make <test>`, where `<test>` is the test name without the f90 extension. `make doc` generates the user guide, but a prebuilt one also available [here](https://raullaasner.github.io/gadfit/doc/user_guide/user_guide.pdf).
 
 * The Qt based CMake frontend can be used by issuing
 
