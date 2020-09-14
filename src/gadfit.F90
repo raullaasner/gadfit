@@ -88,10 +88,10 @@ module gadfit
   ! These are all user controlled variables.
   integer :: show_scope, show_digits, out_unit
   logical :: &
-       & show_timing, show_memory, show_workloads, show_delta1, show_delta2, &
+       & show_timings, show_memory, show_workloads, show_delta1, show_delta2, &
        & show_cos_phi, show_grad_chi2, show_uphill, show_acc
 
-  ! TIMING
+  ! TIMINGS
 
   type(timer) :: Jacobian_timer[*], chi2_timer[*], linalg_timer[*]
   type(timer) :: omega_timer[*], main_loop_timer[*]
@@ -159,7 +159,7 @@ contains
     data_error_type = NONE
     show_scope = GLOBAL_AND_LOCAL
     show_digits = 7
-    show_timing    = .false.; show_memory = .false.; show_workloads = .false.
+    show_timings   = .false.; show_memory = .false.; show_workloads = .false.
     show_delta1    = .false.; show_delta2 = .false.; show_cos_phi   = .false.
     show_grad_chi2 = .false.; show_uphill = .false.; show_acc       = .false.
     out_unit = output_unit
@@ -304,16 +304,16 @@ contains
   !
   ! show_scope - whether to display global and/or local parameters.
   ! show_digits - number of significant digits in the results
-  ! for x in {timing, memory, workloads, delta1, delta2, cos_phi, \
+  ! for x in {timings, memory, workloads, delta1, delta2, cos_phi, \
   !           grad_chi2, uphill, acc}; do
   !   show_$x - whether to show $x
   ! done
   ! output - where the output is directed
-  subroutine gadf_set_verbosity(scope, digits, timing, memory, workloads, &
+  subroutine gadf_set_verbosity(scope, digits, timings, memory, workloads, &
        & delta1, delta2, cos_phi, grad_chi2, uphill, acc, output)
     integer, intent(in), optional :: scope, digits
     logical, intent(in), optional :: &
-         & timing, memory, workloads, delta1, delta2, cos_phi, grad_chi2, &
+         & timings, memory, workloads, delta1, delta2, cos_phi, grad_chi2, &
          & uphill, acc
     character(*), intent(in), optional :: output
     if (present(scope)) then
@@ -324,7 +324,7 @@ contains
        show_scope = scope
     end if
     if (present(digits)) show_digits = digits
-    if (present(timing)) show_timing = timing
+    if (present(timings)) show_timings = timings
     if (present(memory)) show_memory = memory
     if (present(workloads)) show_workloads = workloads
     if (present(delta1)) show_delta1 = delta1
@@ -858,7 +858,7 @@ contains
     sync all ! Wait for all timers
     if (show_memory)    call print_memory_usage(out_unit)
     if (show_workloads) call print_workloads(out_unit)
-    if (show_timing)    call print_timing(out_unit)
+    if (show_timings)   call print_timings(out_unit)
   contains
 
     ! Initializes all work variables that depend on the relative
@@ -1000,7 +1000,7 @@ contains
     end if
   end subroutine print_workloads
 
-  subroutine print_timing(io_unit)
+  subroutine print_timings(io_unit)
     use, intrinsic :: iso_fortran_env, only: int64
     integer, intent(in) :: io_unit
     real(dp) :: Jac_ave_cpu, chi2_ave_cpu, linalg_ave_cpu, omega_ave_cpu
@@ -1010,7 +1010,7 @@ contains
     if (this_image() /= 1) return
     if (main_loop_timer%cpu_time < epsilon(1d0)) then
        write(io_unit, '(/, 1x, g0)') &
-            & 'Timing is suppressed because the calculation was too fast.'
+            & 'Timings suppressed because the calculation was too fast.'
        return
     end if
     Jac_ave_cpu = 0d0; chi2_ave_cpu = 0d0; linalg_ave_cpu = 0d0
@@ -1049,7 +1049,7 @@ contains
     write(io_unit, '(5x, g0, f5.1, g0)') &
          & 'Total: ', 1d2*(Jac_ave_cpu + chi2_ave_cpu + linalg_ave_cpu + &
          & omega_ave_cpu)/main_loop_timer%cpu_time, '%'
-    write(io_unit, '(/, 1x, g0)') 'Timing            cpu     wall'
+    write(io_unit, '(/, 1x, g0)') 'Timings           cpu     wall'
     write(io_unit, '(1x, g0)') '=============================='
     write(io_unit, '(2x, g0)') 'Jacobian'
     do i = 1, num_images()
@@ -1073,7 +1073,7 @@ contains
     end do
     write(io_unit, '(2x, g0, f13.1, f9.1)') &
          & 'Total  ', total_cpu_time, 1d0*main_loop_timer%wall_time/count_rate
-  end subroutine print_timing
+  end subroutine print_timings
 
   ! Prints the results of the last iteration. Arguments have the same
   ! meaning as in gadf_fit.
@@ -1315,7 +1315,7 @@ contains
           call print_header()
           call print_memory_usage(io_unit)
           call print_workloads(io_unit)
-          call print_timing(io_unit)
+          call print_timings(io_unit)
           close(io_unit)
        end if print_results_and_log
     end if first_image
