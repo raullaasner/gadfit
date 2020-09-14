@@ -551,6 +551,12 @@ The CMake configuration variables can also be put into an external file, an exam
 \end{verbatim}
 from the build directory, followed by the \texttt{make} commands. A change of the content of the configuration file has no effect after the first configuring. Instead, it would be necessary to empty \verb+~build+ before using the configuration file again or, better, use \texttt{ccmake}.
 
+The description of all cache variables is found in
+\begin{verbatim}
+  ~gadfit/initial_cache.cmake.example
+\end{verbatim}
+and is thus not included in the documentation.
+
 When using GADfit, i.e., when linking to an executable code (such as when running the tests), the two additional dependencies (OpenCoarrays and a linear algebra library; see below) are by default automatically built when needed.
 
 \subsubsection{\label{sec:parallelism}Parallelism}

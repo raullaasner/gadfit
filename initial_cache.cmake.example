@@ -39,6 +39,12 @@ set(USE_AD ON CACHE BOOL "")
 # Whether to use quadruple or double precision.
 set(QUAD_PRECISION OFF CACHE BOOL "")
 
+# Use this prefix if you want to run the tests in parallel with
+# GFortran. Do not use it with the Intel compiler (it handles Coarrays
+# differently). With Intel, the number of cores used is controlled by
+# OMP_NUM_THREADS or some other environment variable.
+#set(TESTS_RUN_PREFIX mpirun -np 8 CACHE STRING "")
+
 # If the code contains calls to the GSL library, then GSL_DIR should
 # point to the GSL install directory. If GSL_DIR is left empty or is
 # incorrect, GADfit will compile without the GSL related procedures.

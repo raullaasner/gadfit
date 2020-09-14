@@ -49,6 +49,8 @@ endif()
 option(USE_AD
   "If enabled, uses automatic differentiation, else finite differences" ON)
 option(BUILD_SHARED_LIBS "If enabled, builds a shared library, else static." ON)
+set(TESTS_RUN_PREFIX "" CACHE STRING
+  "Prefix used for running tests, e.g., 'mpirun ...'")
 set(LINALG_FLAVOR "" CACHE STRING
   "Choose the linear algebra library (lapack, atlas, mkl)")
 set(INC_PATHS "" CACHE STRING

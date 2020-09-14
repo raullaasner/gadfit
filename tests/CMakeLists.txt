@@ -70,36 +70,6 @@ endif()
 # GADfit
 list(APPEND LIBS gadfit)
 
-# With GFortran, if the user tries to run the "example" or any of the
-# tests and the -fcoarray=lib flag is present but the mpirun command
-# is not found, issue an error. This should only be invoked when
-# building any of those targets, but not when building the main
-# library. This is why we conditionally call add_custom_command inside
-# a macro, which is then called where appropriate. With Intel, the
-# Coarray executable is launched directly and we do not need to worry
-# about mpirun.
-macro(test_if_mpirun_exists_pre target)
-  if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU" AND
-      CURRENT_Fortran_FLAGS MATCHES "-fcoarray=lib")
-    unset(MPIRUN CACHE)
-    find_program(MPIRUN mpirun)
-  endif()
-endmacro()
-macro(test_if_mpirun_exists_post target)
-  if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU" AND
-      CURRENT_Fortran_FLAGS MATCHES "-fcoarray=lib")
-    if (NOT MPIRUN)
-      add_custom_command(TARGET ${target} PRE_LINK
-        COMMAND cmake -E echo
-        "ERROR: mpirun not found. Either install mpirun or"
-        COMMAND cmake -E echo
-        "       use -fcoarray=single for running the tests with GFortran."
-        COMMAND exit 1)
-    endif()
-  endif()
-  unset(MPIRUN CACHE)
-endmacro()
-
 # Example input
 add_executable(example0 EXCLUDE_FROM_ALL example.F90)
 add_dependencies(example0 gadfit)
@@ -113,14 +83,13 @@ target_include_directories(example0 PRIVATE ${PROJECT_BINARY_DIR})
 target_link_libraries(example0 ${LIBS})
 set(SRC ${CMAKE_CURRENT_SOURCE_DIR})
 set(BLD ${CMAKE_CURRENT_BINARY_DIR})
-test_if_mpirun_exists_pre(example0)
+
 add_custom_target(example
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
   ${SRC}/example_data1 ${BLD}/example_data1
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
   ${SRC}/example_data2 ${BLD}/example_data2
-  COMMAND ${MPIRUN} ${BLD}/example0 DEPENDS example0)
-test_if_mpirun_exists_post(example0)
+  COMMAND ${TESTS_RUN_PREFIX} ${BLD}/example0 DEPENDS example0)
 
 # Tests
 foreach(f ${TESTS})
@@ -131,9 +100,8 @@ foreach(f ${TESTS})
   if (TARGET OpenCoarrays-fallback)
     add_dependencies(${f} OpenCoarrays-fallback)
   endif()
-  test_if_mpirun_exists_pre(${f})
-  add_test(NAME ${f} COMMAND ${MPIRUN} ${CMAKE_CURRENT_BINARY_DIR}/${f})
-  test_if_mpirun_exists_post(${f})
+  add_test(NAME ${f} COMMAND ${TESTS_RUN_PREFIX}
+    ${CMAKE_CURRENT_BINARY_DIR}/${f})
   target_include_directories(${f} PRIVATE ${PROJECT_BINARY_DIR})
   target_link_libraries(${f} ${LIBS})
   set_tests_properties(${f} PROPERTIES FAIL_REGULAR_EXPRESSION
