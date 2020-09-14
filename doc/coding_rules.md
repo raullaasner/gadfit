@@ -14,7 +14,7 @@ Programming principles
 
 * **Exception handling.** Use `check_err` after allocate and open statements. `safe_close` is optional and depends on factors such as the amount of data written. For deallocation use `safe_deallocate` and, if necessary, define a new subroutine for the `safe_deallocate` interface. For reporting errors, warnings, and comments, use the appropriate procedures from the messaging module.
 
-* **Compilation stage.** There should be no compilation warnings when using the default debug flags except when due to a compiler bug. This requirement currently holds for the following compilers: GFortran.
+* **Compilation stage.** The code should run without any warning with GFortran and preferably also with Ifort, although the latter is not a requirement.
 
 * **Preprocessor.** Use preprocessor macros only for actual preprocessing and not for something that is a short-hand notation for a Fortran statement. Excessive use of macros makes it difficult for source code indexing tools to navigate through the source code.
 

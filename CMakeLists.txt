@@ -11,40 +11,6 @@ project(GADfit VERSION 1.3 LANGUAGES Fortran C)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 
-# FIRST RUN
-if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
-  # Redefine initial Release flags
-  string(FIND "${CMAKE_Fortran_FLAGS_RELEASE_INIT}"
-    "${CMAKE_Fortran_FLAGS_RELEASE}" _flags_test)
-  if (_flags_test EQUAL 1)
-    if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-      unset(CMAKE_Fortran_FLAGS_RELEASE CACHE)
-      set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -funroll-all-loops -fcoarray=lib"
-        CACHE STRING "GFortran Release flags" FORCE)
-    elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
-      unset(CMAKE_Fortran_FLAGS_RELEASE CACHE)
-      set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -ipo -xHost -coarray=shared"
-        CACHE STRING "IFORT Release flags" FORCE)
-    endif()
-  endif()
-  # Redefine initial Debug flags
-  string(FIND "${CMAKE_Fortran_FLAGS_DEBUG_INIT}"
-    "${CMAKE_Fortran_FLAGS_DEBUG}" _flags_test)
-  if (_flags_test EQUAL 1)
-    if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-      unset(CMAKE_Fortran_FLAGS_DEBUG CACHE)
-      set(CMAKE_Fortran_FLAGS_DEBUG "-O3 -g -Wall -Wno-maybe-uninitialized -Wextra -pedantic -fcheck=all -ffpe-trap=zero,overflow -fbacktrace -fcoarray=lib -std=f2008ts" CACHE STRING "GFortran Debug flags")
-    elseif (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
-      unset(CMAKE_Fortran_FLAGS_DEBUG CACHE)
-      set(CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -debug all -check all -fpe0 -traceback -warn -coarray=shared -std08" CACHE STRING "IFORT Debug flags")
-    endif()
-  endif()
-  if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
-      "Choose the type of build: None Debug Release ..." FORCE)
-  endif()
-endif()
-
 # OPTIONS
 option(USE_AD
   "If enabled, uses automatic differentiation, else finite differences" ON)
