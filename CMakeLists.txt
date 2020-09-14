@@ -7,14 +7,22 @@
 cmake_minimum_required(VERSION 3.13)
 
 # PROJECT
-project(GADfit VERSION 1.3 LANGUAGES Fortran C)
+project(GADfit VERSION 1.3 LANGUAGES C)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 
-# OPTIONS
+# OPTIONS AND VARIABLES
+option(BUILD_CXX_VERSION
+  "If enabled, build the C++ version of GADFit, else the Fortran version" ON)
+if (BUILD_CXX_VERSION)
+  enable_language(CXX)
+else()
+  enable_language(Fortran)
+endif()
 option(USE_AD
-  "If enabled, uses automatic differentiation, else finite differences" ON)
-option(BUILD_SHARED_LIBS "If enabled, builds a shared library, else static." ON)
+  "If disabled, use finite differences (Fortran only)" ON)
+option(BUILD_SHARED_LIBS
+  "If enabled, builds a shared library, else static" ON)
 set(TESTS_RUN_PREFIX "" CACHE STRING
   "Prefix used for running tests, e.g., 'mpirun ...'")
 set(LINALG_FLAVOR "" CACHE STRING
@@ -25,32 +33,28 @@ set(LIB_PATHS "" CACHE STRING
   "Directories containing libraries to be linked against")
 set(LIBS "" CACHE STRING
   "Libraries to be linked against")
-# Convert to list first
-foreach(_var LIBS LIB_PATHS INC_PATHS)
-  if (${_var})
-    list(LENGTH ${_var} _length)
-    if (_length EQUAL 1)
-      string(REPLACE " " ";" ${_var} ${${_var}})
-    endif()
-  endif()
-endforeach()
-# Turn entries of LIBS into targets
-foreach(_lib ${LIBS})
-  if (NOT TARGET ${_lib})
-    find_library(LIB_FULLPATH ${_lib} HINTS ${LIB_PATHS})
-    if (LIB_FULLPATH)
-      message(STATUS "Found ${LIB_FULLPATH}")
-      add_library(${_lib} UNKNOWN IMPORTED)
-      set_target_properties(${_lib} PROPERTIES
-        IMPORTED_LOCATION ${LIB_FULLPATH})
-      unset(LIB_FULLPATH CACHE)
-    else()
-      message(FATAL_ERROR "${Magenta}Could not find ${_lib}${ColorReset}")
-    endif()
-  endif()
-endforeach()
 set(GSL_DIR "" CACHE STRING "GSL install directory")
+option(INCLUDE_COVERAGE "Defines new target called 'coverage'" OFF)
+set(COVERAGE_FLAGS "--coverage" CACHE STRING
+  "Additional compiler flags used when running code coverage")
+if (INCLUDE_COVERAGE)
+  string(APPEND CMAKE_CXX_FLAGS ${COVERAGE_FLAGS})
+endif()
+
+# DEFINE TARGET
+add_library(gadfit "")
+
+# PROCESS USER DEFINED INCLUDE PATHS AND LIBRARIES
+include(Tools)
+target_include_directories(gadfit PRIVATE ${INC_PATHS})
+# Convert variables to list first
+foreach(_var LIBS LIB_PATHS INC_PATHS)
+  convert_to_list(${_var})
+endforeach()
+generate_library_targets(LIB_PATHS LIBS)
+target_link_libraries(gadfit PRIVATE ${LIBS})
 if (GSL_DIR)
+  target_include_directories(gadfit PRIVATE ${GSL_DIR}/include/gsl)
   unset(GSL_INCLUDE_DIR CACHE)
   unset(GSL_LIBRARY CACHE)
   unset(GSLCBLAS_LIBRARY CACHE)
@@ -60,15 +64,17 @@ if (GSL_DIR)
   mark_as_advanced(GSL_INCLUDE_DIR GSL_LIBRARY GSLCBLAS_LIBRARY)
   if (GSL_INCLUDE_DIR AND GSL_LIBRARY AND GSLCBLAS_LIBRARY)
     message(STATUS "Found ${GSL_LIBRARY} ${GSLCBLAS_LIBRARY}")
-    list(APPEND LIBS ${GSL_LIBRARY} ${GSLCBLAS_LIBRARY})
+    target_link_libraries(gadfit PRIVATE ${GSL_LIBRARY} ${GSLCBLAS_LIBRARY})
   else()
     set(GSL_DIR FALSE)
   endif()
 endif()
 option(QUAD_PRECISION
-  "If enabled, uses quadruple precision, else double precision" OFF)
+  "Whether to use quadruple or double precision (Fortran only)" OFF)
 set(OPEN_COARRAYS "" CACHE STRING "Full path to libcaf_mpi.a")
-list(APPEND LIBS ${OPEN_COARRAYS})
+if (OPEN_COARRAYS)
+  target_link_libraries(gadfit PRIVATE ${OPEN_COARRAYS})
+endif()
 
 # COMPILER CAPABILITIES
 set(HAS_CO_SUM TRUE)
@@ -76,35 +82,27 @@ if (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   set(HAS_CO_SUM FALSE)
 endif()
 
-# DEFINE TARGET
-add_library(gadfit "")
-set_target_properties(gadfit PROPERTIES
-  Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/include)
-target_include_directories(gadfit INTERFACE
-  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-target_link_libraries(gadfit PRIVATE ${LIBS})
-
-# CONFIG.H
-configure_file(${PROJECT_SOURCE_DIR}/config.h.in ${PROJECT_BINARY_DIR}/config.h)
-target_include_directories(gadfit PRIVATE ${PROJECT_BINARY_DIR})
-
-# SUBDIRECTORIES
+# SOURCES
 add_subdirectory(doc)
-add_subdirectory(src)
-add_subdirectory(tests)
+if (BUILD_CXX_VERSION)
+  add_subdirectory(c++/gadfit)
+  add_subdirectory(c++/tests)
+else()
+  add_subdirectory(fortran/gadfit)
+  add_subdirectory(fortran/tests)
+endif()
 
 # SUMMARY
 message("")
 message("Summary")
 message("=======")
-message("Fortran compiler: ${CMAKE_Fortran_COMPILER_ID} ${CMAKE_Fortran_COMPILER_VERSION}")
-set(all_flags ${CMAKE_Fortran_FLAGS})
-if (CMAKE_BUILD_TYPE)
-  string(TOUPPER ${CMAKE_BUILD_TYPE} buildtype)
-  set(all_flags "${all_flags} ${CMAKE_Fortran_FLAGS_${buildtype}}")
-  string(STRIP ${all_flags} all_flags)
-  endif()
+if (BUILD_CXX_VERSION)
+  message("C++ compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+  get_all_flags(CXX all_flags)
+else()
+  message("Fortran compiler: ${CMAKE_Fortran_COMPILER_ID} ${CMAKE_Fortran_COMPILER_VERSION}")
+  get_all_flags(Fortran all_flags)
+endif()
 message("Compiler flags: ${all_flags}")
 message("Build configuration: ${CMAKE_BUILD_TYPE}")
 if (BUILD_SHARED)
@@ -112,15 +110,17 @@ if (BUILD_SHARED)
 else()
   message("Building a static library")
 endif()
-if (QUAD_PRECISION)
-  message("Using quadruple precision")
-else()
-  message("Using double precision")
-endif()
-if (USE_AD)
-  message("Using automatic differentiation")
-else()
-  message("Using finite differences")
+if (NOT BUILD_CXX_VERSION)
+  if (QUAD_PRECISION)
+    message("Using quadruple precision")
+  else()
+    message("Using double precision")
+  endif()
+  if (USE_AD)
+    message("Using automatic differentiation")
+  else()
+    message("Using finite differences")
+  endif()
 endif()
 if (GSL_DIR)
   message("Using GSL")

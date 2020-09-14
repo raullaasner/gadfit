@@ -1,12 +1,12 @@
 Quick installation instructions
 ===============================
 
-GADfit is developed with the CMake build system generator. CMake is a set of tools for configuring, building, and testing software. In comparison to GNU Autotools, it uses a simpler syntax and generally runs faster. It is advised to read the [user guide](https://raullaasner.github.io/gadfit/doc/user_guide/user_guide.pdf) for detailed installation instructions. This document provides quick installation steps aimed mainly at Autotools oriented users.
+GADfit is developed with the CMake build system generator. CMake is a set of tools for configuring, building, and testing software. In comparison to GNU Autotools, it uses a simpler syntax and generally runs faster. It is advised to read the [user guide](https://raullaasner.github.io/gadfit/doc/user_guide/user_guide.pdf) for detailed installation instructions. This document provides quick installation steps aimed mainly at Autotools users.
 
 0. For the impatient
 --------------------
 
-Obtain CMake, a Fortran compiler, the GADfit tarball, and issue
+Obtain CMake, the GADfit tarball, and issue
 
 ```
 tar xf gadfit.tar.gz
@@ -21,13 +21,7 @@ Note that this might produce only a serial build.
 1. Prerequisites
 ----------------
 
-* **Fortran compiler (required)**. GADfit is expected to work with the latest GNU Fortran compiler (GFortran). In principle, any other F2008 compliant compiler should also work. On Ubuntu, GFortran, released under the GPL 3+ license, can be obtained by issuing
-
-   ```
-   sudo apt-get install gfortran
-   ```
-
-   Source code is available at https://gcc.gnu.org/wiki/GFortran.
+GADfit comes in two implementations, one in C++ and one in Fortran.
 
 * **CMake (required)**. On Ubuntu, CMake, released under the New BSD license, can be obtained by issuing
 
@@ -37,7 +31,19 @@ Note that this might produce only a serial build.
 
   Source code is available at http://cmake.org.
 
-* **OpenCoarrays**. The multi-image Coarray support of GFortran is provided by the OpenCoarrays project. This allows to run GADfit in parallel. It is available at https://github.com/sourceryinstitute/opencoarrays and can be built and installed using standard CMake commands. When running tests and if the OpenCoarrays library is not specified the user, it is automatically downloaded and built. The Coarray support of the Intel compiler does not depend on an external project and is available out of the box.
+* C++ version:
+  * **C++ compiler (required)**. GADfit is expected to work with the latest GNU C++ compiler (G++). One is probably present in your system so you don't need to do anything here.
+
+* Fortran version:
+  * **Fortran compiler (required)**. GADfit is expected to work with the latest GNU Fortran compiler (GFortran). In principle, any other F2008 compliant compiler should also work. On Ubuntu, GFortran, released under the GPL 3+ license, can be obtained by issuing
+
+    ```
+    sudo apt-get install gfortran
+    ```
+
+    Source code is available at https://gcc.gnu.org/wiki/GFortran.
+
+  * **OpenCoarrays**. The multi-image Coarray support of GFortran is provided by the OpenCoarrays project. This allows to run GADfit in parallel. It is available at https://github.com/sourceryinstitute/opencoarrays and can be built and installed using standard CMake commands. When running tests and if the OpenCoarrays library is not specified the user, it is automatically downloaded and built. The Coarray support of the Intel compiler does not depend on an external project and is available out of the box.
 
 * **Linear algebra library**. While not required during compilation, a linear algebra library is necessary for using GADfit for running the tests (see `make test` below). If none is specified, the fallback Lapack library is used.
 

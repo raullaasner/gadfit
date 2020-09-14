@@ -2,9 +2,8 @@
 #define CMAKE_Fortran_COMPILER \
   '@CMAKE_Fortran_COMPILER_ID@ version @CMAKE_Fortran_COMPILER_VERSION@'
 #define CMAKE_PLATFORM '${CMAKE_HOST_SYSTEM}'
-#define TESTS_BLD '@CMAKE_CURRENT_BINARY_DIR@/tests'
+#define TESTS_BLD '../tests'
 #cmakedefine QUAD_PRECISION
-#cmakedefine POLYM_ARRAY_SUPPORT
 #cmakedefine HAS_CO_SUM
 #cmakedefine USE_AD
 #cmakedefine GSL_DIR

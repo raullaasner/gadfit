@@ -15,6 +15,15 @@ target_sources(gadfit PRIVATE
   numerical_integration.F90
   )
 
+configure_file(config.h.in ${PROJECT_BINARY_DIR}/config.h)
+target_include_directories(gadfit PRIVATE ${PROJECT_BINARY_DIR})
+
+set_target_properties(gadfit PROPERTIES
+  Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/include)
+target_include_directories(gadfit INTERFACE
+  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
 install(TARGETS gadfit EXPORT gadfitConfig)
 install(DIRECTORY ${PROJECT_BINARY_DIR}/include/ DESTINATION include)
 install(EXPORT gadfitConfig NAMESPACE gadfit:: DESTINATION lib/cmake/gadfit)

@@ -30,7 +30,7 @@ foreach(_var LINALG_FLAVOR LIB_PATHS LIBS)
 endforeach()
 if (_test_linalg)
   try_compile(LINALG_TEST ${CMAKE_CURRENT_BINARY_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/tests/Linalg.f90
+    ${PROJECT_SOURCE_DIR}/cmake/tests/Linalg.f90
     CMAKE_FLAGS
     "-DLINK_LIBRARIES=${LIBS}"
     "-DLINK_DIRECTORIES=${LIB_PATHS}")

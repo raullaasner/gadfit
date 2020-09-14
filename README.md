@@ -6,7 +6,7 @@ Global nonlinear optimization with automatic differentiation
 Brief description
 -----------------
 
-GADfit is a Fortran implementation of global nonlinear curve fitting, based on a modified Levenberg-Marquardt algorithm. Global fitting refers to fitting many datasets simultaneously with some parameters shared among the datasets. The fitting procedure is very fast and accurate thanks to the use of automatic differentiation. The model curves (fitting functions) can be of essentially arbitrary complexity. This includes any nonlinear combination of elementary and special functions, single and/or double integrals, and any control flow statement allowed by the programming language. See the latest [user guide](https://raullaasner.github.io/gadfit/doc/user_guide/user_guide.pdf).
+GADfit is an implementation of global nonlinear curve fitting, based on a modified Levenberg-Marquardt algorithm. Global fitting refers to fitting many datasets simultaneously with some parameters shared among the datasets. The fitting procedure is very fast and accurate thanks to the use of automatic differentiation. The model curves (fitting functions) can be of essentially arbitrary complexity. This includes any nonlinear combination of elementary and special functions, single and/or double integrals, and any control flow statement allowed by the programming language. See the latest [user guide](https://raullaasner.github.io/gadfit/doc/user_guide/user_guide.pdf).
 
 Features
 --------
@@ -14,7 +14,7 @@ Features
 * Modified Levenberg-Marquardt
 * Multi-curve fitting with shared parameters
 * Automatic differentiation
-* Adaptive parallelism using coarrays
+* MPI (C++) and Coarray (Fortran) parallelism
 
 Downloading
 -----------
