@@ -61,7 +61,6 @@ end module gaussian_m
 
   ! The following is for CTest and can be ignored
 #define TEST_TARGET 37.21457246216242_kp
-#ifdef SUPPORTS_POLYM_ARRAY
   if (this_image() == 1 .and. &
        & abs(fitfuncs(1)%pars(3) - TEST_TARGET) > 5e-7_kp) then
      write(*,*)
@@ -71,21 +70,6 @@ end module gaussian_m
      write(*,'(27(" "), 2(g0))') 'Expected value: ', TEST_TARGET
      write(*,*)
   end if
-#else
-  block
-    class(fitfunc), allocatable :: fitfunc_tmp
-    allocate(fitfunc_tmp, source=fitfuncs(1))
-    if (this_image() == 1 .and. &
-         & abs(fitfunc_tmp%pars(3) - TEST_TARGET) > 5e-7_kp) then
-       write(*,*)
-       write(*,'(g0)') 'Error at 1_gaussian:'
-       write(*,'(2(g0))') '  "a" at the end of the fitting procedure: ', &
-            & fitfunc_tmp%pars(3)%val
-       write(*,'(27(" "), 2(g0))') 'Expected value: ', TEST_TARGET
-       write(*,*)
-    end if
-  end block
-#endif
 
   call gadf_close()
 end program

@@ -52,14 +52,7 @@ module gadfit
 
   ! There are as many instances of the fitting function as there are
   ! datasets.
-#ifdef POLYM_ARRAY_SUPPORT
   class(fitfunc), allocatable, public :: fitfuncs(:)
-#else
-  ! Currently gfortran is unable to directly access the allocatable
-  ! components of a polymorphic array.
-  class(fitfunc), allocatable, target, public :: fitfuncs(:)
-  class(fitfunc), pointer :: fitfunc_tmp => null()
-#endif
   ! Active parameters are accessed with
   ! fitfuncs(i)%pars(active_pars(j)), where j = 1...<number of active
   ! parameters>.
@@ -554,12 +547,7 @@ contains
          & call warning(__FILE__, __LINE__, &
          & 'Some parameters might be uninitialized.')
     do j = 1, size(fitfuncs)
-#ifdef POLYM_ARRAY_SUPPORT
        fitfuncs(j)%pars(active_pars)%index = [(i, i=1, size(active_pars))]
-#else
-       fitfunc_tmp => fitfuncs(j)
-       fitfunc_tmp%pars(active_pars)%index = [(i, i=1, size(active_pars))]
-#endif
     end do
     index_count = size(active_pars) ! Index of the next AD variable
                                     ! will be index_count+1
@@ -609,12 +597,7 @@ contains
     end if
     ! Old parameters are initialized with the current ones.
     do i = 1, size(fitfuncs)
-#ifdef POLYM_ARRAY_SUPPORT
        old_pars(:,i) = fitfuncs(i)%pars(active_pars)%val
-#else
-       fitfunc_tmp => fitfuncs(i)
-       old_pars(:,i) = fitfunc_tmp%pars(active_pars)%val
-#endif
     end do
     ! Initialize timers
     call Jacobian_timer%reset()
@@ -633,12 +616,7 @@ contains
        do j = 1, size(fitfuncs)
           ! forward_values must be re-initialized each time the
           ! fitting function changes.
-#ifdef POLYM_ARRAY_SUPPORT
           forward_values(:size(active_pars)) = fitfuncs(j)%pars(active_pars)%val
-#else
-          fitfunc_tmp => fitfuncs(j)
-          forward_values(:size(active_pars)) = fitfunc_tmp%pars(active_pars)%val
-#endif
           do i = img_bounds(j), img_bounds(j+1)-1
              res(i-img_bounds(1)+1) = fitfuncs(j)%eval(x_data(i))
              res(i-img_bounds(1)+1) = &
@@ -678,12 +656,7 @@ contains
           reverse_mode = .false.
           call omega_timer%time()
           do j = 1, size(fitfuncs)
-#ifdef POLYM_ARRAY_SUPPORT
              fitfuncs(j)%pars(active_pars)%d = delta1(Jacobian_indices(:,j))
-#else
-             fitfunc_tmp => fitfuncs(j)
-             fitfunc_tmp%pars(active_pars)%d = delta1(Jacobian_indices(:,j))
-#endif
              do i = img_bounds(j), img_bounds(j+1)-1
 #ifdef USE_AD
                 dummy = fitfuncs(j)%eval(x_data(i))
@@ -709,18 +682,10 @@ contains
        end if calc_acc
        ! Update the fitting parameters
        do i = 1, size(fitfuncs)
-#ifdef POLYM_ARRAY_SUPPORT
           fitfuncs(i)%pars(active_pars)%val = &
                & fitfuncs(i)%pars(active_pars)%val + &
                & delta1(Jacobian_indices(:,i)) + &
                & 0.5*delta2(Jacobian_indices(:,i))
-#else
-          fitfunc_tmp => fitfuncs(i)
-          fitfunc_tmp%pars(active_pars)%val = &
-               & fitfunc_tmp%pars(active_pars)%val + &
-               & delta1(Jacobian_indices(:,i)) + &
-               & 0.5*delta2(Jacobian_indices(:,i))
-#endif
        end do
        ! STEP 4 - Update lambda
        new_lambda: do i = 1, lam_incs_loc + 1
@@ -770,36 +735,19 @@ contains
                    lambda_loc = lam_up_loc*lambda_loc
                 end if
                 do j = 1, size(fitfuncs)
-#ifdef POLYM_ARRAY_SUPPORT
                    fitfuncs(j)%pars(active_pars)%val = old_pars(:,j)
-#else
-                   fitfunc_tmp => fitfuncs(j)
-                   fitfunc_tmp%pars(active_pars)%val = old_pars(:,j)
-#endif
                 end do
                 delta1 = real(JTres, dp)
                 linalg_tmp = real(JTJ + lambda_loc*DTD, dp)
                 call potr_f08(__FILE__, __LINE__, linalg_tmp, delta1)
                 do j = 1, size(fitfuncs)
-#ifdef POLYM_ARRAY_SUPPORT
                    fitfuncs(j)%pars(active_pars)%val = &
                         & fitfuncs(j)%pars(active_pars)%val + &
                         & delta1(Jacobian_indices(:,j))
-#else
-                   fitfunc_tmp => fitfuncs(j)
-                   fitfunc_tmp%pars(active_pars)%val = &
-                        & fitfunc_tmp%pars(active_pars)%val + &
-                        & delta1(Jacobian_indices(:,j))
-#endif
                 end do
              else
                 do j = 1, size(fitfuncs)
-#ifdef POLYM_ARRAY_SUPPORT
                    fitfuncs(j)%pars(active_pars)%val = old_pars(:,j)
-#else
-                   fitfunc_tmp => fitfuncs(j)
-                   fitfunc_tmp%pars(active_pars)%val = old_pars(:,j)
-#endif
                 end do
                 if (this_image() == 1) write(out_unit, '(1x, *(g0))') &
                      & 'Lambda increased '//str(lam_incs_loc+1)// &
@@ -810,12 +758,7 @@ contains
        end do new_lambda
        ! Update some variables for the next iteration
        do i = 1, size(fitfuncs)
-#ifdef POLYM_ARRAY_SUPPORT
           old_pars(:,i) = fitfuncs(i)%pars(active_pars)%val
-#else
-          fitfunc_tmp => fitfuncs(i)
-          old_pars(:,i) = fitfunc_tmp%pars(active_pars)%val
-#endif
        end do
        old_delta1 = delta1
        old_old_chi2 = old_chi2
@@ -881,14 +824,8 @@ contains
        if (present(rel_error)) then
           test_rel_change: block
             do j = 1, size(fitfuncs)
-#ifdef POLYM_ARRAY_SUPPORT
                if (any(abs(delta1(Jacobian_indices(:,j))/ &
                     & fitfuncs(j)%pars(active_pars)%val) > rel_error)) &
-#else
-               fitfunc_tmp => fitfuncs(j)
-               if (any(abs(delta1(Jacobian_indices(:,j))/ &
-                    & fitfunc_tmp%pars(active_pars)%val) > rel_error)) &
-#endif
                     & exit test_rel_change
             end do
             if (this_image() == 1) &
@@ -899,18 +836,10 @@ contains
           end block test_rel_change
        end if
        if (present(rel_error_global)) then
-#ifdef POLYM_ARRAY_SUPPORT
           if (.not. any(is_global(active_pars) .and. &
                & abs(delta1(Jacobian_indices(:,1))/ &
                & fitfuncs(1)%pars(active_pars)%val) > &
                & rel_error_global)) then
-#else
-          fitfunc_tmp => fitfuncs(1)
-          if (.not. any(is_global(active_pars) .and. &
-               & abs(delta1(Jacobian_indices(:,1))/ &
-               & fitfunc_tmp%pars(active_pars)%val) > &
-               & rel_error_global)) then
-#endif
              if (this_image() == 1) &
                   & write(out_unit, '(/, 1x, *(g0))') &
                   & 'Relative change in all global parameters was less than ', &
@@ -1029,22 +958,13 @@ contains
       saved_indices = 0
       call chi2_timer%time()
       do j = 1, size(fitfuncs)
-#ifdef POLYM_ARRAY_SUPPORT
          call swap(fitfuncs(j)%pars%index, saved_indices)
-#else
-         fitfunc_tmp => fitfuncs(j)
-         call swap(fitfunc_tmp%pars%index, saved_indices)
-#endif
          do i = img_bounds(j), img_bounds(j+1)-1
             res(i-img_bounds(1)+1) = fitfuncs(j)%eval(x_data(i))
             res(i-img_bounds(1)+1) = &
                  & (y_data(i) - res(i-img_bounds(1)+1))*weights(i)
          end do
-#ifdef POLYM_ARRAY_SUPPORT
          call swap(fitfuncs(j)%pars%index, saved_indices)
-#else
-         call swap(fitfunc_tmp%pars%index, saved_indices)
-#endif
       end do
       sum = dot_product(res,res)
       call chi2_timer%time()
@@ -1190,12 +1110,7 @@ contains
        tmp_names = fitfuncs(1)%get_name(active_pars)
        do i = 1, size(active_pars)
           if (is_global(active_pars(i))) then
-#ifdef POLYM_ARRAY_SUPPORT
              associate(val => fitfuncs(1)%pars(active_pars(i))%val)
-#else
-             fitfunc_tmp => fitfuncs(1)
-             associate(val => fitfunc_tmp%pars(active_pars(i))%val)
-#endif
                if (len_aux(tmp_names(i)%name) > 0) then ! If is named
                   write(io_unit, '(2x'//fmt_name//'" ="'//fmt_value//')', &
                        & advance='no') tmp_names(i)%name, val
@@ -1225,12 +1140,7 @@ contains
                   write(io_unit, '(2x, g0, i'//str(x)//'.'//str(x)//', g0)', &
                        & advance='no') 'Curve ', j, ':'
                 end associate
-#ifdef POLYM_ARRAY_SUPPORT
                 associate(val => fitfuncs(j)%pars(active_pars(i))%val)
-#else
-                fitfunc_tmp => fitfuncs(j)
-                associate(val => fitfunc_tmp%pars(active_pars(i))%val)
-#endif
                   if (len_aux(tmp_names(i)%name) > 0) then ! If is named
                      write(io_unit, '(x'//fmt_name//'" ="'//fmt_value//')', &
                           & advance='no') tmp_names(i)%name, val
@@ -1348,20 +1258,11 @@ contains
     end associate
     saved_indices = 0
     do j = 1, size(fitfuncs) ! y-values
-#ifdef POLYM_ARRAY_SUPPORT
        call swap(fitfuncs(j)%pars%index, saved_indices)
        do i = 1, points_loc/num_images()
           buffer(j+1,i) = fitfuncs(j)%eval(buffer(1,i))
        end do
        call swap(fitfuncs(j)%pars%index, saved_indices)
-#else
-       fitfunc_tmp => fitfuncs(j)
-       call swap(fitfunc_tmp%pars%index, saved_indices)
-       do i = 1, points_loc/num_images()
-          buffer(j+1,i) = fitfuncs(j)%eval(buffer(1,i))
-       end do
-       call swap(fitfunc_tmp%pars%index, saved_indices)
-#endif
     end do
     sync all
     ! STEP 3 - Print to I/O device(s)
