@@ -1433,6 +1433,10 @@ The function body may also refer to an external function. The dilogarithm functi
 
 \subsection{C++}
 
+\subsubsection{Unit tests}
+
+Unit tests are written using the Catch2 framework.
+
 \subsubsection{Code linters}
 
 Before comitting, you should run clang-tidy on the source code. CMake has built-in support for that so all you need to do is run
@@ -1450,6 +1454,15 @@ sh -c 'clang-format -style=file {} | diff -u {} -' \;
 \end{verbatim}
 If the code is perfectly valid, there should be not output. Otherwise, you should resolve the diff.
 
+\subsubsection{Code coverage}
+
+Code coverage can be inspected by enabling the \verb+INCLUDE_COVERAGE+ CMake variable. This only works with the GNU compiler and requires LCOV to be installed. The flags defined by \verb+COVERAGE_FLAGS+ are then appended to the compilation flags (the default ``--coverage'' should be fine). If you then recompile and run the tests, it shows you the overall coverage rate for lines and functions and produces a detailed HTML report that you can inspect. Here is an example how to programmatically turn on the coverage flag, run coverage, and turn it off again.
+\begin{verbatim}
+cmake -DINCLUDE_COVERAGE=ON .
+cmake --build . --target coverage
+cmake -DINCLUDE_COVERAGE=OFF .
+\end{verbatim}
+
 \subsubsection{Coding rules}
 
 Follow the C++20 standard. Otherwise, there are no additional coding rules beause clang-tidy and clang-format are already quite exhaustive. If those pass, you're good to go.
@@ -1461,9 +1474,9 @@ Follow the C++20 standard. Otherwise, there are no additional coding rules beaus
 \textit{Programming principles}
 
 \begin{itemize}
-\item \textbf{Standard-conforming code.} This project is committed to following the Fortran 2008 standard (F2008), which is a minor improvement over the 2003 standard, but a major improvement over the commonly used Fortran 90, making coding much more efficient. It is not possible to list here all the rules that the developer is expected to follow when writing modern Fortran. There is not always a unique answer anyway. Many rules are expected to be self-evident. Here we concentrate on rules specific to this project and that are not standard in general for modern Fortran. A good place to start is to examine an existing module in addition to reading this document.
+\item \textbf{Standard-conforming code.} This project is committed to following the Fortran 2008 standard (F2008), which is a minor improvement over the 2003 standard, but a major improvement over the commonly used Fortran 90, making coding much more efficient. It is not possible to list here all the rules that the developer is expected to follow when writing modern Fortran. There is not always a unique answer anyway. Many rules are expected to be self-evident. Here we concentrate on rules specific to this project and that are not standard in general for modern Fortran. A good place to start is to examine an existing module in addition to reading this.
 \item \textbf{Exception handling.} Use \verb+check_err+ after allocate and open statements. \verb+safe_close+ is optional and depends on factors such as the amount of data written. For deallocation use \verb+safe_deallocate+ and, if necessary, define a new subroutine for the \verb+safe_deallocate+ interface. For reporting errors, warnings, and comments, use the appropriate procedures from the messaging module.
-\item \textbf{Compilation stage.} The code should run without any warning with GFortran and preferably also with Ifort, although the latter is not a requirement.
+\item \textbf{Compilation stage.} The code should compile without any warnings when using debug flags with GFortran and preferably also with Ifort, although the latter is not a requirement.
 \item \textbf{Preprocessor.} Use preprocessor macros only for actual preprocessing and not for something that is a short-hand notation for a Fortran statement. Excessive use of macros makes it difficult for source code indexing tools to navigate through the source code.
 \end{itemize}
 

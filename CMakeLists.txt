@@ -38,7 +38,7 @@ option(INCLUDE_COVERAGE "Defines new target called 'coverage'" OFF)
 set(COVERAGE_FLAGS "--coverage" CACHE STRING
   "Additional compiler flags used when running code coverage")
 if (INCLUDE_COVERAGE)
-  string(APPEND CMAKE_CXX_FLAGS ${COVERAGE_FLAGS})
+  string(APPEND CMAKE_CXX_FLAGS " ${COVERAGE_FLAGS}")
 endif()
 
 # DEFINE TARGET
