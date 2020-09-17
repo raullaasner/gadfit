@@ -43,6 +43,9 @@ endif()
 
 # DEFINE TARGET
 add_library(gadfit "")
+target_compile_definitions(gadfit PRIVATE
+  PROJECT_VERSION="${PROJECT_VERSION}"
+  CMAKE_PLATFORM="${CMAKE_HOST_SYSTEM}")
 
 # PROCESS USER DEFINED INCLUDE PATHS AND LIBRARIES
 include(Tools)

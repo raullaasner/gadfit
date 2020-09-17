@@ -1,5 +1,3 @@
-#include <config.h>
-
 module test_f
   ! This module defines the function I(x) = I0*exp(-t/tau)+bgr.
   ! In Fortran, comments begin with an "!".

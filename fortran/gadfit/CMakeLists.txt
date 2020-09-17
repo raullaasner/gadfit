@@ -15,8 +15,16 @@ target_sources(gadfit PRIVATE
   numerical_integration.F90
   )
 
-configure_file(config.h.in ${PROJECT_BINARY_DIR}/config.h)
 target_include_directories(gadfit PRIVATE ${PROJECT_BINARY_DIR})
+
+target_compile_definitions(gadfit PRIVATE
+  Fortran_COMPILER_ID='${CMAKE_Fortran_COMPILER_ID}'
+  Fortran_COMPILER_VERSION='${CMAKE_Fortran_COMPILER_VERSION}')
+foreach(_flag QUAD_PRECISION HAS_CO_SUM GSL_DIR)
+  if (${_flag})
+    target_compile_definitions(gadfit PRIVATE ${_flag})
+  endif()
+endforeach()
 
 set_target_properties(gadfit PROPERTIES
   Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/include)

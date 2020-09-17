@@ -1,5 +1,3 @@
-#include <config.h>
-
 module gaussian_m
   ! See the user guide for information about this fitting function.
 
@@ -62,7 +60,7 @@ end module gaussian_m
   ! The following is for CTest and can be ignored
 #define TEST_TARGET 37.21457246216242_kp
   if (this_image() == 1 .and. &
-       & abs(fitfuncs(1)%pars(3) - TEST_TARGET) > 5e-7_kp) then
+       & abs(fitfuncs(1)%pars(3)%val - TEST_TARGET) > 5e-7_kp) then
      write(*,*)
      write(*,'(g0)') 'Error at 1_gaussian:'
      write(*,'(2(g0))') '  "a" at the end of the fitting procedure: ', &

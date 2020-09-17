@@ -1,8 +1,0 @@
-#define PROJECT_VERSION '@PROJECT_VERSION@'
-#define CMAKE_Fortran_COMPILER \
-  '@CMAKE_Fortran_COMPILER_ID@ version @CMAKE_Fortran_COMPILER_VERSION@'
-#define CMAKE_PLATFORM '${CMAKE_HOST_SYSTEM}'
-#define TESTS_BLD '../tests'
-#cmakedefine QUAD_PRECISION
-#cmakedefine HAS_CO_SUM
-#cmakedefine GSL_DIR

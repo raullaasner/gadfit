@@ -3,8 +3,6 @@
 ! with this file, You can obtain one at
 ! http://gnu.org/copyleft/gpl.txt.
 
-#include <config.h>
-
 ! Wrappers for linear algebra routines.
 module gadfit_linalg
 

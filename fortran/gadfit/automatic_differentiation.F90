@@ -3,8 +3,6 @@
 ! with this file, You can obtain one at
 ! http://gnu.org/copyleft/gpl.txt.
 
-#include <config.h>
-
 ! Procedures for finding the gradient of a function using the reverse
 ! mode of automatic differentiation (AD), and procedures for finding
 ! the first and second directional derivatives using the forward

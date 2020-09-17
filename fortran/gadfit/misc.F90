@@ -3,8 +3,6 @@
 ! with this file, You can obtain one at
 ! http://gnu.org/copyleft/gpl.txt.
 
-#include <config.h>
-
 ! Provides some commonly used types and helper procedures.
 module misc
 

@@ -3,8 +3,6 @@
 ! with this file, You can obtain one at
 ! http://gnu.org/copyleft/gpl.txt.
 
-#include <config.h>
-
 ! Contains the 2n+1 nodes of the Legendre polynomials, weights
 ! corresponding to the n-point Gaussian rule, and weights
 ! corresponding to the (2n+1)-point Kronrod rule. 2n+1 can be 15, 21,

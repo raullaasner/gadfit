@@ -3,8 +3,6 @@
 ! with this file, You can obtain one at
 ! http://gnu.org/copyleft/gpl.txt.
 
-#include <config.h>
-
 ! AD implementation of adaptive numerical integration based on the
 ! Gauss-Kronrod rules.
 module numerical_integration

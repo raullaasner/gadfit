@@ -72,6 +72,7 @@ list(APPEND LIBS gadfit)
 
 # Example input
 add_executable(example0 EXCLUDE_FROM_ALL example.F90)
+target_compile_definitions(example0 PRIVATE TESTS_BLD='../tests')
 add_dependencies(example0 gadfit)
 if (TARGET lapack-fallback)
   add_dependencies(example0 lapack-fallback)
@@ -104,6 +105,7 @@ foreach(f ${TESTS})
     ${CMAKE_CURRENT_BINARY_DIR}/${f})
   target_include_directories(${f} PRIVATE ${PROJECT_BINARY_DIR})
   target_link_libraries(${f} ${LIBS})
+  target_compile_definitions(${f} PRIVATE TESTS_BLD='../tests')
 endforeach()
 
 add_custom_target(test
