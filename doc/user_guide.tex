@@ -1059,7 +1059,7 @@ integer, optional :: e
 gadf_fit(lambda, lam_up, lam_down, accth, grad_chi2, cos_phi,
          rel_error, rel_error_global, chi2_rel, chi2_abs,
          lam_incs, uphill, max_iter, damp_max, nielsen, umnigh,
-         ap)
+         load_balancing, use_ad)
 \end{verbatim}
 Performs the fitting procedure. The procedure stops if any of the convergence criteria is satisfied.
 \begin{itemize}
@@ -1189,6 +1189,13 @@ logical, optional :: load_balancing
   Whether to use load balancing. If \verb+.true.+, the input data is redistributed among the images in an effort to achieve equal workloads. The redistribution is based on the workloads of the previous iteration and is repeated after each iteration. Load balancing makes sense with integrals and other constructs whose cost heavily depends on the argument.
 
   Default: \verb+.false.+.
+\item
+\begin{verbatim}
+logical, optional :: use_ad
+\end{verbatim}
+  Whether to use automatic differentiation for the computation of the Jacobian (both the velocity and acceleration terms). If false, use finite differences.
+
+  Default: \verb+.true.+.
 \end{itemize}
 
 \begin{verbatim}

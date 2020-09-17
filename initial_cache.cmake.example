@@ -34,12 +34,6 @@ set(BUILD_SHARED ON CACHE BOOL "")
 # Where to install GADfit
 set(CMAKE_INSTALL_PREFIX /usr/local/gadfit CACHE STRING "")
 
-# Whether to use automatic differentiation. This only determines
-# whether AD or finite differences is used for calculating the
-# derivatives during the fitting procedure. Both AD and finite
-# differences are still available throughout the code.
-set(USE_AD ON CACHE BOOL "")
-
 # Whether to use quadruple or double precision (Fortran only).
 set(QUAD_PRECISION OFF CACHE BOOL "")
 

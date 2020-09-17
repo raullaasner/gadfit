@@ -445,15 +445,16 @@ contains
   ! umnigh - whether to update lambda according to Umrigar and
   !          Nightingale
   ! load_balancing - whether to use load balancing
+  ! use_ad - whether to use automatic differentiation for the Jacobian
   subroutine gadf_fit(lambda, lam_up, lam_down, accth, grad_chi2, cos_phi, &
        & rel_error, rel_error_global, chi2_rel, chi2_abs, DTD_min, lam_incs, &
-       & uphill, max_iter, damp_max, nielsen, umnigh, load_balancing)
+       & uphill, max_iter, damp_max, nielsen, umnigh, load_balancing, use_ad)
     ! INPUT
     real(real32), intent(in), optional :: lambda, lam_up, lam_down, accth, &
          & grad_chi2, cos_phi, rel_error, rel_error_global, chi2_rel, chi2_abs
     real(kp), intent(in), optional :: DTD_min(:)
     integer, intent(in), optional :: lam_incs, uphill, max_iter
-    logical, intent(in), optional :: damp_max, nielsen, umnigh
+    logical, intent(in), optional :: damp_max, nielsen, umnigh, use_ad
     logical, value, optional :: load_balancing
     ! MAIN WORK VARIABLES
     real(kp) :: lambda_loc, lam_up_loc, lam_down_loc
@@ -500,6 +501,7 @@ contains
     real(kp) :: acc_ratio, beta
     real(kp), save :: tmp[*]
     type(advar) :: dummy
+    logical :: use_ad_loc
     integer :: active_pars_tmp(size(active_pars)), shift
     integer :: i, j
     if (.not. allocated(fitfuncs)) &
@@ -523,6 +525,8 @@ contains
     end if
     uphill_loc = 0
     if (present(uphill)) uphill_loc = uphill
+    use_ad_loc = .true.
+    if (present(use_ad)) use_ad_loc = use_ad
     ! Reshape active_pars without the zeros
     if (minval(active_pars) == 0) then ! Only if has passive pars
        do i = 1, size(active_pars)-1 ! Move zeros to end
@@ -538,20 +542,20 @@ contains
        allocate(active_pars(minloc(active_pars_tmp,1)-1))
        active_pars = active_pars_tmp(:size(active_pars))
     end if
-#ifdef USE_AD
-    ! Make all fitting parameters active if using AD
-    if (size(active_pars) == 0) &
-         & call error(__FILE__, __LINE__, 'There are no active parameters.')
-    if (this_image() == 1 .and. &
-         & set_count < size(fitfuncs)*size(fitfuncs(1)%pars)) &
-         & call warning(__FILE__, __LINE__, &
-         & 'Some parameters might be uninitialized.')
-    do j = 1, size(fitfuncs)
-       fitfuncs(j)%pars(active_pars)%index = [(i, i=1, size(active_pars))]
-    end do
-    index_count = size(active_pars) ! Index of the next AD variable
-                                    ! will be index_count+1
-#endif
+    if (use_ad_loc) then
+       ! Make all fitting parameters active if using AD
+       if (size(active_pars) == 0) &
+            & call error(__FILE__, __LINE__, 'There are no active parameters.')
+       if (this_image() == 1 .and. &
+            & set_count < size(fitfuncs)*size(fitfuncs(1)%pars)) &
+            & call warning(__FILE__, __LINE__, &
+            & 'Some parameters might be uninitialized.')
+       do j = 1, size(fitfuncs)
+          fitfuncs(j)%pars(active_pars)%index = [(i, i=1, size(active_pars))]
+       end do
+       index_count = size(active_pars) ! Index of the next AD variable
+       ! will be index_count+1
+    end if
     ! Determine the parameter indices in the Jacobian
     allocate(Jacobian_indices(size(active_pars), size(fitfuncs)), &
          & stat=err_stat, errmsg=err_msg)
@@ -621,11 +625,11 @@ contains
              res(i-img_bounds(1)+1) = fitfuncs(j)%eval(x_data(i))
              res(i-img_bounds(1)+1) = &
                   & (y_data(i) - res(i-img_bounds(1)+1))*weights(i)
-#ifdef USE_AD
-             call ad_grad(size(active_pars))
-#else
-             call fitfuncs(j)%grad_finite(x_data(i), active_pars, adjoints)
-#endif
+             if (use_ad_loc) then
+                call ad_grad(size(active_pars))
+             else
+                call fitfuncs(j)%grad_finite(x_data(i), active_pars, adjoints)
+             end if
              JacobianT(Jacobian_indices(:,j), i-img_bounds(1)+1) = &
                   & adjoints(:size(active_pars))*weights(i)
           end do
@@ -658,14 +662,15 @@ contains
           do j = 1, size(fitfuncs)
              fitfuncs(j)%pars(active_pars)%d = delta1(Jacobian_indices(:,j))
              do i = img_bounds(j), img_bounds(j+1)-1
-#ifdef USE_AD
-                dummy = fitfuncs(j)%eval(x_data(i))
-                omega(i-img_bounds(1)+1) = -dummy%dd*weights(i)
-#else
-                omega(i-img_bounds(1)+1) = -fitfuncs(j)%dir_deriv_2nd_finite( &
-                     & x_data(i), active_pars, &
-                     & real(delta1(Jacobian_indices(:,j)), kp))*weights(i)
-#endif
+                if (use_ad_loc) then
+                   dummy = fitfuncs(j)%eval(x_data(i))
+                   omega(i-img_bounds(1)+1) = -dummy%dd*weights(i)
+                else
+                   omega(i-img_bounds(1)+1) = &
+                        & -fitfuncs(j)%dir_deriv_2nd_finite( &
+                        & x_data(i), active_pars, &
+                        & real(delta1(Jacobian_indices(:,j)), kp))*weights(i)
+                end if
              end do
           end do
           call omega_timer%time()
