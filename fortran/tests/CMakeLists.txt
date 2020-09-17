@@ -104,8 +104,6 @@ foreach(f ${TESTS})
     ${CMAKE_CURRENT_BINARY_DIR}/${f})
   target_include_directories(${f} PRIVATE ${PROJECT_BINARY_DIR})
   target_link_libraries(${f} ${LIBS})
-  set_tests_properties(${f} PROPERTIES FAIL_REGULAR_EXPRESSION
-    "(Error|BAD TERMINATION)")
 endforeach()
 
 add_custom_target(test

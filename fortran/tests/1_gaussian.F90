@@ -69,6 +69,7 @@ end module gaussian_m
           & fitfuncs(1)%pars(3)%val
      write(*,'(27(" "), 2(g0))') 'Expected value: ', TEST_TARGET
      write(*,*)
+     error stop
   end if
 
   call gadf_close()
