@@ -1,0 +1,17 @@
+---
+Checks: "-*,\
+bugprone-*,\
+clang-analyzer-*,\
+cppcoreguidelines-*,\
+misc-*,\
+modernize-*,\
+mpi-*,\
+performance-*,\
+portability-*,\
+readability-*,\
+"
+HeaderFilterRegex: 'c\+\+/gadfit/.*\.h$'
+CheckOptions:
+  - key:   misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic
+    value: '1'
+...

@@ -13,17 +13,23 @@ class AdVar
 {
 public:
     // Value and first and second derivatives of the AD variable
+    // NOLINTNEXTLINE(modernize-use-default-member-init)
     double val, d, dd;
     // The index serves three purposes. If zero, this is an
     // inactive AD variable, so just compute the value and no
     // derivatives. If positive, we are in the reverse mode and if
     // negative in the forward mode of AD.
+    // NOLINTNEXTLINE(modernize-use-default-member-init)
     int idx;
 
-    AdVar() : val {}, d {}, dd {}, idx {} {};
-    // For performance reasons, don't set d, dd, or idx here.
+    // For performance reasons, don't use any default values.
+    AdVar() = default;
+    // NOLINTNEXTLINE
     AdVar(const double val) : val { val } {}
-    AdVar(const double val, const double d, const double dd, const int idx)
+    constexpr AdVar(const double val,
+                    const double d,
+                    const double dd,
+                    const int idx)
       : val { val }, d { d }, dd { dd }, idx { idx }
     {}
 };

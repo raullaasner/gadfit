@@ -1433,6 +1433,27 @@ The function body may also refer to an external function. The dilogarithm functi
 
 \subsection{C++}
 
+\subsubsection{Code linters}
+
+Before comitting, you should run clang-tidy on the source code. CMake has built-in support for that so all you need to do is run
+\begin{verbatim}
+cmake -DCMAKE_CXX_CLANG_TIDY=clang-tidy .
+\end{verbatim}
+in the build directory and recompile. You can keep this on but if it noticeably slows down compilation you might want to turn it off again with
+\begin{verbatim}
+cmake -U CMAKE_CXX_CLANG_TIDY .
+\end{verbatim}
+We also use the clang-format code linter. However, since CMake does not have support for clang-format it is up to the developer to find a way to run clang-format on the source code. As an example, you may run this in the directory with the C++ source files:
+\begin{verbatim}
+find -regextype posix-extended -regex ".*\.(cpp|h)" -exec \
+sh -c 'clang-format -style=file {} | diff -u {} -' \;
+\end{verbatim}
+If the code is perfectly valid, there should be not output. Otherwise, you should resolve the diff.
+
+\subsubsection{Coding rules}
+
+Follow the C++20 standard. Otherwise, there are no additional coding rules beause clang-tidy and clang-format are already quite exhaustive. If those pass, you're good to go.
+
 \subsection{Fortran}
 
 \subsubsection{Coding rules}
