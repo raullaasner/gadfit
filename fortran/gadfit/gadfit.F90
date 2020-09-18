@@ -167,7 +167,6 @@ contains
     set_count = 0
     ! Since some procedures may never be called, their defaults are
     ! set here.
-    iterations = 0
     data_error_type = NONE
     show_scope = GLOBAL_AND_LOCAL
     show_digits = 7
@@ -556,8 +555,10 @@ contains
     if (.not. allocated(fitfuncs)) &
          & call error(__FILE__, __LINE__, &
          & 'Number of datasets is undetermined. Call gadf_init first.')
-    call read_data()
-    call init_weights()
+    if (.not. allocated(x_data)) then
+       call read_data()
+       call init_weights()
+    end if
     ! Initialize some of the optional arguments
     lambda_loc = 1.0_kp
     if (present(lambda)) lambda_loc = lambda
@@ -629,6 +630,7 @@ contains
            & img_bounds(size(data_positions)), stat=err_stat, errmsg=err_msg)
       call check_err(__FILE__, __LINE__)
     end associate
+    iterations = 0
     call re_initialize()
     delta2 = 0d0
     DTD = 0d0
@@ -922,7 +924,7 @@ contains
     ! parallel parts of the main loop during the previous
     ! iteration. The weights determine the length of the work region
     ! (my_size) that is attributed to each image in img_bounds (see
-    ! above for img_bounds). If adaptive parallelism is not used, the
+    ! above for img_bounds). If load balancing is not used, the
     ! determination of the weights is straightforward and this
     ! procedure is called only once.
     subroutine re_initialize()
@@ -956,8 +958,8 @@ contains
          if (minval(img_weights) <= epsilon(1d0)) then
             if (this_image() == 1 ) &
                  & call comment(__FILE__, __LINE__, &
-                 & 'The calculation is too fast for adaptive &
-                 &parallelism (AP) to be effective. AP is now switched off.')
+                 & 'The calculation is too fast for load balancing to be &
+                 &effective. AP is now switched off.')
             load_balancing = .false.
             img_weights = 1d0
          else
