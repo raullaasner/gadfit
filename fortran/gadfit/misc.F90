@@ -13,7 +13,7 @@ module misc
   implicit none
 
   private
-  public :: string, len, swap, timer, safe_deallocate, safe_close
+  public :: data_pointer, string, len, swap, timer, safe_deallocate, safe_close
 #if !defined HAS_CO_SUM || defined QUAD_PRECISION
   public :: co_sum
 #endif
@@ -42,6 +42,10 @@ module misc
      procedure :: time
   end type timer
 
+  type :: data_pointer
+     real(kp), pointer :: x_data(:), y_data(:), weights(:)
+  end type data_pointer
+
 #if !defined HAS_CO_SUM || defined QUAD_PRECISION
   interface co_sum
      module procedure co_sum_0d, co_sum_1d, co_sum_2d
@@ -56,7 +60,7 @@ module misc
      module procedure safe_deallocate_dp, safe_deallocate_qp, &
           & safe_deallocate_dp_2d, safe_deallocate_qp_2d, &
           & safe_deallocate_integer, safe_deallocate_string, &
-          & safe_deallocate_logical
+          & safe_deallocate_logical, safe_deallocate_data_pointer
   end interface safe_deallocate
 
 contains
@@ -231,6 +235,16 @@ contains
        call check_err(file, line)
     end if
   end subroutine safe_deallocate_logical
+
+  subroutine safe_deallocate_data_pointer(file, line, array)
+    character(*), intent(in) :: file
+    integer, intent(in) :: line
+    type(data_pointer), allocatable, intent(in out) :: array(:)
+    if (allocated(array)) then
+       deallocate(array, stat=err_stat, errmsg=err_msg)
+       call check_err(file, line)
+    end if
+  end subroutine safe_deallocate_data_pointer
 
   ! Closes an I/O device and checks the success of that
   ! operation. 'file' and 'line' should be determined by the

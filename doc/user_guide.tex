@@ -911,6 +911,28 @@ character(*) :: path
 \end{itemize}
 
 \begin{verbatim}
+gadf_add_dataset(x_data, y_data, weights)
+\end{verbatim}
+Reads a data set. This procedure must be called as many times as there are data sets, which is determined by the \verb+num_datasets+ argument to \verb+gadf_init+.
+\begin{itemize}
+\item
+\begin{verbatim}
+real(kp) :: x_data(:)
+\end{verbatim}
+  Array containing the x-values (data point coordinates).
+\item
+\begin{verbatim}
+real(kp) :: y_data(:)
+\end{verbatim}
+  Array containing the y-values (data point values).
+\item
+\begin{verbatim}
+real(kp), optional :: weights(:)
+\end{verbatim}
+  Array containig the data point weights. Only used with the \texttt{USER} argument to \verb+gadf_set_errors+ (see below).
+\end{itemize}
+
+\begin{verbatim}
 gadf_set(dataset_i, par, value, active)
 \end{verbatim}
 Defines the parameter as local, sets its value, and marks it either active or passive.
@@ -1052,7 +1074,7 @@ Specifies the data point errors -- $\sigma_i$ in Eq.~\eqref{eq:Jacob}. If this p
 \begin{verbatim}
 integer, optional :: e
 \end{verbatim}
-  Allowed values are \verb+NONE+ -- $\sigma_i = 1$ (the default); \verb+SQRT_Y+ -- $\sigma_i = \sqrt{y_i}$ (shot noise); \verb+PROPTO_Y+ -- $\sigma_i = y_i$; \verb+INVERSE_Y+ -- $\sigma_i = 1/y_i$; \verb+USER+ -- user defined uncertainties, must be supplied as the 3rd column in the data files.
+  Allowed values are \verb+NONE+ -- $\sigma_i = 1$ (the default); \verb+SQRT_Y+ -- $\sigma_i = \sqrt{y_i}$ (shot noise); \verb+PROPTO_Y+ -- $\sigma_i = y_i$; \verb+INVERSE_Y+ -- $\sigma_i = 1/y_i$; \verb+USER+ -- user defined uncertainties, must be supplied as the 3rd column in the data files or as a separate array.
 \end{itemize}
 
 \begin{verbatim}

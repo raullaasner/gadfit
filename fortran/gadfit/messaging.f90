@@ -28,7 +28,7 @@ contains
     integer, intent(in) :: line
     critical ! Often all images encounter an error at the same time.
       write(error_unit, '(/, *(g0))') file, ':', line, ':'
-      call print_msg('ERROR', msg, error_unit)
+      call print_msg('Error', msg, error_unit)
       error stop
     end critical
   end subroutine error
@@ -40,7 +40,7 @@ contains
     integer, intent(in) :: line
     critical
       write(error_unit, '(/, *(g0))') file, ':', line, ':'
-      call print_msg('WARNING', msg, error_unit)
+      call print_msg('Warning', msg, error_unit)
     end critical
   end subroutine warning
 
@@ -51,7 +51,7 @@ contains
     integer, intent(in) :: line
     critical
       write(output_unit, '(/, *(g0))') file, ':', line, ':'
-      call print_msg('COMMENT', msg, output_unit)
+      call print_msg('Comment', msg, output_unit)
     end critical
   end subroutine comment
 

@@ -21,7 +21,7 @@ module gadfit
   use gadf_constants, only: dp, kp
   use gadfit_linalg,  only: potr_f08 ! A*X=B with A symmetric
   use messaging
-  use misc,           only: string, len, swap, timer, safe_close
+  use misc,           only: data_pointer, string, len, swap, timer, safe_close
 #if !defined HAS_CO_SUM || defined QUAD_PRECISION
   use misc,           only: co_sum
 #endif
@@ -39,6 +39,10 @@ module gadfit
      enumerator:: GLOBAL, LOCAL, GLOBAL_AND_LOCAL         ! For I/O
      enumerator:: NONE, SQRT_Y, PROPTO_Y, INVERSE_Y, USER ! Data errors
   end enum
+
+  interface gadf_add_dataset
+     module procedure gadf_add_dataset_file, gadf_add_dataset_data
+  end interface gadf_add_dataset
 
   interface gadf_set
      module procedure set_int_local_real, set_int_local_real32, &
@@ -69,6 +73,10 @@ module gadfit
   ! Information about where one dataset ends and another begins in
   ! x_data, y_data, and weights.
   integer, allocatable :: data_positions(:)
+  ! When calling gadf_add_dataset, if the user passes data directly
+  ! instead of a filename, that data is temporarily held in this
+  ! variable.
+  type(data_pointer), allocatable :: data_pointers(:)
   ! Counts calls to gadf_set and warns if some parameters are not
   ! initialized. (Not terribly important.)
   integer :: set_count
@@ -139,7 +147,13 @@ contains
          & active_pars(size(fitfuncs(1)%pars)), &
          & is_global(size(fitfuncs(1)%pars)), &
          & data_positions(size(fitfuncs)+1), &
+         & data_pointers(size(fitfuncs)), &
          & stat=err_stat, errmsg=err_msg)
+    do i = 1, size(data_pointers)
+       data_pointers(i)%x_data => null()
+       data_pointers(i)%y_data => null()
+       data_pointers(i)%weights => null()
+    end do
     call check_err(__FILE__, __LINE__)
     call ad_init_reverse(ad_memory, sweep_size, trace_size, const_size)
     if (present(rel_error_inner) .or. present(ws_size_inner)) then
@@ -166,38 +180,64 @@ contains
   ! Opens a data file and determines the number of data points. If
   ! successful, the I/O device number is saved and the actual reading
   ! takes place in read_data.
-  subroutine gadf_add_dataset(path)
+  subroutine gadf_add_dataset_file(path)
     use, intrinsic :: iso_fortran_env, only: iostat_end
     character(*), intent(in) :: path
     real(kp) :: dummy
     integer :: data_size
     logical :: file_exists
-    integer :: i
+    integer :: i_dataset
     if (.not. allocated(fitfuncs)) &
          & call error(__FILE__, __LINE__, &
          & 'Number of datasets is undetermined. Call gadf_init first.')
-    main: do i = 1, size(fitfuncs)
-       slot_available: if (data_positions(i+1) == 1) then
-          open(newunit=data_units(i), file=path, status='old', action='read', &
-               & form='formatted', iostat=err_stat, iomsg=err_msg)
-          call check_err(__FILE__, __LINE__)
-          err_stat = 0; data_size = 0
-          inquire(file=path, exist=file_exists)
-          if (file_exists) then
-             do while (err_stat /= iostat_end)
-                read(data_units(i), *, iostat=err_stat) dummy
-                if (err_stat == 0) data_size = data_size + 1
-             end do
-          end if
-          if (data_size == 0) &
-               & call error(__FILE__, __LINE__, &
-               & path//' contains no valid data points.')
-          data_positions(i+1) = data_positions(i) + data_size
-          rewind(data_units(i))
-          exit main
-       end if slot_available
-    end do main
-  end subroutine gadf_add_dataset
+    do i_dataset = 1, size(data_positions) - 1
+       if (data_positions(i_dataset+1) == 1) exit
+    end do
+    if (i_dataset >= size(data_positions)) &
+         & call error(__FILE__, __LINE__, &
+         & 'Too many calls to gadf_add_dataset ('//str(i_dataset)//'/'// &
+         & str(size(fitfuncs))//').')
+    open(newunit=data_units(i_dataset), file=path, status='old', &
+         & action='read', form='formatted', iostat=err_stat, iomsg=err_msg)
+    call check_err(__FILE__, __LINE__)
+    err_stat = 0; data_size = 0
+    inquire(file=path, exist=file_exists)
+    if (file_exists) then
+       do while (err_stat /= iostat_end)
+          read(data_units(i_dataset), *, iostat=err_stat) dummy
+          if (err_stat == 0) data_size = data_size + 1
+       end do
+    end if
+    if (data_size == 0) &
+         & call error(__FILE__, __LINE__, &
+         & path//' contains no valid data points.')
+    data_positions(i_dataset+1) = data_positions(i_dataset) + data_size
+    rewind(data_units(i_dataset))
+  end subroutine gadf_add_dataset_file
+
+  ! Saves pointers to the data arrays provided by the user. The global
+  ! arrays x_data, y_data, and weights are constructed in read_data.
+  subroutine gadf_add_dataset_data(x_data, y_data, weights)
+    real(dp), intent(in), target :: x_data(:), y_data(:)
+    real(dp), intent(in), target, optional :: weights(:)
+    integer :: i_dataset
+    if (.not. allocated(fitfuncs)) &
+         & call error(__FILE__, __LINE__, &
+         & 'Number of datasets is undetermined. Call gadf_init first.')
+    do i_dataset = 1, size(data_positions) - 1
+       if (data_positions(i_dataset+1) == 1) exit
+    end do
+    if (i_dataset >= size(data_positions)) &
+         & call error(__FILE__, __LINE__, &
+         & 'Too many calls to gadf_add_dataset ('//str(i_dataset)//'/'// &
+         & str(size(fitfuncs))//').')
+    data_pointers(i_dataset)%x_data => x_data
+    data_pointers(i_dataset)%y_data => y_data
+    if (present(weights)) then
+       data_pointers(i_dataset)%weights => weights
+    end if
+    data_positions(i_dataset+1) = data_positions(i_dataset) + size(x_data)
+  end subroutine gadf_add_dataset_data
 
   ! Defines the parameter as local, sets its value, and marks it
   ! either active or passive.
@@ -368,18 +408,29 @@ contains
     do i = 1, size(data_units)
        j = data_positions(i)
        if (data_error_type == USER) then ! User defined errors
-          do while (j < data_positions(i+1))
-             read(data_units(i), *, iostat=err_stat) &
-                  & x_data(j), y_data(j), weights(j)
-             ! At this point, weights contains the inverse of weights
-             ! (see USER in init_weights).
-             if (err_stat == 0) j = j + 1
-          end do
+          if (associated(data_pointers(i)%x_data)) then
+             x_data(j:data_positions(i+1)-1) = data_pointers(i)%x_data
+             y_data(j:data_positions(i+1)-1) = data_pointers(i)%y_data
+             weights(j:data_positions(i+1)-1) = data_pointers(i)%weights
+          else
+             do while (j < data_positions(i+1))
+                read(data_units(i), *, iostat=err_stat) &
+                     & x_data(j), y_data(j), weights(j)
+                ! At this point, weights contains the inverse of weights
+                ! (see USER in init_weights).
+                if (err_stat == 0) j = j + 1
+             end do
+          end if
        else
-          do while (j < data_positions(i+1))
-             read(data_units(i), *, iostat=err_stat) x_data(j), y_data(j)
-             if (err_stat == 0) j = j + 1
-          end do
+          if (associated(data_pointers(i)%x_data)) then
+             x_data(j:data_positions(i+1)-1) = data_pointers(i)%x_data
+             y_data(j:data_positions(i+1)-1) = data_pointers(i)%y_data
+          else
+             do while (j < data_positions(i+1))
+                read(data_units(i), *, iostat=err_stat) x_data(j), y_data(j)
+                if (err_stat == 0) j = j + 1
+             end do
+          end if
        end if
        call safe_close(__FILE__, __LINE__, data_units(i))
     end do
@@ -1349,6 +1400,7 @@ contains
     call safe_deallocate(__FILE__, __LINE__, weights)
     call safe_deallocate(__FILE__, __LINE__, data_units)
     call safe_deallocate(__FILE__, __LINE__, data_positions)
+    call safe_deallocate(__FILE__, __LINE__, data_pointers)
     call free_integration()
     call ad_close()
   end subroutine gadf_close
