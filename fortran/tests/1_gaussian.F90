@@ -1,6 +1,8 @@
 module gaussian_m
   ! See the user guide for information about this fitting function.
 
+  use gaussian_data, only: x_data, y_data
+
   use ad
   use fitfunction
   use gadf_constants
@@ -40,7 +42,7 @@ end module gaussian_m
 
   call gadf_init(f) ! Number of curves defaults to 1.
 
-  call gadf_add_dataset(TESTS_BLD//'/1_gaussian_data')
+  call gadf_add_dataset(x_data, y_data)
 
   ! Since we have named the parameters we can use either the name or
   ! the parameter number.
@@ -55,19 +57,22 @@ end module gaussian_m
 
   call gadf_fit(0.1)
 
-  call gadf_print(output=TESTS_BLD//'/1_gaussian_results')
+  call gadf_print(output='1_gaussian_results')
 
   ! The following is for CTest and can be ignored
-#define TEST_TARGET 37.21457246216242_kp
-  if (this_image() == 1 .and. &
-       & abs(fitfuncs(1)%pars(3)%val - TEST_TARGET) > 5e-7_kp) then
-     write(*,*)
-     write(*,'(g0)') 'Error at 1_gaussian:'
-     write(*,'(2(g0))') '  "a" at the end of the fitting procedure: ', &
-          & fitfuncs(1)%pars(3)%val
-     write(*,'(27(" "), 2(g0))') 'Expected value: ', TEST_TARGET
-     write(*,*)
-     error stop
+  if (this_image() == 1) then
+     block
+       real(kp), parameter :: reference_value = 37.21457246216242_kp
+       if (abs(fitfuncs(1)%pars(3)%val - reference_value) > 5e-7_kp) then
+          write(*,*)
+          write(*,'(g0)') 'Error at 1_gaussian:'
+          write(*,'(2(g0))') '  "a" at the end of the fitting procedure: ', &
+               & fitfuncs(1)%pars(3)%val
+          write(*,'(27x, 2(g0))') 'Expected value: ', reference_value
+          write(*,*)
+          error stop
+       end if
+     end block
   end if
 
   call gadf_close()

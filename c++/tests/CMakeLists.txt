@@ -12,7 +12,7 @@ add_executable(tests EXCLUDE_FROM_ALL
 find_package(Catch2 QUIET)
 
 if (Catch2_FOUND)
-  target_link_libraries(tests PRIVATE ${LIBS} gadfit Catch2::Catch2)
+  target_link_libraries(tests PRIVATE ${LIBRARIES} gadfit Catch2::Catch2)
   add_test(tests tests)
   add_custom_target(test COMMAND ctest -V DEPENDS tests)
 else()

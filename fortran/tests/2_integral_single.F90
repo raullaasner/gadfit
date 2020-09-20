@@ -1,6 +1,8 @@
 module integral_single_m
   ! See the user guide for information about this fitting function.
 
+  use integral_single_data, only: x_data, y_data
+
   use ad
   use fitfunction
   use gadf_constants
@@ -54,7 +56,7 @@ end module integral_single_m
   ! rel_error is the error tolerance for numerical integration.
   call gadf_init(f, rel_error=1e-12_kp)
 
-  call gadf_add_dataset(TESTS_BLD//'/2_integral_single_data')
+  call gadf_add_dataset(x_data, y_data)
 
   call gadf_set('a', 10.0, .true.)
   call gadf_set('b', 1.0, .true.)
@@ -64,19 +66,22 @@ end module integral_single_m
 
   call gadf_fit(10.0, rel_error=1e-6)
 
-  call gadf_print(output=TESTS_BLD//'/2_integral_single_results')
+  call gadf_print(output='2_integral_single_results')
 
   ! The following is for CTest and can be ignored
-#define TEST_TARGET 1.923267927408180_kp
-  if (this_image() == 1 .and. &
-       & abs(fitfuncs(1)%pars(1)%val - TEST_TARGET) > 5e-7_kp) then
-     write(*,*)
-     write(*,'(g0)') 'Error at 2_integral_single:'
-     write(*,'(2(g0))') '  "a" at the end of the fitting procedure: ', &
-          & fitfuncs(1)%pars(1)%val
-     write(*,'(27(" "), 2(g0))') 'Expected value: ', TEST_TARGET
-     write(*,*)
-     error stop
+  if (this_image() == 1) then
+     block
+       real(kp), parameter :: reference_value = 1.923267927408180_kp
+       if (abs(fitfuncs(1)%pars(1)%val - reference_value) > 5e-7_kp) then
+          write(*,*)
+          write(*,'(g0)') 'Error at 2_integral_single:'
+          write(*,'(2(g0))') '  "a" at the end of the fitting procedure: ', &
+               & fitfuncs(1)%pars(1)%val
+          write(*,'(27x, 2(g0))') 'Expected value: ', reference_value
+          write(*,*)
+          error stop
+       end if
+     end block
   end if
 
   call gadf_close()

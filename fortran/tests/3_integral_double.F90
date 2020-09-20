@@ -1,6 +1,8 @@
 module integral_double_m
   ! See the user guide for information about this fitting function.
 
+  use integral_double_data, only: x_data, y_data, weights
+
   use ad
   use fitfunction
   use gadf_constants
@@ -71,7 +73,7 @@ end module integral_double_m
   call gadf_init(f, ad_memory='10 MB', &
        & rel_error_inner=1e-6_kp, rel_error=1e-5_kp)
 
-  call gadf_add_dataset(TESTS_BLD//'/3_integral_double_data')
+  call gadf_add_dataset(x_data, y_data, weights)
 
   call gadf_set('a', 1.0, .true.)
   call gadf_set('b', 1.0, .true.)
@@ -84,19 +86,22 @@ end module integral_double_m
 
   call gadf_fit(0.1, max_iter=3)
 
-  call gadf_print(output=TESTS_BLD//'/3_integral_double_results')
+  call gadf_print(output='3_integral_double_results')
 
   ! The following is for CTest and can be ignored
-#define TEST_TARGET 8.257343615095179_kp
-  if (this_image() == 1 .and. &
-       & abs(fitfuncs(1)%pars(1)%val - TEST_TARGET) > 5e-7_kp) then
-     write(*,*)
-     write(*,'(g0)') 'Error at 3_integral_double:'
-     write(*,'(2(g0))') '  "a" at the end of the fitting procedure: ', &
-          & fitfuncs(1)%pars(1)%val
-     write(*,'(27(" "), 2(g0))') 'Expected value: ', TEST_TARGET
-     write(*,*)
-     error stop
+  if (this_image() == 1) then
+     block
+       real(kp), parameter :: reference_value = 8.257343615095179_kp
+       if (abs(fitfuncs(1)%pars(1)%val - reference_value) > 5e-7_kp) then
+          write(*,*)
+          write(*,'(g0)') 'Error at 3_integral_double:'
+          write(*,'(2(g0))') '  "a" at the end of the fitting procedure: ', &
+               & fitfuncs(1)%pars(1)%val
+          write(*,'(27x, 2(g0))') 'Expected value: ', reference_value
+          write(*,*)
+          error stop
+       end if
+     end block
   end if
 
   call gadf_close()

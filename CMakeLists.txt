@@ -27,18 +27,22 @@ set(TESTS_RUN_PREFIX "" CACHE STRING
   "Prefix used for running tests, e.g., 'mpirun ...'")
 set(LINALG_FLAVOR "" CACHE STRING
   "Choose the linear algebra library (lapack, atlas, mkl)")
-set(INC_PATHS "" CACHE STRING
+set(INCLUDE_PATHS "" CACHE STRING
   "Directories containing necessary header files")
-set(LIB_PATHS "" CACHE STRING
+set(LIBRARY_PATHS "" CACHE STRING
   "Directories containing libraries to be linked against")
-set(LIBS "" CACHE STRING
+set(LIBRARIES "" CACHE STRING
   "Libraries to be linked against")
 set(GSL_DIR "" CACHE STRING "GSL install directory")
 option(INCLUDE_COVERAGE "Defines new target called 'coverage'" OFF)
 set(COVERAGE_FLAGS "--coverage" CACHE STRING
   "Additional compiler flags used when running code coverage")
 if (INCLUDE_COVERAGE)
-  string(APPEND CMAKE_CXX_FLAGS " ${COVERAGE_FLAGS}")
+  if (BUILD_CXX_VERSION)
+    string(APPEND CMAKE_CXX_FLAGS " ${COVERAGE_FLAGS}")
+  else()
+    string(APPEND CMAKE_Fortran_FLAGS " ${COVERAGE_FLAGS}")
+  endif()
 endif()
 
 # DEFINE TARGET
@@ -49,13 +53,13 @@ target_compile_definitions(gadfit PRIVATE
 
 # PROCESS USER DEFINED INCLUDE PATHS AND LIBRARIES
 include(Tools)
-target_include_directories(gadfit PRIVATE ${INC_PATHS})
+target_include_directories(gadfit PRIVATE ${INCLUDE_PATHS})
 # Convert variables to list first
-foreach(_var LIBS LIB_PATHS INC_PATHS)
+foreach(_var LIBRARIES LIBRARY_PATHS INCLUDE_PATHS)
   convert_to_list(${_var})
 endforeach()
-generate_library_targets(LIB_PATHS LIBS)
-target_link_libraries(gadfit PRIVATE ${LIBS})
+generate_library_targets(LIBRARY_PATHS LIBRARIES)
+target_link_libraries(gadfit PRIVATE ${LIBRARIES})
 if (GSL_DIR)
   target_include_directories(gadfit PRIVATE ${GSL_DIR}/include/gsl)
   unset(GSL_INCLUDE_DIR CACHE)

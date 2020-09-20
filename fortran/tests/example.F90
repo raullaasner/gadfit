@@ -52,10 +52,9 @@ end module test_f
   call gadf_init(f, 2)
 
   ! Include both decay curves. The argument must be full or relative
-  ! path to the data. TESTS_BLD is expanded by the preprocessor to
-  ! ~build/tests.
-  call gadf_add_dataset(TESTS_BLD//'/example_data1')
-  call gadf_add_dataset(TESTS_BLD//'/example_data2')
+  ! path to the data.
+  call gadf_add_dataset(DATA_DIR//'/example_data1')
+  call gadf_add_dataset(DATA_DIR//'/example_data2')
 
   ! The initial guess for all fitting parameters is 1.0. The first
   ! argument denotes the dataset, the second argument the parameter,
@@ -81,6 +80,6 @@ end module test_f
   call gadf_fit(lambda=10.0)
 
   ! The results are saved into ~gadfit/tests
-  call gadf_print(output=TESTS_BLD//'/example_results')
+  call gadf_print(output='example_results')
   call gadf_close() ! Free memory
 end program

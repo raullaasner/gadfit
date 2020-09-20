@@ -3,26 +3,29 @@
 # with this file, You can obtain one at
 # http://gnu.org/copyleft/gpl.txt.
 
-set(TESTS
+set(tests
+  ad_forward_mode
   1_gaussian
   2_integral_single
-  3_integral_double)
+  3_integral_double
+  4_multiple_data
+  )
 
 enable_testing()
 
 # Linear algebra libraries
 if (LINALG_FLAVOR MATCHES "lapack")
   find_package(LAPACK REQUIRED)
-  list(APPEND LIBS ${LAPACK_LIBRARIES})
+  list(APPEND LIBRARIES ${LAPACK_LIBRARIES})
 elseif (LINALG_FLAVOR MATCHES "atlas")
   find_package(Atlas REQUIRED)
-  list(APPEND LIBS ${Atlas_LIBRARIES})
+  list(APPEND LIBRARIES ${Atlas_LIBRARIES})
 elseif (LINALG_FLAVOR MATCHES "mkl")
   find_package(MKL REQUIRED)
-  list(APPEND LIBS ${MKL_LIBRARIES})
+  list(APPEND LIBRARIES ${MKL_LIBRARIES})
 endif()
 set(_test_linalg FALSE)
-foreach(_var LINALG_FLAVOR LIB_PATHS LIBS)
+foreach(_var LINALG_FLAVOR LIBRARY_PATHS LIBRARIES)
   if (DEFINED ${_var} AND NOT ${_var}_prev STREQUAL ${_var})
     set(${_var}_prev "${${_var}}" CACHE INTERNAL "")
     set(_test_linalg TRUE)
@@ -32,8 +35,8 @@ if (_test_linalg)
   try_compile(LINALG_TEST ${CMAKE_CURRENT_BINARY_DIR}
     ${PROJECT_SOURCE_DIR}/cmake/tests/Linalg.f90
     CMAKE_FLAGS
-    "-DLINK_LIBRARIES=${LIBS}"
-    "-DLINK_DIRECTORIES=${LIB_PATHS}")
+    "-DLINK_LIBRARIES=${LIBRARIES}"
+    "-DLINK_DIRECTORIES=${LIBRARY_PATHS}")
   set(linalg_ok ${LINALG_TEST} CACHE INTERNAL "")
   if (LINALG_TEST)
     message(STATUS "Linear algebra library is OK")
@@ -43,7 +46,7 @@ if (_test_linalg)
 endif()
 if (NOT linalg_ok)
   add_library(lapack-fallback SHARED EXCLUDE_FROM_ALL lapack-fallback.f)
-  list(APPEND LIBS lapack-fallback)
+  list(APPEND LIBRARIES lapack-fallback)
 endif()
 
 # OpenCoarrays
@@ -64,15 +67,16 @@ if (NOT OPEN_COARRAYS AND CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
     copy lib/libcaf_mpi.a ${CMAKE_CURRENT_BINARY_DIR}
     BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/libcaf_mpi.a
     )
-  list(APPEND LIBS ${CMAKE_CURRENT_BINARY_DIR}/libcaf_mpi.a)
+  list(APPEND LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libcaf_mpi.a)
 endif()
 
 # GADfit
-list(APPEND LIBS gadfit)
+list(APPEND LIBRARIES gadfit)
 
 # Example input
 add_executable(example0 EXCLUDE_FROM_ALL example.F90)
-target_compile_definitions(example0 PRIVATE TESTS_BLD='../tests')
+target_compile_definitions(example0 PRIVATE
+  DATA_DIR='${CMAKE_CURRENT_SOURCE_DIR}')
 add_dependencies(example0 gadfit)
 if (TARGET lapack-fallback)
   add_dependencies(example0 lapack-fallback)
@@ -81,20 +85,18 @@ if (TARGET OpenCoarrays-fallback)
   add_dependencies(example0 OpenCoarrays-fallback)
 endif()
 target_include_directories(example0 PRIVATE ${PROJECT_BINARY_DIR})
-target_link_libraries(example0 ${LIBS})
-set(SRC ${CMAKE_CURRENT_SOURCE_DIR})
-set(BLD ${CMAKE_CURRENT_BINARY_DIR})
-
+target_link_libraries(example0 ${LIBRARIES})
 add_custom_target(example
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-  ${SRC}/example_data1 ${BLD}/example_data1
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-  ${SRC}/example_data2 ${BLD}/example_data2
-  COMMAND ${TESTS_RUN_PREFIX} ${BLD}/example0 DEPENDS example0)
+  COMMAND ${TESTS_RUN_PREFIX} ${CMAKE_CURRENT_BINARY_DIR}/example0
+  DEPENDS example0)
 
 # Tests
-foreach(f ${TESTS})
-  add_executable(${f} EXCLUDE_FROM_ALL ${f}.F90)
+foreach(f ${tests})
+  add_executable(${f} EXCLUDE_FROM_ALL ${f}.F90 testing.F90)
+  # If a test requires input data, include that in a separate module.
+  if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${f}_data.F90)
+    target_sources(${f} PRIVATE ${f}_data.F90)
+  endif()
   if (TARGET lapack-fallback)
     add_dependencies(${f} lapack-fallback)
   endif()
@@ -104,15 +106,31 @@ foreach(f ${TESTS})
   add_test(NAME ${f} COMMAND ${TESTS_RUN_PREFIX}
     ${CMAKE_CURRENT_BINARY_DIR}/${f})
   target_include_directories(${f} PRIVATE ${PROJECT_BINARY_DIR})
-  target_link_libraries(${f} ${LIBS})
-  target_compile_definitions(${f} PRIVATE TESTS_BLD='../tests')
+  target_link_libraries(${f} ${LIBRARIES})
 endforeach()
-
 add_custom_target(test
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-  ${SRC}/1_gaussian_data ${BLD}/1_gaussian_data
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-  ${SRC}/2_integral_single_data ${BLD}/2_integral_single_data
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-  ${SRC}/3_integral_double_data ${BLD}/3_integral_double_data
-  COMMAND ctest -V DEPENDS ${TESTS})
+  COMMAND ctest -V DEPENDS ${tests})
+
+if (INCLUDE_COVERAGE)
+  find_program(_lcov lcov)
+  if (_lcov)
+    set(lcov_excluded_directory /usr)
+    add_custom_target(coverage
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+      COMMAND lcov -c -d CMakeFiles -o cov.info
+      COMMAND
+      sed -nr 's|SF:${lcov_excluded_directory}|${lcov_excluded_directory}|p'
+      cov.info | xargs lcov -r cov.info -o cov_filtered.info
+      COMMAND genhtml cov_filtered.info -o out
+      COMMAND cmake -E echo
+      "Open ${PROJECT_BINARY_DIR}/out/index.html to see the detailed report"
+      DEPENDS test)
+  else()
+    add_custom_target(coverage
+      COMMAND cmake -E echo "Error: Cannot run coverage. Install lcov first.")
+  endif()
+else()
+  add_custom_target(coverage
+    COMMAND cmake -E echo
+    "Error: Cannot run coverage. Enable INCLUDE_COVERAGE first.")
+endif()
