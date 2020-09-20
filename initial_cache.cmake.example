@@ -58,10 +58,10 @@ set(QUAD_PRECISION OFF CACHE BOOL "")
 #set(LINALG_FLAVOR lapack CACHE STRING "")
 
 # Linalg library directories
-#set(LIB_PATHS /usr/local/atlas/lib CACHE STRING "")
+#set(LIBRARY_PATHS /usr/local/atlas/lib CACHE STRING "")
 
 # Linalg libraries. Must be shared libraries.
-#set(LIBS tatlas CACHE STRING "")
+#set(LIBRARIES tatlas CACHE STRING "")
 
 # Location of libcaf_mpi.a
 #set(OPEN_COARRAYS /usr/local/opencoarrays/lib/libcaf_mpi.a CACHE STRING "")
