@@ -9,3 +9,4 @@ target_sources(gadfit PRIVATE
 
 target_include_directories(gadfit INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+target_compile_features(gadfit PUBLIC cxx_std_20)

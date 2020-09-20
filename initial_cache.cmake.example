@@ -5,7 +5,7 @@
 # You only need to edit the <value> parameter.
 
 # GNU compilers and flags
-#set(CMAKE_CXX_FLAGS "-std=c++17" CACHE STRING "")
+#set(CMAKE_CXX_FLAGS "" CACHE STRING "")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG" CACHE STRING "")
 #set(CMAKE_CXX_FLAGS_DEBUG "-Og -g -Wall -Wextra -Wcast-align -Wformat -Winvalid-pch -Wmissing-declarations -Wmissing-include-dirs -Wconversion -Wredundant-decls -Wswitch-default -Wswitch-enum -pedantic" CACHE STRING "")
 #set(CMAKE_Fortran_COMPILER mpif90 CACHE STRING "")
@@ -16,8 +16,8 @@
 # Intel compilers and flags
 #set(CMAKE_C_COMPILER icc CACHE STRING "")
 #set(CMAKE_CXX_COMPILER icpc CACHE STRING "")
-#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -ipo -xHost -fp-model precise -std=c++17" CACHE STRING "")
-#set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -debug all -check all -traceback -check-uninit -std=c++17" CACHE STRING "")
+#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -ipo -xHost -fp-model precise " CACHE STRING "")
+#set(CMAKE_CXX_FLAGS_DEBUG "-O3 -g -debug all -traceback" CACHE STRING "")
 #set(CMAKE_Fortran_COMPILER ifort CACHE STRING "")
 #set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -ipo -xHost -fp-model precise -coarray=shared" CACHE STRING "" FORCE)
 #set(CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -debug all -check all -fpe0 -traceback -warn -coarray=shared -std08" CACHE STRING "")
