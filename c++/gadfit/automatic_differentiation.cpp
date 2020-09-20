@@ -19,6 +19,16 @@ std::vector<int> trace;
 
 } // namespace reverse_work
 
+auto gadfit::operator>(const AdVar& x, const AdVar& y) -> bool
+{
+    return x.val > y.val;
+}
+
+auto gadfit::operator<(const AdVar& x, const AdVar& y) -> bool
+{
+    return x.val < y.val;
+}
+
 // Utilities
 auto operator<<(std::ostream& out, const AdVar& x) -> std::ostream&
 {

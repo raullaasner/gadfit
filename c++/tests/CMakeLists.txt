@@ -3,18 +3,22 @@
 # with this file, You can obtain one at
 # http://gnu.org/copyleft/gpl.txt.
 
-enable_testing()
-
-add_executable(tests EXCLUDE_FROM_ALL
-  catch2_init.cpp
+set(tests
+  ad_basic
   )
 
-find_package(Catch2 QUIET)
+enable_testing()
 
+find_package(Catch2 QUIET)
 if (Catch2_FOUND)
-  target_link_libraries(tests PRIVATE ${LIBRARIES} gadfit Catch2::Catch2)
-  add_test(tests tests)
-  add_custom_target(test COMMAND ctest -V DEPENDS tests)
+  add_library(catch2_init OBJECT EXCLUDE_FROM_ALL catch2_init.cpp)
+  target_link_libraries(catch2_init PUBLIC ${LIBRARIES} gadfit Catch2::Catch2)
+  foreach(_test ${tests})
+    add_executable(${_test} EXCLUDE_FROM_ALL ${_test}.cpp)
+    target_link_libraries(${_test} PRIVATE catch2_init)
+    add_test(${_test} ${_test})
+  endforeach()
+  add_custom_target(test COMMAND ctest -V DEPENDS ${tests})
 else()
   add_custom_target(test
     COMMAND cmake -E echo

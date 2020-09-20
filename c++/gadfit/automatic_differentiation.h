@@ -8,6 +8,10 @@
 
 namespace gadfit {
 
+// If AdVar::idx has this value then it is an active variable in the
+// forward mode.
+constexpr int forward_active_idx { -1 };
+
 // The AD variable
 class AdVar
 {
@@ -15,10 +19,10 @@ public:
     // Value and first and second derivatives of the AD variable
     // NOLINTNEXTLINE(modernize-use-default-member-init)
     double val, d, dd;
-    // The index serves three purposes. If zero, this is an
-    // inactive AD variable, so just compute the value and no
-    // derivatives. If positive, we are in the reverse mode and if
-    // negative in the forward mode of AD.
+    // The index serves three purposes. If zero, this is an inactive
+    // AD variable, so just compute the value and no derivatives. If
+    // positive, we are in the reverse mode and if negative
+    // (forward_active_idx) in the forward mode of AD.
     // NOLINTNEXTLINE(modernize-use-default-member-init)
     int idx;
 
@@ -32,7 +36,36 @@ public:
                     const int idx)
       : val { val }, d { d }, dd { dd }, idx { idx }
     {}
+    AdVar(const AdVar&) = default;
+    AdVar(AdVar&&) = default;
+
+    auto operator=(const AdVar& x) -> AdVar& = default;
+    auto operator=(AdVar &&) -> AdVar& = default;
+    template <typename T>
+    auto operator=(const T x) -> AdVar&
+    {
+        val = static_cast<double>(x);
+        return *this;
+    }
+
+    template <typename T>
+    operator T() const { return static_cast<T>(val); }
+
+    ~AdVar() = default;
 };
+
+template <typename T>
+auto operator>(const AdVar& x, T y) -> bool
+{
+    return x.val > static_cast<double>(y);
+}
+auto operator>(const AdVar& x, const AdVar& y) -> bool;
+template <typename T>
+auto operator<(const AdVar& x, T y) -> bool
+{
+    return x.val < static_cast<double>(y);
+}
+auto operator<(const AdVar& x, const AdVar& y) -> bool;
 
 } // namespace gadfit
 
