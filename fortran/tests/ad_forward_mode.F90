@@ -53,6 +53,14 @@
     call test(POS, e, 6)
   end block
 
+  ! Memory allocation
+  block
+    type(advar), allocatable :: a(:)
+    allocate(a(2))
+    a = test_parameters(1)
+    call safe_deallocate(POS, a)
+  end block
+
   ! Basic arithmetic
   block
     real(kp), parameter :: ref_value = -2.6269013312046944d-3
@@ -70,7 +78,7 @@
     real(16), parameter :: par_128 = test_parameters(3)
     integer, parameter :: par_int = nint(test_parameters(4))
     type(advar) :: a, b, c, expression
-    integer :: i1, i2, i3, i4, test_counter
+    integer :: i1, i2, i3, test_counter
     a = test_parameters(5)
     b = test_parameters(6)
     c = test_parameters(7)

@@ -5,6 +5,7 @@
 
 set(tests
   ad_forward_mode
+  ad_reverse_mode
   1_gaussian
   2_integral_single
   3_integral_double
@@ -91,8 +92,10 @@ add_custom_target(example
   DEPENDS example0)
 
 # Tests
+add_library(fortran_testing testing.F90)
+target_link_libraries(fortran_testing PUBLIC ${LIBRARIES})
 foreach(f ${tests})
-  add_executable(${f} EXCLUDE_FROM_ALL ${f}.F90 testing.F90)
+  add_executable(${f} EXCLUDE_FROM_ALL ${f}.F90)
   # If a test requires input data, include that in a separate module.
   if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${f}_data.F90)
     target_sources(${f} PRIVATE ${f}_data.F90)
@@ -105,8 +108,9 @@ foreach(f ${tests})
   endif()
   add_test(NAME ${f} COMMAND ${TESTS_RUN_PREFIX}
     ${CMAKE_CURRENT_BINARY_DIR}/${f})
-  target_include_directories(${f} PRIVATE ${PROJECT_BINARY_DIR})
-  target_link_libraries(${f} ${LIBRARIES})
+  target_include_directories(${f}
+    PRIVATE ${PROJECT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+  target_link_libraries(${f} fortran_testing)
 endforeach()
 add_custom_target(test
   COMMAND ctest -V DEPENDS ${tests})

@@ -1769,5 +1769,6 @@ contains
     call safe_deallocate(__FILE__, __LINE__, adjoints)
     call safe_deallocate(__FILE__, __LINE__, trace)
     call safe_deallocate(__FILE__, __LINE__, ad_constants)
+    reverse_mode = .false.
   end subroutine ad_close
 end module ad
