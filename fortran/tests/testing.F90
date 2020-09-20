@@ -1,9 +1,11 @@
+! Fixtures and other helper functions for the tests
+
 module testing
 
   use, intrinsic :: iso_fortran_env, only: error_unit, real32
 
   use ad
-  use gadf_constants, only: kp
+  use gadf_constants, only: kp, qp
 
   implicit none
 
@@ -18,7 +20,7 @@ module testing
   real(kp), parameter :: error_tolerance = 1d1*epsilon(1d0)
 
   ! Random values in the range -10...10
-  real(kp), parameter :: test_parameters(*) = [ &
+  real(kp), parameter :: fix_d(*) = [ &
        &  6.1360420701563498d0, &
        &  2.9606444748278875d0, &
        &  9.9253736972586246d0, &
@@ -39,6 +41,53 @@ module testing
        &  2.1875264606693996d0, &
        &  7.5767671483267520d0, &
        &  9.7405995203640394d0]
+
+  real(qp), parameter :: fix_q(*) = [ &
+       &  6.1360420701563498_qp, &
+       &  2.9606444748278875_qp, &
+       &  9.9253736972586246_qp, &
+       &  0.5356792380861322_qp, &
+       & -1.4727205961479033_qp, &
+       &  4.2512661200877879_qp, &
+       & -2.9410316453781444_qp, &
+       &  3.4797551257539538_qp, &
+       &  2.8312317178378699_qp, &
+       & -1.4900798993157309_qp, &
+       & -9.7526376845644123_qp, &
+       & -8.8824179995985126_qp, &
+       &  6.7638244484618752_qp, &
+       & -7.1130268493509963_qp, &
+       & -4.5835128246417494_qp, &
+       & -8.9059115759599745_qp, &
+       &  3.2898784649467867_qp, &
+       &  2.1875264606693996_qp, &
+       &  7.5767671483267520_qp, &
+       &  9.7405995203640394_qp]
+
+  real(real32), parameter :: fix_f(*) = [ &
+       &  6.1360420701563498, &
+       &  2.9606444748278875, &
+       &  9.9253736972586246, &
+       &  0.5356792380861322, &
+       & -1.4727205961479033, &
+       &  4.2512661200877879, &
+       & -2.9410316453781444, &
+       &  3.4797551257539538, &
+       &  2.8312317178378699, &
+       & -1.4900798993157309, &
+       & -9.7526376845644123, &
+       & -8.8824179995985126, &
+       &  6.7638244484618752, &
+       & -7.1130268493509963, &
+       & -4.5835128246417494, &
+       & -8.9059115759599745, &
+       &  3.2898784649467867, &
+       &  2.1875264606693996, &
+       &  7.5767671483267520, &
+       &  9.7405995203640394]
+
+  integer, parameter :: fix_i(*) = &
+       & [ 6, 2, 9, 0, -1, 4, -2, 3, 2, -1, -9, -8, 6, -7, -4, -8, 3, 2, 7, 9]
 
 contains
   impure elemental subroutine test_bool(file, line, condition)
@@ -82,7 +131,7 @@ contains
        & reference_value)
     character(*), intent(in) :: file
     integer, intent(in) :: line
-    real(16), intent(in) :: computed_value, reference_value
+    real(qp), intent(in) :: computed_value, reference_value
     if (abs(computed_value - reference_value) > error_tolerance) then
        write(error_unit, '(a, a, ":", i0)') 'Error at ', file, line
        write(error_unit, '(2x, a, g0)') 'Computed value: ', computed_value
