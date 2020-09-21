@@ -7,6 +7,26 @@ target_sources(gadfit PRIVATE
   automatic_differentiation.cpp
   )
 
-target_include_directories(gadfit INTERFACE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 target_compile_features(gadfit PUBLIC cxx_std_20)
+
+set_target_properties(gadfit PROPERTIES PUBLIC_HEADER
+  automatic_differentiation.h
+  )
+
+target_include_directories(gadfit INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:include>)
+
+install(TARGETS gadfit EXPORT gadfitConfig)
+install(EXPORT gadfitConfig NAMESPACE gadfit:: DESTINATION lib/cmake/gadfit)
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+  ${PROJECT_BINARY_DIR}/gadfitConfigVersion.cmake
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY SameMajorVersion)
+install(FILES ${PROJECT_BINARY_DIR}/gadfitConfigVersion.cmake
+  DESTINATION lib/cmake/gadfit)
+
+export(EXPORT gadfitConfig NAMESPACE gadfit::
+  FILE ${PROJECT_BINARY_DIR}/gadfitConfig.cmake)
