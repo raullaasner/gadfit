@@ -29,11 +29,11 @@ public:
     // For performance reasons, don't use any default values.
     AdVar() = default;
     // NOLINTNEXTLINE
-    AdVar(const double val) : val { val } {}
-    constexpr AdVar(const double val,
-                    const double d,
-                    const double dd,
-                    const int idx)
+    explicit AdVar(const double val) : val { val } {}
+    explicit constexpr AdVar(const double val,
+                             const double d,
+                             const double dd,
+                             const int idx)
       : val { val }, d { d }, dd { dd }, idx { idx }
     {}
     AdVar(const AdVar&) = default;
@@ -49,23 +49,188 @@ public:
     }
 
     template <typename T>
-    operator T() const { return static_cast<T>(val); }
+    operator T() const
+    {
+        return static_cast<T>(val);
+    }
+
+    auto operator-() const -> AdVar;
+    auto operator+() const -> AdVar;
 
     ~AdVar() = default;
 };
 
+// void initialize_ad_reverse();
+
+// Greater than
 template <typename T>
-auto operator>(const AdVar& x, T y) -> bool
+auto operator>(const AdVar& x, const T y) -> bool
 {
     return x.val > static_cast<double>(y);
 }
-auto operator>(const AdVar& x, const AdVar& y) -> bool;
+
 template <typename T>
-auto operator<(const AdVar& x, T y) -> bool
+auto operator>(const T y, const AdVar& x) -> bool
+{
+    return static_cast<double>(y) > x.val;
+}
+
+auto operator>(const AdVar& x, const AdVar& y) -> bool;
+
+// Less than
+template <typename T>
+auto operator<(const AdVar& x, const T y) -> bool
 {
     return x.val < static_cast<double>(y);
 }
+
+template <typename T>
+auto operator<(const T y, const AdVar& x) -> bool
+{
+    return static_cast<double>(y) < x.val;
+}
+
 auto operator<(const AdVar& x, const AdVar& y) -> bool;
+
+// Addition
+template <typename T>
+auto operator+(const AdVar& x1, const T x2) -> AdVar
+{
+    AdVar y { x1.val + x2 };
+    if (x1.idx < 0) {
+        y.d = x1.d;
+        y.dd = x1.dd;
+        y.idx = forward_active_idx;
+    } else {
+        y.d = 0.0;
+        y.dd = 0.0;
+        y.idx = 0;
+    }
+    return y;
+}
+
+template <typename T>
+auto operator+(const T x1, const AdVar& x2) -> AdVar
+{
+    AdVar y { x1 + x2.val };
+    if (x2.idx < 0) {
+        y.d = x2.d;
+        y.dd = x2.dd;
+        y.idx = forward_active_idx;
+    } else {
+        y.d = 0.0;
+        y.dd = 0.0;
+        y.idx = 0;
+    }
+    return y;
+}
+
+auto operator+(const AdVar& x1, const AdVar& x2) -> AdVar;
+
+// Subtraction
+template <typename T>
+auto operator-(const AdVar& x1, const T x2) -> AdVar
+{
+    AdVar y { x1.val - x2 };
+    if (x1.idx < 0) {
+        y.d = x1.d;
+        y.dd = x1.dd;
+        y.idx = forward_active_idx;
+    } else {
+        y.d = 0.0;
+        y.dd = 0.0;
+        y.idx = 0;
+    }
+    return y;
+}
+
+template <typename T>
+auto operator-(const T x1, const AdVar& x2) -> AdVar
+{
+    AdVar y { x1 - x2.val };
+    if (x2.idx < 0) {
+        y.d = -x2.d;
+        y.dd = -x2.dd;
+        y.idx = forward_active_idx;
+    } else {
+        y.d = 0.0;
+        y.dd = 0.0;
+        y.idx = 0;
+    }
+    return y;
+}
+
+auto operator-(const AdVar& x1, const AdVar& x2) -> AdVar;
+
+// Multiplication
+template <typename T>
+auto operator*(const AdVar& x1, const T x2) -> AdVar
+{
+    AdVar y { x1.val * x2 };
+    if (x1.idx == forward_active_idx) {
+        y.d = x1.d * x2;
+        y.dd = x1.dd * x2;
+        y.idx = forward_active_idx;
+    } else {
+        y.d = 0.0;
+        y.dd = 0.0;
+        y.idx = 0;
+    }
+    return y;
+}
+
+template <typename T>
+auto operator*(const T x1, const AdVar& x2) -> AdVar
+{
+    AdVar y { x1 * x2.val };
+    if (x2.idx == forward_active_idx) {
+        y.d = x1 * x2.d;
+        y.dd = x1 * x2.dd;
+        y.idx = forward_active_idx;
+    } else {
+        y.d = 0.0;
+        y.dd = 0.0;
+        y.idx = 0;
+    }
+    return y;
+}
+
+auto operator*(const AdVar& x1, const AdVar& x2) -> AdVar;
+
+// Division
+template <typename T>
+auto operator/(const AdVar& x1, const T x2) -> AdVar
+{
+    AdVar y { x1.val / x2 };
+    if (x1.idx == forward_active_idx) {
+        y.d = x1.d / x2;
+        y.dd = x1.dd / x2;
+        y.idx = forward_active_idx;
+    } else {
+        y.d = 0.0;
+        y.dd = 0.0;
+        y.idx = 0;
+    }
+    return y;
+}
+
+template <typename T>
+auto operator/(const T x1, const AdVar& x2) -> AdVar
+{
+    AdVar y { x1 / x2.val };
+    if (x2.idx == forward_active_idx) {
+        y.d = -y.val * x2.d / x2.val;
+        y.dd = (-x2.dd * y.val - 2 * y.d * x2.d) / x2.val;
+        y.idx = forward_active_idx;
+    } else {
+        y.d = 0.0;
+        y.dd = 0.0;
+        y.idx = 0;
+    }
+    return y;
+}
+
+auto operator/(const AdVar& x1, const AdVar& x2) -> AdVar;
 
 } // namespace gadfit
 

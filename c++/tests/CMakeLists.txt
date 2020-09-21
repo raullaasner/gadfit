@@ -5,6 +5,7 @@
 
 set(tests
   ad_basic
+  ad_forward_mode
   )
 
 enable_testing()

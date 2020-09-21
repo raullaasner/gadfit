@@ -9,6 +9,7 @@ mpi-*,\
 performance-*,\
 portability-*,\
 readability-*,\
+-readability-avoid-const-params-in-decls
 "
 HeaderFilterRegex: 'c\+\+/gadfit/.*\.h$'
 CheckOptions:
