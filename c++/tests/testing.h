@@ -9,7 +9,7 @@
     REQUIRE( x.dd  == approx(ref_dd)  );                \
     REQUIRE( x.idx == ref_idx         );
 
-#include <gadfit.h>
+#include <automatic_differentiation.h>
 #include <catch2/catch.hpp>
 #include <array>
 
