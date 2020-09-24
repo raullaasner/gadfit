@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include <cmath>
 #include <iostream>
+#include <vector>
 
 namespace gadfit {
 
@@ -201,10 +203,11 @@ auto operator*(const AdVar& x1, const AdVar& x2) -> AdVar;
 template <typename T>
 auto operator/(const AdVar& x1, const T x2) -> AdVar
 {
-    AdVar y { x1.val / x2 };
+    const double& inv_x2 { 1.0 / x2 };
+    AdVar y { x1.val * inv_x2 };
     if (x1.idx == forward_active_idx) {
-        y.d = x1.d / x2;
-        y.dd = x1.dd / x2;
+        y.d = x1.d * inv_x2;
+        y.dd = x1.dd * inv_x2;
         y.idx = forward_active_idx;
     } else {
         y.d = 0.0;
@@ -217,10 +220,11 @@ auto operator/(const AdVar& x1, const T x2) -> AdVar
 template <typename T>
 auto operator/(const T x1, const AdVar& x2) -> AdVar
 {
-    AdVar y { x1 / x2.val };
+    const double& inv_x2 { 1.0 / x2.val };
+    AdVar y { x1 * inv_x2 };
     if (x2.idx == forward_active_idx) {
-        y.d = -y.val * x2.d / x2.val;
-        y.dd = (-x2.dd * y.val - 2 * y.d * x2.d) / x2.val;
+        y.d = -y.val * x2.d * inv_x2;
+        y.dd = (-x2.dd * y.val - 2 * y.d * x2.d) * inv_x2;
         y.idx = forward_active_idx;
     } else {
         y.d = 0.0;
@@ -232,6 +236,68 @@ auto operator/(const T x1, const AdVar& x2) -> AdVar
 
 auto operator/(const AdVar& x1, const AdVar& x2) -> AdVar;
 
+// Exponentiation
+auto pow(const AdVar& x1, const AdVar& x2) -> AdVar;
+
+template <typename T>
+auto pow(const AdVar& x1, const T x2) -> AdVar
+{
+    AdVar y { std::pow(x1.val, x2) };
+    if (x1.idx == forward_active_idx) {
+        y.d = x1.d * x2 * std::pow(x1.val, x2 - 1);
+        const double& inv_x1 { 1.0 / x1.val };
+        y.dd = y.d * y.d / y.val
+               + y.val * x2 * (x1.dd - x1.d * x1.d * inv_x1) * inv_x1;
+        y.idx = forward_active_idx;
+    } else {
+        y.d = 0.0;
+        y.dd = 0.0;
+        y.idx = 0;
+    }
+    return y;
+}
+
+template <typename T>
+auto pow(const T x1, const AdVar& x2) -> AdVar
+{
+    AdVar y { std::pow(x1, x2.val) };
+    if (x2.idx == forward_active_idx) {
+        const double& log_value { std::log(x1) };
+        y.d = y.val * x2.d * log_value;
+        y.dd = y.d * y.d / y.val + y.val * x2.dd * log_value;
+        y.idx = forward_active_idx;
+    } else {
+        y.d = 0.0;
+        y.dd = 0.0;
+        y.idx = 0;
+    }
+    return y;
+}
+
+// Logarithm, exponentiatial, and other
+auto log(const AdVar& x) -> AdVar;
+auto exp(const AdVar& x) -> AdVar;
+auto sqrt(const AdVar& x) -> AdVar;
+auto abs(const AdVar& x) -> AdVar;
+
+// Trigonometric
+auto sin(const AdVar& x) -> AdVar;
+auto cos(const AdVar& x) -> AdVar;
+auto tan(const AdVar& x) -> AdVar;
+auto asin(const AdVar& x) -> AdVar;
+auto acos(const AdVar& x) -> AdVar;
+auto atan(const AdVar& x) -> AdVar;
+auto sinh(const AdVar& x) -> AdVar;
+auto cosh(const AdVar& x) -> AdVar;
+auto tanh(const AdVar& x) -> AdVar;
+auto asinh(const AdVar& x) -> AdVar;
+auto acosh(const AdVar& x) -> AdVar;
+auto atanh(const AdVar& x) -> AdVar;
+
+// Special
+auto erf(const AdVar& x) -> AdVar;
+
 } // namespace gadfit
 
+// Utilities
 auto operator<<(std::ostream& out, const gadfit::AdVar& x) -> std::ostream&;
