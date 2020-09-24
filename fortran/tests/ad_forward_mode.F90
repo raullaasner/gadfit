@@ -63,7 +63,7 @@
 
   ! Basic arithmetic
   block
-    real(kp), parameter :: ref_value = 17.070019074561596d0
+    real(kp), parameter :: ref_value = 17.070019074561593d0
     real(kp), parameter :: references(3,8) = reshape([ &
          & ref_value,   1.9151681173140911d0,   1.2073525195984129d0, &
          & ref_value,   3.4496862204095673d0,   3.4511016163800172d0, &
@@ -121,13 +121,13 @@
     end do
   end block
 
-  ! Exponentiation, logarithms
+  ! Exponentiation, logarithm
   block
     real(kp), parameter :: ref_value = 18998439975.537479d0
     real(kp), parameter :: references(3,4) = reshape([ &
-         & ref_value, 199282009046.68716d0, 2328449500178.3389d0, &
+         & ref_value, 199282009046.68716d0, 2328449500178.3394d0, &
          & ref_value, 38415548.376606211d0, 38479204.243286937d0, &
-         & ref_value, 199243593498.31058d0, 2327612220349.5225d0, &
+         & ref_value, 199243593498.31061d0, 2327612220349.5225d0, &
          & ref_value, 0d0, 0d0], shape(references))
     real(kp), parameter :: par_kp = fix_d(1)
     real(real32), parameter :: par_f = fix_d(2)
@@ -164,8 +164,8 @@
   block
     real(kp), parameter :: ref_value = -0.84756731470205926d0
     real(kp), parameter :: references(3,4) = reshape([ &
-         & ref_value, -0.95581756099443504d0, -15.651120019290964d0, &
-         & ref_value, -1.4470151214729803d0, -19.528161631929262d0, &
+         & ref_value, -0.95581756099443504d0, -15.650198027974600d0, &
+         & ref_value, -1.4470151214729803d0, -19.527239640612894d0, &
          & ref_value, 0.49119756047854513d0, 1.6911147680304270d0, &
          & ref_value, 0d0, 0d0], shape(references))
     type(advar) :: a, b, expression
@@ -197,7 +197,7 @@
     real(kp), parameter :: ref_value = 0.55128846666540832d0
     real(kp), parameter :: references(3,2) = reshape([ &
          & ref_value, 0d0, 0d0, &
-         & ref_value, 0.84690224138588510d0, -0.90733589479805699d0 &
+         & ref_value, 0.84690224138588510d0, -0.060433653412171925d0 &
          & ], shape(references))
     type(advar) :: a, expression
     a%val = fix_d(4)
@@ -205,7 +205,7 @@
     call test(POS, expression, references(:,1))
     a%index = -1
     a%d = 1d0
-    a%d = 1d0
+    a%dd = 1d0
     a%val = fix_d(4)
     expression = erf(a)
     call test(POS, expression, references(:,2))

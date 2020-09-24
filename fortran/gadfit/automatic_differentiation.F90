@@ -816,8 +816,10 @@ contains
 
   type(advar) function divide_advar_advar(x1, x2) result(y)
     type(advar), intent(in) :: x1, x2
+    real(kp) :: inv_x2
     if (x1%index /= 0 .and. x2%index /= 0) then
-       y%val = x1%val/x2%val
+       inv_x2 = 1/x2%val
+       y%val = x1%val*inv_x2
        if (reverse_mode) then
           index_count = index_count + 1
           y%index = index_count
@@ -828,8 +830,8 @@ contains
           trace(trace_count+4) = DIVIDE_A_A
           trace_count = trace_count + 4
        else
-          y%d = (x1%d - y%val*x2%d)/x2%val
-          y%dd = (x1%dd - y%val*x2%dd - 2*y%d*x2%d)/x2%val
+          y%d = (x1%d - y%val*x2%d)*inv_x2
+          y%dd = (x1%dd - y%val*x2%dd - 2*y%d*x2%d)*inv_x2
           y%index = 1
        end if
     else if (x1%index /= 0) then
@@ -844,21 +846,23 @@ contains
   type(advar) function divide_advar_real(x1, x2) result(y)
     type(advar), intent(in) :: x1
     real(kp), intent(in) :: x2
-    y%val = x1%val/x2
+    real(kp) :: inv_x2
+    inv_x2 = 1/x2
+    y%val = x1%val*inv_x2
     if (x1%index /= 0) then
        if (reverse_mode) then
           index_count = index_count + 1
           const_count = const_count + 1
           y%index = index_count
           forward_values(index_count) = y%val
-          ad_constants(const_count) = 1/x2
+          ad_constants(const_count) = inv_x2
           trace(trace_count+1) = x1%index
           trace(trace_count+2) = y%index
           trace(trace_count+3) = MULTIPLY_DIVIDE_A_R
           trace_count = trace_count + 3
        else
-          y%d = x1%d/x2
-          y%dd = x1%dd/x2
+          y%d = x1%d*inv_x2
+          y%dd = x1%dd*inv_x2
           y%index = 1
        end if
     end if
@@ -957,6 +961,7 @@ contains
 
   type(advar) function power_advar_advar(x1, x2) result(y)
     type(advar), intent(in) :: x1, x2
+    real(kp) :: inv_x1, log_value
     if (x1%index /= 0 .and. x2%index /= 0) then
        y%val = x1%val**x2%val
        if (reverse_mode) then
@@ -969,9 +974,11 @@ contains
           trace(trace_count+4) = POWER_A_A
           trace_count = trace_count + 4
        else
-          y%d = y%val*x2%d*log(x1%val) + x1%d*x2%val*x1%val**(x2%val-1)
-          y%dd = y%d**2/y%val + y%val*(x2%dd*log(x1%val) + &
-               & (2*x2%d*x1%d + x2%val*(x1%dd - x1%d**2/x1%val))/x1%val)
+          log_value = log(x1%val)
+          y%d = y%val*x2%d*log_value + x1%d*x2%val*x1%val**(x2%val-1)
+          inv_x1 = 1/x1%val
+          y%dd = y%d**2/y%val + y%val*(x2%dd*log_value + &
+               & (2*x2%d*x1%d + x2%val*(x1%dd - x1%d**2*inv_x1))*inv_x1)
           y%index = 1
        end if
     else if (x1%index /= 0) then
@@ -986,6 +993,7 @@ contains
   type(advar) function power_advar_real(x1, x2) result(y)
     type(advar), intent(in) :: x1
     real(kp), intent(in) :: x2
+    real(kp) :: inv_x1
     y%val = x1%val**x2
     if (x1%index /= 0) then
        if (reverse_mode) then
@@ -1000,7 +1008,8 @@ contains
           trace_count = trace_count + 3
        else
           y%d = x1%d*x2*x1%val**(x2-1)
-          y%dd = y%d**2/y%val + y%val*x2*(x1%dd - x1%d**2/x1%val)/x1%val
+          inv_x1 = 1/x1%val
+          y%dd = y%d**2/y%val + y%val*x2*(x1%dd - x1%d**2*inv_x1)*inv_x1
           y%index = 1
        end if
     end if
@@ -1027,6 +1036,7 @@ contains
   type(advar) function power_advar_integer(x1, x2) result(y)
     type(advar), intent(in) :: x1
     integer, intent(in) :: x2
+    real(kp) :: inv_x1
     y%val = x1%val**x2
     if (x1%index /= 0) then
        if (reverse_mode) then
@@ -1043,8 +1053,9 @@ contains
           trace(trace_count+4) = POWER_INTEGER
           trace_count = trace_count + 4
        else
-          y%d = y%val*x2*x1%d/x1%val
-          y%dd = y%d**2/y%val + y%val*x2*(x1%dd - x1%d**2/x1%val)/x1%val
+          inv_x1 = 1/x1%val
+          y%d = y%val*x2*x1%d*inv_x1
+          y%dd = y%d**2/y%val + y%val*x2*(x1%dd - x1%d**2*inv_x1)*inv_x1
           y%index = 1
        end if
     end if
@@ -1053,6 +1064,7 @@ contains
   type(advar) function power_real_advar(x1, x2) result(y)
     real(kp), intent(in) :: x1
     type(advar), intent(in) :: x2
+    real(kp) :: log_value
     y%val = x1**x2%val
     if (x2%index /= 0) then
        if (reverse_mode) then
@@ -1066,8 +1078,9 @@ contains
           trace(trace_count+3) = POWER_R_A
           trace_count = trace_count + 3
        else
-          y%d = y%val*x2%d*log(x1)
-          y%dd = y%d**2/y%val + y%val*x2%dd*log(x1)
+          log_value = log(x1)
+          y%d = y%val*x2%d*log_value
+          y%dd = y%d**2/y%val + y%val*x2%dd*log_value
           y%index = 1
        end if
     end if
@@ -1119,6 +1132,7 @@ contains
 
   type(advar) function sqrt_advar(x) result(y)
     type(advar), intent(in) :: x
+    real(kp) :: inv_y
     y%val = sqrt(x%val)
     if (x%index /= 0) then
        if (reverse_mode) then
@@ -1130,8 +1144,9 @@ contains
           trace(trace_count+3) = SQRT_A
           trace_count = trace_count + 3
        else
-          y%d = x%d/2/y%val
-          y%dd = (x%dd/y%val - y%d*x%d/x%val)/2
+          inv_y = 1/y%val
+          y%d = x%d/2*inv_y
+          y%dd = (x%dd*inv_y - y%d*x%d/x%val)/2
           y%index = 1
        end if
     end if
@@ -1139,6 +1154,7 @@ contains
 
   type(advar) function log_advar(x) result(y)
     type(advar), intent(in) :: x
+    real(kp) :: inv_x
     y%val = log(x%val)
     if (x%index /= 0) then
        if (reverse_mode) then
@@ -1150,8 +1166,9 @@ contains
           trace(trace_count+3) = LOG_A
           trace_count = trace_count + 3
        else
-          y%d = x%d/x%val
-          y%dd = (x%dd - x%d*y%d)/x%val
+          inv_x = 1/x%val
+          y%d = x%d*inv_x
+          y%dd = (x%dd - x%d*y%d)*inv_x
           y%index = 1
        end if
     end if
@@ -1159,6 +1176,7 @@ contains
 
   type(advar) function sin_advar(x) result(y)
     type(advar), intent(in) :: x
+    real(kp) :: cos_value
     y%val = sin(x%val)
     if (x%index /= 0) then
        if (reverse_mode) then
@@ -1170,12 +1188,9 @@ contains
           trace(trace_count+3) = SIN_A
           trace_count = trace_count + 3
        else
-          y%d = x%d*cos(x%val)
-          if (abs(x%d) > tiny(1.0_kp)) then
-             y%dd = x%dd*y%d/x%d - x%d**2*y%val
-          else
-             y%dd = x%dd*cos(x%val)
-          end if
+          cos_value = cos(x%val)
+          y%d = x%d*cos_value
+          y%dd = x%dd*cos_value - x%d**2*y%val
           y%index = 1
        end if
     end if
@@ -1183,6 +1198,7 @@ contains
 
   type(advar) function cos_advar(x) result(y)
     type(advar), intent(in) :: x
+    real(kp) :: sin_value
     y%val = cos(x%val)
     if (x%index /= 0) then
        if (reverse_mode) then
@@ -1194,12 +1210,9 @@ contains
           trace(trace_count+3) = COS_A
           trace_count = trace_count + 3
        else
-          y%d = -x%d*sin(x%val)
-          if (abs(x%d) > tiny(1.0_kp)) then
-             y%dd = x%dd*y%d/x%d -x%d**2*y%val
-          else
-             y%dd = -x%dd*sin(x%val)
-          end if
+          sin_value = -sin(x%val)
+          y%d = x%d*sin_value
+          y%dd = x%dd*sin_value -x%d**2*y%val
           y%index = 1
        end if
     end if
@@ -1207,6 +1220,7 @@ contains
 
   type(advar) function tan_advar(x) result(y)
     type(advar), intent(in) :: x
+    real(kp) :: inv_cos_value2
     y%val = tan(x%val)
     if (x%index /= 0) then
        if (reverse_mode) then
@@ -1218,12 +1232,10 @@ contains
           trace(trace_count+3) = TAN_A
           trace_count = trace_count + 3
        else
-          y%d = x%d/cos(x%val)**2
-          if (abs(x%d) > tiny(1.0_kp)) then
-             y%dd = (x%dd/x%d + 2*x%d*y%val/cos(x%val))*y%d
-          else
-             y%dd = x%dd/cos(x%val)**2
-          end if
+          inv_cos_value2 = 1/cos(x%val)
+          inv_cos_value2 = inv_cos_value2*inv_cos_value2
+          y%d = x%d*inv_cos_value2
+          y%dd = x%dd*inv_cos_value2 + 2*x%d*y%val*y%d
           y%index = 1
        end if
     end if
@@ -1231,6 +1243,7 @@ contains
 
   type(advar) function asin_advar(x) result(y)
     type(advar), intent(in) :: x
+    real(kp) :: tmp
     y%val = asin(x%val)
     if (x%index /= 0) then
        if (reverse_mode) then
@@ -1242,12 +1255,9 @@ contains
           trace(trace_count+3) = ASIN_A
           trace_count = trace_count + 3
        else
-          y%d = x%d/sqrt(1-x%val**2)
-          if (abs(x%d) > tiny(1.0_kp)) then
-             y%dd = y%d*(x%dd + x%val*y%d**2)/x%d
-          else
-             y%dd = x%dd/sqrt(1-x%val**2)
-          end if
+          tmp = 1/sqrt(1-x%val**2)
+          y%d = x%d*tmp
+          y%dd = tmp*(x%dd + x%val*y%d**2)
           y%index = 1
        end if
     end if
@@ -1255,6 +1265,7 @@ contains
 
   type(advar) function acos_advar(x) result(y)
     type(advar), intent(in) :: x
+    real(kp) :: tmp
     y%val = acos(x%val)
     if (x%index /= 0) then
        if (reverse_mode) then
@@ -1266,12 +1277,9 @@ contains
           trace(trace_count+3) = ACOS_A
           trace_count = trace_count + 3
        else
-          y%d = -x%d/sqrt(1-x%val**2)
-          if (abs(x%d) > tiny(1.0_kp)) then
-             y%dd = y%d*(x%dd + x%val*y%d**2)/x%d
-          else
-             y%dd = -x%dd/sqrt(1-x%val**2)
-          end if
+          tmp = -1/sqrt(1-x%val**2)
+          y%d = x%d*tmp
+          y%dd = tmp*(x%dd + x%val*y%d**2)
           y%index = 1
        end if
     end if
@@ -1279,6 +1287,7 @@ contains
 
   type(advar) function atan_advar(x) result(y)
     type(advar), intent(in) :: x
+    real(kp) :: tmp
     y%val = atan(x%val)
     if (x%index /= 0) then
        if (reverse_mode) then
@@ -1290,20 +1299,17 @@ contains
           trace(trace_count+3) = ATAN_A
           trace_count = trace_count + 3
        else
-          y%d = x%d/(1+x%val**2)
-          if (abs(x%d) > tiny(1.0_kp)) then
-             y%dd = y%d*(x%dd/x%d - 2*x%val*y%d)
-          else
-             y%dd = x%dd/(1+x%val**2)
-          end if
+          tmp = 1/(1+x%val**2)
+          y%d = x%d*tmp
+          y%dd = x%dd*tmp - 2*x%val*y%d**2
           y%index = 1
        end if
     end if
   end function atan_advar
 
-
   type(advar) function sinh_advar(x) result(y)
     type(advar), intent(in) :: x
+    real(kp) :: cosh_value
     y%val = sinh(x%val)
     if (x%index /= 0) then
        if (reverse_mode) then
@@ -1315,12 +1321,9 @@ contains
           trace(trace_count+3) = SINH_A
           trace_count = trace_count + 3
        else
-          y%d = x%d*cosh(x%val)
-          if (abs(x%d) > tiny(1.0_kp)) then
-             y%dd = x%dd*y%d/x%d + y%val*x%d**2
-          else
-             y%dd = x%dd*cosh(x%val)
-          end if
+          cosh_value = cosh(x%val)
+          y%d = x%d*cosh_value
+          y%dd = x%dd*cosh_value + y%val*x%d**2
           y%index = 1
        end if
     end if
@@ -1328,6 +1331,7 @@ contains
 
   type(advar) function cosh_advar(x) result(y)
     type(advar), intent(in) :: x
+    real(kp) :: sinh_value
     y%val = cosh(x%val)
     if (x%index /= 0) then
        if (reverse_mode) then
@@ -1339,12 +1343,9 @@ contains
           trace(trace_count+3) = COSH_A
           trace_count = trace_count + 3
        else
-          y%d = x%d*sinh(x%val)
-          if (abs(x%d) > tiny(1.0_kp)) then
-             y%dd = x%dd*y%d/x%d + y%val*x%d**2
-          else
-             y%dd = x%dd*sinh(x%val)
-          end if
+          sinh_value = sinh(x%val)
+          y%d = x%d*sinh_value
+          y%dd = x%dd*sinh_value + y%val*x%d**2
           y%index = 1
        end if
     end if
@@ -1352,6 +1353,7 @@ contains
 
   type(advar) function tanh_advar(x) result(y)
     type(advar), intent(in) :: x
+    real(kp) :: inv_cosh_value2
     y%val = tanh(x%val)
     if (x%index /= 0) then
        if (reverse_mode) then
@@ -1363,12 +1365,9 @@ contains
           trace(trace_count+3) = TANH_A
           trace_count = trace_count + 3
        else
-          y%d = x%d*(1-tanh(x%val)**2)
-          if (abs(x%d) > tiny(1.0_kp)) then
-             y%dd = y%d*(x%dd/x%d - 2*y%val*x%d)
-          else
-             y%dd = x%dd*(1-tanh(x%val)**2)
-          end if
+          inv_cosh_value2 = 1/cosh(x%val)**2
+          y%d = x%d*inv_cosh_value2
+          y%dd = x%dd*inv_cosh_value2 - 2*y%val*x%d*y%d
           y%index = 1
        end if
     end if
@@ -1376,6 +1375,7 @@ contains
 
   type(advar) function asinh_advar(x) result(y)
     type(advar), intent(in) :: x
+    real(kp) :: tmp
     y%val = asinh(x%val)
     if (x%index /= 0) then
        if (reverse_mode) then
@@ -1387,12 +1387,9 @@ contains
           trace(trace_count+3) = ASINH_A
           trace_count = trace_count + 3
        else
-          y%d = x%d/sqrt(1+x%val**2)
-          if (abs(x%d) > tiny(1.0_kp)) then
-             y%dd = y%d*(x%dd - x%val*y%d**2)/x%d
-          else
-             y%dd = x%dd/sqrt(1+x%val**2)
-          end if
+          tmp = 1/sqrt(1+x%val**2)
+          y%d = x%d*tmp
+          y%dd = tmp*(x%dd - x%val*y%d**2)
           y%index = 1
        end if
     end if
@@ -1400,6 +1397,7 @@ contains
 
   type(advar) function acosh_advar(x) result(y)
     type(advar), intent(in) :: x
+    real(kp) :: tmp
     y%val = acosh(x%val)
     if (x%index /= 0) then
        if (reverse_mode) then
@@ -1411,12 +1409,9 @@ contains
           trace(trace_count+3) = ACOSH_A
           trace_count = trace_count + 3
        else
-          y%d = x%d/sqrt(x%val**2-1)
-          if (abs(x%d) > tiny(1.0_kp)) then
-             y%dd = y%d*(x%dd - x%val*y%d**2)/x%d
-          else
-             y%dd = x%dd/sqrt(x%val**2-1)
-          end if
+          tmp = 1/sqrt(x%val**2-1)
+          y%d = x%d*tmp
+          y%dd = tmp*(x%dd - x%val*y%d**2)
           y%index = 1
        end if
     end if
@@ -1424,6 +1419,7 @@ contains
 
   type(advar) function atanh_advar(x) result(y)
     type(advar), intent(in) :: x
+    real(kp) :: tmp
     y%val = atanh(x%val)
     if (x%index /= 0) then
        if (reverse_mode) then
@@ -1435,12 +1431,9 @@ contains
           trace(trace_count+3) = ATANH_A
           trace_count = trace_count + 3
        else
-          y%d = x%d/(1-x%val**2)
-          if (abs(x%d) > tiny(1.0_kp)) then
-             y%dd = y%d*(x%dd/x%d + 2*x%val*y%d)
-          else
-             y%dd = x%dd/(1-x%val**2)
-          end if
+          tmp = 1/(1-x%val**2)
+          y%d = x%d*tmp
+          y%dd = (x%dd + 2*x%val*x%d*y%d)*tmp
           y%index = 1
        end if
     end if
@@ -1448,6 +1441,7 @@ contains
 
   type(advar) function erf_advar(x) result(y)
     type(advar), intent(in) :: x
+    real(kp) :: tmp
     y%val = erf(x%val)
     if (x%index /= 0) then
        if (reverse_mode) then
@@ -1459,12 +1453,9 @@ contains
           trace(trace_count+3) = ERF_A
           trace_count = trace_count + 3
        else
-          y%d = x%d*2/sqrtpi*exp(-x%val**2)
-          if (abs(x%d) > tiny(1.0_kp)) then
-             y%dd = y%d*(x%dd/x%d - 2*x%val*x%d)
-          else
-             y%dd = x%dd*2/sqrtpi*exp(-x%val**2)
-          end if
+          tmp = 2/sqrtpi*exp(-x%val**2)
+          y%d = x%d*tmp
+          y%dd = (x%dd - 2*x%d*x%d*x%val)*tmp
           y%index = 1
        end if
     end if

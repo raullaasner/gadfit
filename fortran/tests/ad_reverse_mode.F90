@@ -97,9 +97,9 @@
   ! Exponentiation, logarithms
   block
     real(kp), parameter :: references(2,3) = reshape([ &
-         & 199243593498.31058d0, 8124.5154209683460d0, &
+         & 199243593498.31058d0, 8124.5154209683469d0, &
          & 38415548.376606211d0, 8124.5154209683460d0, &
-         & 38415548.376606211d0, 199243593498.31058d0 &
+         & 38415548.376606219d0, 199243593498.31058d0 &
          & ], shape(references))
     real(kp), parameter :: par_kp = fix_d(1)
     real(real32), parameter :: par_f = fix_d(2)
