@@ -1481,7 +1481,7 @@ We also use the clang-format code linter. However, since CMake does not have sup
 find -regextype posix-extended -regex ".*\.(cpp|h)" -exec \
 sh -c 'clang-format -style=file {} | diff -u {} -' \;
 \end{verbatim}
-If the code is perfectly valid, there should be not output. Otherwise, you should resolve the diff.
+If the code is perfectly valid, there should be not output. Otherwise, you should resolve the diff. This requirement does not hold for the tests directory.
 
 \subsubsection{Code coverage}
 
