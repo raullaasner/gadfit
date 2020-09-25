@@ -84,12 +84,10 @@ enum class Op
 {
     add_a_a,
     add_subtract_a_r,
-    add_r_a,
     subtract_a_a,
     subtract_r_a,
     multiply_a_a,
     multiply_divide_a_r,
-    multiply_a_r,
     divide_a_a,
     divide_r_a,
     pow_a_a,

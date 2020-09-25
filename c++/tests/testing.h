@@ -33,5 +33,6 @@ template <typename T>
 auto approx(const T x) -> Approx
 {
     Approx app { x };
-    return app.epsilon(tolerance_factor*std::numeric_limits<T>::epsilon());
+    return app.epsilon(tolerance_factor * std::numeric_limits<T>::epsilon())
+      .margin(1e-300);
 }
