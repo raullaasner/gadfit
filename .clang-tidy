@@ -3,6 +3,7 @@ Checks: "-*,\
 bugprone-*,\
 clang-analyzer-*,\
 cppcoreguidelines-*,\
+-cppcoreguidelines-pro-bounds-array-to-pointer-decay,\
 misc-*,\
 modernize-*,\
 mpi-*,\

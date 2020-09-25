@@ -10,9 +10,13 @@
 
 namespace gadfit {
 
+// If AdVar::idx has this value then it is a passive variable in both
+// modes. If its index is higher than passive_idx then it is active in
+// the reverse mode.
+constexpr int passive_idx { -1 };
 // If AdVar::idx has this value then it is an active variable in the
 // forward mode.
-constexpr int forward_active_idx { -1 };
+constexpr int forward_active_idx { -2 };
 
 // The AD variable
 class AdVar
@@ -62,7 +66,63 @@ public:
     ~AdVar() = default;
 };
 
-// void initialize_ad_reverse();
+// Work arrays for the reverse mode
+namespace reverse {
+
+extern int last_index;
+extern std::vector<double> forwards; // Forward values
+extern std::vector<double> adjoints;
+extern std::vector<double> constants;
+extern int const_count;
+extern std::vector<int> trace;
+extern int trace_count;
+
+} // namespace reverse
+
+// Operation codes
+enum class Op
+{
+    add_a_a,
+    add_subtract_a_r,
+    add_r_a,
+    subtract_a_a,
+    subtract_r_a,
+    multiply_a_a,
+    multiply_divide_a_r,
+    multiply_a_r,
+    divide_a_a,
+    divide_r_a,
+    pow_a_a,
+    pow_a_r,
+    pow_r_a,
+    log_a,
+    exp_a,
+    sqrt_a,
+    abs_a,
+    sin_a,
+    cos_a,
+    tan_a,
+    asin_a,
+    acos_a,
+    atan_a,
+    sinh_a,
+    cosh_a,
+    tanh_a,
+    asinh_a,
+    acosh_a,
+    atanh_a,
+    erf_a,
+};
+
+constexpr int default_sweep_size { 1000 };
+
+auto initializeADReverse(const int sweep_size = default_sweep_size) -> void;
+
+auto adResetSweep() -> void;
+
+auto addADSeed(const AdVar& x) -> void;
+
+// BEGIN AD ELEMENTAL OPERATIONS
 
 // Greater than
 template <typename T>
@@ -99,14 +159,21 @@ template <typename T>
 auto operator+(const AdVar& x1, const T x2) -> AdVar
 {
     AdVar y { x1.val + x2 };
-    if (x1.idx < 0) {
+    if (x1.idx > passive_idx) {
+        y.idx = ++reverse::last_index;
+        reverse::forwards[reverse::last_index] = y.val;
+        reverse::trace[++reverse::trace_count] = x1.idx;
+        reverse::trace[++reverse::trace_count] = y.idx;
+        reverse::trace[++reverse::trace_count] =
+          static_cast<int>(Op::add_subtract_a_r);
+    } else if (x1.idx == forward_active_idx) {
         y.d = x1.d;
         y.dd = x1.dd;
         y.idx = forward_active_idx;
     } else {
         y.d = 0.0;
         y.dd = 0.0;
-        y.idx = 0;
+        y.idx = passive_idx;
     }
     return y;
 }
@@ -115,14 +182,21 @@ template <typename T>
 auto operator+(const T x1, const AdVar& x2) -> AdVar
 {
     AdVar y { x1 + x2.val };
-    if (x2.idx < 0) {
+    if (x2.idx > passive_idx) {
+        y.idx = ++reverse::last_index;
+        reverse::forwards[reverse::last_index] = y.val;
+        reverse::trace[++reverse::trace_count] = x2.idx;
+        reverse::trace[++reverse::trace_count] = y.idx;
+        reverse::trace[++reverse::trace_count] =
+          static_cast<int>(Op::add_subtract_a_r);
+    } else if (x2.idx == forward_active_idx) {
         y.d = x2.d;
         y.dd = x2.dd;
         y.idx = forward_active_idx;
     } else {
         y.d = 0.0;
         y.dd = 0.0;
-        y.idx = 0;
+        y.idx = passive_idx;
     }
     return y;
 }
@@ -134,14 +208,21 @@ template <typename T>
 auto operator-(const AdVar& x1, const T x2) -> AdVar
 {
     AdVar y { x1.val - x2 };
-    if (x1.idx < 0) {
+    if (x1.idx > passive_idx) {
+        y.idx = ++reverse::last_index;
+        reverse::forwards[reverse::last_index] = y.val;
+        reverse::trace[++reverse::trace_count] = x1.idx;
+        reverse::trace[++reverse::trace_count] = y.idx;
+        reverse::trace[++reverse::trace_count] =
+          static_cast<int>(Op::add_subtract_a_r);
+    } else if (x1.idx == forward_active_idx) {
         y.d = x1.d;
         y.dd = x1.dd;
         y.idx = forward_active_idx;
     } else {
         y.d = 0.0;
         y.dd = 0.0;
-        y.idx = 0;
+        y.idx = passive_idx;
     }
     return y;
 }
@@ -150,14 +231,21 @@ template <typename T>
 auto operator-(const T x1, const AdVar& x2) -> AdVar
 {
     AdVar y { x1 - x2.val };
-    if (x2.idx < 0) {
+    if (x2.idx > passive_idx) {
+        y.idx = ++reverse::last_index;
+        reverse::forwards[reverse::last_index] = y.val;
+        reverse::trace[++reverse::trace_count] = x2.idx;
+        reverse::trace[++reverse::trace_count] = y.idx;
+        reverse::trace[++reverse::trace_count] =
+          static_cast<int>(Op::subtract_r_a);
+    } else if (x2.idx == forward_active_idx) {
         y.d = -x2.d;
         y.dd = -x2.dd;
         y.idx = forward_active_idx;
     } else {
         y.d = 0.0;
         y.dd = 0.0;
-        y.idx = 0;
+        y.idx = passive_idx;
     }
     return y;
 }
@@ -169,14 +257,22 @@ template <typename T>
 auto operator*(const AdVar& x1, const T x2) -> AdVar
 {
     AdVar y { x1.val * x2 };
-    if (x1.idx == forward_active_idx) {
+    if (x1.idx > passive_idx) {
+        y.idx = ++reverse::last_index;
+        reverse::forwards[reverse::last_index] = y.val;
+        reverse::constants[++reverse::const_count] = static_cast<double>(x2);
+        reverse::trace[++reverse::trace_count] = x1.idx;
+        reverse::trace[++reverse::trace_count] = y.idx;
+        reverse::trace[++reverse::trace_count] =
+          static_cast<int>(Op::multiply_divide_a_r);
+    } else if (x1.idx == forward_active_idx) {
         y.d = x1.d * x2;
         y.dd = x1.dd * x2;
         y.idx = forward_active_idx;
     } else {
         y.d = 0.0;
         y.dd = 0.0;
-        y.idx = 0;
+        y.idx = passive_idx;
     }
     return y;
 }
@@ -185,14 +281,22 @@ template <typename T>
 auto operator*(const T x1, const AdVar& x2) -> AdVar
 {
     AdVar y { x1 * x2.val };
-    if (x2.idx == forward_active_idx) {
+    if (x2.idx > passive_idx) {
+        y.idx = ++reverse::last_index;
+        reverse::forwards[reverse::last_index] = y.val;
+        reverse::constants[++reverse::const_count] = static_cast<double>(x1);
+        reverse::trace[++reverse::trace_count] = x2.idx;
+        reverse::trace[++reverse::trace_count] = y.idx;
+        reverse::trace[++reverse::trace_count] =
+          static_cast<int>(Op::multiply_divide_a_r);
+    } else if (x2.idx == forward_active_idx) {
         y.d = x1 * x2.d;
         y.dd = x1 * x2.dd;
         y.idx = forward_active_idx;
     } else {
         y.d = 0.0;
         y.dd = 0.0;
-        y.idx = 0;
+        y.idx = passive_idx;
     }
     return y;
 }
@@ -205,14 +309,22 @@ auto operator/(const AdVar& x1, const T x2) -> AdVar
 {
     const double& inv_x2 { 1.0 / x2 };
     AdVar y { x1.val * inv_x2 };
-    if (x1.idx == forward_active_idx) {
+    if (x1.idx > passive_idx) {
+        y.idx = ++reverse::last_index;
+        reverse::forwards[reverse::last_index] = y.val;
+        reverse::constants[++reverse::const_count] = inv_x2;
+        reverse::trace[++reverse::trace_count] = x1.idx;
+        reverse::trace[++reverse::trace_count] = y.idx;
+        reverse::trace[++reverse::trace_count] =
+          static_cast<int>(Op::multiply_divide_a_r);
+    } else if (x1.idx == forward_active_idx) {
         y.d = x1.d * inv_x2;
         y.dd = x1.dd * inv_x2;
         y.idx = forward_active_idx;
     } else {
         y.d = 0.0;
         y.dd = 0.0;
-        y.idx = 0;
+        y.idx = passive_idx;
     }
     return y;
 }
@@ -222,14 +334,22 @@ auto operator/(const T x1, const AdVar& x2) -> AdVar
 {
     const double& inv_x2 { 1.0 / x2.val };
     AdVar y { x1 * inv_x2 };
-    if (x2.idx == forward_active_idx) {
+    if (x2.idx > passive_idx) {
+        y.idx = ++reverse::last_index;
+        reverse::forwards[reverse::last_index] = y.val;
+        reverse::constants[++reverse::const_count] = static_cast<double>(x1);
+        reverse::trace[++reverse::trace_count] = x2.idx;
+        reverse::trace[++reverse::trace_count] = y.idx;
+        reverse::trace[++reverse::trace_count] =
+          static_cast<int>(Op::divide_r_a);
+    } else if (x2.idx == forward_active_idx) {
         y.d = -y.val * x2.d * inv_x2;
         y.dd = (-x2.dd * y.val - 2 * y.d * x2.d) * inv_x2;
         y.idx = forward_active_idx;
     } else {
         y.d = 0.0;
         y.dd = 0.0;
-        y.idx = 0;
+        y.idx = passive_idx;
     }
     return y;
 }
@@ -243,7 +363,14 @@ template <typename T>
 auto pow(const AdVar& x1, const T x2) -> AdVar
 {
     AdVar y { std::pow(x1.val, x2) };
-    if (x1.idx == forward_active_idx) {
+    if (x1.idx > passive_idx) {
+        y.idx = ++reverse::last_index;
+        reverse::forwards[reverse::last_index] = y.val;
+        reverse::constants[++reverse::const_count] = static_cast<double>(x2);
+        reverse::trace[++reverse::trace_count] = x1.idx;
+        reverse::trace[++reverse::trace_count] = y.idx;
+        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::pow_a_r);
+    } else if (x1.idx == forward_active_idx) {
         y.d = x1.d * x2 * std::pow(x1.val, x2 - 1);
         const double& inv_x1 { 1.0 / x1.val };
         y.dd = y.d * y.d / y.val
@@ -252,7 +379,7 @@ auto pow(const AdVar& x1, const T x2) -> AdVar
     } else {
         y.d = 0.0;
         y.dd = 0.0;
-        y.idx = 0;
+        y.idx = passive_idx;
     }
     return y;
 }
@@ -261,7 +388,14 @@ template <typename T>
 auto pow(const T x1, const AdVar& x2) -> AdVar
 {
     AdVar y { std::pow(x1, x2.val) };
-    if (x2.idx == forward_active_idx) {
+    if (x2.idx > passive_idx) {
+        y.idx = ++reverse::last_index;
+        reverse::forwards[reverse::last_index] = y.val;
+        reverse::constants[++reverse::const_count] = static_cast<double>(x1);
+        reverse::trace[++reverse::trace_count] = x2.idx;
+        reverse::trace[++reverse::trace_count] = y.idx;
+        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::pow_r_a);
+    } else if (x2.idx == forward_active_idx) {
         const double& log_value { std::log(x1) };
         y.d = y.val * x2.d * log_value;
         y.dd = y.d * y.d / y.val + y.val * x2.dd * log_value;
@@ -269,12 +403,12 @@ auto pow(const T x1, const AdVar& x2) -> AdVar
     } else {
         y.d = 0.0;
         y.dd = 0.0;
-        y.idx = 0;
+        y.idx = passive_idx;
     }
     return y;
 }
 
-// Logarithm, exponentiatial, and other
+// Logarithm, exponential, other
 auto log(const AdVar& x) -> AdVar;
 auto exp(const AdVar& x) -> AdVar;
 auto sqrt(const AdVar& x) -> AdVar;
@@ -296,6 +430,22 @@ auto atanh(const AdVar& x) -> AdVar;
 
 // Special
 auto erf(const AdVar& x) -> AdVar;
+
+// END AD ELEMENTAL OPERATIONS
+
+// Reverse mode specific
+class UnknownOperationException : public std::exception
+{
+private:
+    std::string message;
+
+public:
+    UnknownOperationException(const int op_code);
+    [[nodiscard]] auto what() const noexcept -> const char* override;
+};
+
+auto returnSweep() -> void;
+auto freeAdReverse() -> void;
 
 } // namespace gadfit
 

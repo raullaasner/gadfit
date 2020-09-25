@@ -1645,11 +1645,11 @@ contains
             i = i - 3
          case(ASINH_A)
             adjoints(trace(i-2)) = adjoints(trace(i-2)) + &
-                 & adjoints(trace(i-1))/sqrt((forward_values(trace(i-2)))**2+1)
+                 & adjoints(trace(i-1))/sqrt(forward_values(trace(i-2))**2+1)
             i = i - 3
          case(ACOSH_A)
             adjoints(trace(i-2)) = adjoints(trace(i-2)) + &
-                 & adjoints(trace(i-1))/sqrt((forward_values(trace(i-2)))**2-1)
+                 & adjoints(trace(i-1))/sqrt(forward_values(trace(i-2))**2-1)
             i = i - 3
          case(ATANH_A)
             adjoints(trace(i-2)) = adjoints(trace(i-2)) + &
