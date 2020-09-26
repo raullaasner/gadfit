@@ -203,6 +203,7 @@ auto operator+(const AdVar& x1, const AdVar& x2) -> AdVar;
 
 // Subtraction
 template <typename T>
+// LCOV_EXCL_START
 auto operator-(const AdVar& x1, const T x2) -> AdVar
 {
     AdVar y { x1.val - x2 };
@@ -224,6 +225,7 @@ auto operator-(const AdVar& x1, const T x2) -> AdVar
     }
     return y;
 }
+// LCOV_EXCL_STOP
 
 template <typename T>
 auto operator-(const T x1, const AdVar& x2) -> AdVar
@@ -252,6 +254,7 @@ auto operator-(const AdVar& x1, const AdVar& x2) -> AdVar;
 
 // Multiplication
 template <typename T>
+// LCOV_EXCL_START
 auto operator*(const AdVar& x1, const T x2) -> AdVar
 {
     AdVar y { x1.val * x2 };
@@ -274,8 +277,10 @@ auto operator*(const AdVar& x1, const T x2) -> AdVar
     }
     return y;
 }
+// LCOV_EXCL_STOP
 
 template <typename T>
+// LCOV_EXCL_START
 auto operator*(const T x1, const AdVar& x2) -> AdVar
 {
     AdVar y { x1 * x2.val };
@@ -298,6 +303,7 @@ auto operator*(const T x1, const AdVar& x2) -> AdVar
     }
     return y;
 }
+// LCOV_EXCL_STOP
 
 auto operator*(const AdVar& x1, const AdVar& x2) -> AdVar;
 

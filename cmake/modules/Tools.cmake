@@ -43,3 +43,33 @@ macro(get_all_flags language flags)
     string(STRIP ${${flags}} ${flags})
   endif()
 endmacro()
+
+# Without this macro, the following statements would need to be
+# duplicated in the Fortran/gadfit and C++/gadfit folders. It depends
+# on the test target, which is defined separately fort Fortran and
+# C++, but otherwise the statements are identical for both.
+macro(include_coverage)
+  if (INCLUDE_COVERAGE)
+    find_program(_lcov lcov)
+    if (_lcov)
+      set(lcov_excluded_directory /usr)
+      add_custom_target(coverage
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+        COMMAND lcov -c -d CMakeFiles -o cov.info
+        COMMAND
+        sed -nr 's|SF:${lcov_excluded_directory}|${lcov_excluded_directory}|p'
+        cov.info | xargs lcov -r cov.info -o cov_filtered.info
+        COMMAND genhtml cov_filtered.info -o out
+        COMMAND cmake -E echo
+        "Open ${PROJECT_BINARY_DIR}/out/index.html to see the detailed report"
+        DEPENDS test)
+    else()
+      add_custom_target(coverage
+        COMMAND cmake -E echo "Error: Cannot run coverage. Install lcov first.")
+    endif()
+  else()
+    add_custom_target(coverage
+      COMMAND cmake -E echo
+      "Error: Cannot run coverage. Enable INCLUDE_COVERAGE first.")
+  endif()
+endmacro()
