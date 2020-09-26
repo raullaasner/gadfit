@@ -92,7 +92,7 @@ add_custom_target(example
   DEPENDS example0)
 
 # Tests
-add_library(fortran_testing testing.F90)
+add_library(fortran_testing EXCLUDE_FROM_ALL testing.F90)
 target_link_libraries(fortran_testing PUBLIC ${LIBRARIES})
 foreach(f ${tests})
   add_executable(${f} EXCLUDE_FROM_ALL ${f}.F90)
