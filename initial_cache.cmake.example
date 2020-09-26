@@ -60,7 +60,8 @@ set(QUAD_PRECISION OFF CACHE BOOL "")
 # Linalg library directories
 #set(LIBRARY_PATHS /usr/local/atlas/lib CACHE STRING "")
 
-# Linalg libraries. Must be shared libraries.
+# Linalg libraries. Must be shared libraries. Cannot use full path
+# here (split the full path between LIBRARY_PATHS and LIBRARIES).
 #set(LIBRARIES tatlas CACHE STRING "")
 
 # Location of libcaf_mpi.a
