@@ -10,6 +10,7 @@
     REQUIRE( x.idx == ref_idx         );
 
 #include <automatic_differentiation.h>
+#include <exceptions.h>
 #include <catch2/catch.hpp>
 #include <array>
 

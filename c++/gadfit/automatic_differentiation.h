@@ -2,6 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+// Provide an implementation for both the forward and reverse modes of
+// automatic differentiation. Define the AD variable (AdVar), all
+// operations between AD variables and between AD variables and
+// fundamental types, and few additional functions mainly related to
+// initialization and memory management of the reverse mode.
+
 #pragma once
 
 #include <cmath>
@@ -438,16 +444,6 @@ auto erf(const AdVar& x) -> AdVar;
 // END AD ELEMENTAL OPERATIONS
 
 // Reverse mode specific
-class UnknownOperationException : public std::exception
-{
-private:
-    std::string message;
-
-public:
-    UnknownOperationException(const int op_code);
-    [[nodiscard]] auto what() const noexcept -> const char* override;
-};
-
 auto returnSweep() -> void;
 auto freeAdReverse() -> void;
 

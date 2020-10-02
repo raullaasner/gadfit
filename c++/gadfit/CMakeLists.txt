@@ -5,6 +5,7 @@
 
 target_sources(gadfit PRIVATE
   automatic_differentiation.cpp
+  exceptions.cpp
   )
 
 target_compile_features(gadfit PUBLIC cxx_std_20)

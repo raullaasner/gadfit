@@ -4,6 +4,8 @@
 
 #include "automatic_differentiation.h"
 
+#include "exceptions.h"
+
 #include <cassert>
 #include <iomanip>
 #include <iostream>
@@ -72,6 +74,8 @@ auto operator<(const AdVar& x, const AdVar& y) -> bool
 
 auto operator+(const AdVar& x1, const AdVar& x2) -> AdVar
 {
+    // Can't have one variable active in reverse mode and the other
+    // one active in forward mode.
     assert(!(x1.idx > passive_idx && x2.idx == forward_active_idx));
     assert(!(x1.idx == forward_active_idx && x2.idx > passive_idx));
     AdVar y { x1.val + x2.val };
@@ -933,18 +937,6 @@ auto returnSweep() -> void
             throw UnknownOperationException { trace[trace_count] };
         }
     }
-}
-
-UnknownOperationException::UnknownOperationException(const int op_code)
-{
-    message = "Unknown operation code during the return sweep: "
-              + std::to_string(op_code);
-}
-
-[[nodiscard]] auto UnknownOperationException::what() const noexcept -> const
-  char*
-{
-    return message.c_str();
 }
 
 auto freeAdReverse() -> void
