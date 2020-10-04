@@ -21,7 +21,7 @@ Note that this might produce only a serial build.
 1. Prerequisites
 ----------------
 
-GADfit comes in two implementations, one in C++ and one in Fortran.
+GADfit comes in two implementations, one in C++ and one in Fortran. The CMake variable that controls which version is built is `BUILD_CXX_VERSION`.
 
 * **CMake (required)**. On Ubuntu, CMake, released under the New BSD license, can be obtained by issuing
 
