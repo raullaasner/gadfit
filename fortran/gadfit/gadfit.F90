@@ -440,11 +440,17 @@ contains
     case(NONE)
        weights = 1.0_kp
     case(SQRT_Y)
-       if (minval(abs(y_data)) < epsilon(1.0_kp)) call minval_error('SQRT_Y')
-       weights = 1.0_kp/sqrt(y_data)
+       where(abs(y_data) < 1d2*tiny(1.0_kp))
+          weights = 0d0
+       elsewhere
+          weights = 1.0_kp/sqrt(y_data)
+       end where
     case(PROPTO_Y)
-       if (minval(abs(y_data)) < epsilon(1.0_kp)) call minval_error('PROPTO_Y')
-       weights = 1.0_kp/y_data
+       where(abs(y_data) < 1d2*tiny(1.0_kp))
+          weights = 0d0
+       elsewhere
+          weights = 1.0_kp/y_data
+       end where
     case(INVERSE_Y)
        weights = y_data
     case(USER)
