@@ -9,7 +9,7 @@ set(tests
   1_gaussian
   2_integral_single
   3_integral_double
-  4_multiple_data
+  4_multiple_curves
   )
 
 enable_testing()

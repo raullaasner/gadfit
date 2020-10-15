@@ -1,8 +1,8 @@
-module multiple_data_m
+module multiple_curves_m
   ! This is the same as the example except the data is not read in
   ! from files.
 
-  use multiple_data_data, only: x_data_1, x_data_2, y_data_1, y_data_2
+  use multiple_curves_data, only: x_data_1, x_data_2, y_data_1, y_data_2
 
   use ad
   use fitfunction
@@ -27,9 +27,9 @@ contains
     real(kp), intent(in) :: x
     y = this%pars(1)*exp(-x/this%pars(2)) + this%pars(3)
   end function eval_exponential
-end module multiple_data_m
+end module multiple_curves_m
 
-  use multiple_data_m
+  use multiple_curves_m
   use gadfit
 
   implicit none
