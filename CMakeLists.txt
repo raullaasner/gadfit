@@ -90,7 +90,6 @@ if (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
 endif()
 
 # SOURCES
-add_subdirectory(doc)
 if (BUILD_CXX_VERSION)
   add_subdirectory(c++/gadfit)
   add_subdirectory(c++/tests)
