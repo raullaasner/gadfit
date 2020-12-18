@@ -1,4 +1,6 @@
-#include "multiple_curves_data.h"
+#include <array>
+
+#include "lm_solver_data.h"
 
 #include "lm_solver.h"
 
