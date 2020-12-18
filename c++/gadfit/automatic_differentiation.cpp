@@ -1,6 +1,7 @@
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+// This Source Code Form is subject to the terms of the GNU General
+// Public License, v. 3.0. If a copy of the GPL was not distributed
+// with this file, You can obtain one at
+// http://gnu.org/copyleft/gpl.txt.
 
 #include "automatic_differentiation.h"
 
@@ -16,6 +17,11 @@ namespace gadfit {
 namespace reverse {
 
 int last_index;
+// Value of index of the most recent seed AD variable. It is
+// determined in the most recent call to addADSeed and should equal
+// the number of active parameters in the LM procedure. Each call to
+// returnSweep resets last_index to this value.
+int last_index_reset_value;
 std::vector<double> forwards;
 std::vector<double> adjoints;
 std::vector<double> constants;
@@ -50,6 +56,7 @@ auto addADSeed(const AdVar& x) -> void
 {
     reverse::forwards[x.idx] = x.val;
     reverse::last_index = x.idx;
+    reverse::last_index_reset_value = reverse::last_index;
 }
 
 auto AdVar::operator-() const -> AdVar
@@ -220,7 +227,7 @@ auto operator/(const AdVar& x1, const AdVar& x2) -> AdVar
 {
     assert(!(x1.idx > passive_idx && x2.idx == forward_active_idx));
     assert(!(x1.idx == forward_active_idx && x2.idx > passive_idx));
-    const double& inv_x2 { 1.0 / x2.val };
+    const double inv_x2 { 1.0 / x2.val };
     AdVar y { x1.val * inv_x2 };
     if (x1.idx > passive_idx && x2.idx > passive_idx) {
         y.idx = ++reverse::last_index;
@@ -293,10 +300,10 @@ auto pow(const AdVar& x1, const AdVar& x2) -> AdVar
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::pow_r_a);
     } else if (x1.idx == forward_active_idx && x2.idx == forward_active_idx) {
-        const double& log_value { std::log(x1.val) };
+        const double log_value { std::log(x1.val) };
         y.d = x1.d * x2.val * std::pow(x1.val, x2.val - 1)
               + x2.d * log_value * y.val;
-        const double& inv_x1 { 1.0 / x1.val };
+        const double inv_x1 { 1.0 / x1.val };
         // clang-format off
         y.dd = y.d * y.d / y.val
                + y.val * (x2.dd * log_value
@@ -306,12 +313,12 @@ auto pow(const AdVar& x1, const AdVar& x2) -> AdVar
         y.idx = forward_active_idx;
     } else if (x1.idx == forward_active_idx) {
         y.d = x1.d * x2 * std::pow(x1.val, x2 - 1);
-        const double& inv_x1 { 1.0 / x1.val };
+        const double inv_x1 { 1.0 / x1.val };
         y.dd = y.d * y.d / y.val
                + y.val * x2.val * (x1.dd - x1.d * x1.d * inv_x1) * inv_x1;
         y.idx = forward_active_idx;
     } else if (x2.idx == forward_active_idx) {
-        const double& log_value { std::log(x1.val) };
+        const double log_value { std::log(x1.val) };
         y.d = y.val * x2.d * log_value;
         y.dd = y.d * y.d / y.val + y.val * x2.dd * log_value;
         y.idx = forward_active_idx;
@@ -333,7 +340,7 @@ auto log(const AdVar& x) -> AdVar
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::log_a);
     } else if (x.idx == forward_active_idx) {
-        const double& inv_x { 1.0 / x.val };
+        const double inv_x { 1.0 / x.val };
         y.d = x.d * inv_x;
         y.dd = (x.dd - x.d * y.d) * inv_x;
         y.idx = forward_active_idx;
@@ -376,7 +383,7 @@ auto sqrt(const AdVar& x) -> AdVar
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::sqrt_a);
     } else if (x.idx == forward_active_idx) {
-        const double& inv_y { 1.0 / y.val };
+        const double inv_y { 1.0 / y.val };
         y.d = x.d / 2 * inv_y;
         y.dd = (x.dd * inv_y - y.d * x.d / x.val) / 2;
         y.idx = forward_active_idx;
@@ -419,7 +426,7 @@ auto sin(const AdVar& x) -> AdVar
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::sin_a);
     } else if (x.idx == forward_active_idx) {
-        const double& cos_value { std::cos(x.val) };
+        const double cos_value { std::cos(x.val) };
         y.d = x.d * cos_value;
         y.dd = x.dd * cos_value - x.d * x.d * y.val;
         y.idx = forward_active_idx;
@@ -441,7 +448,7 @@ auto cos(const AdVar& x) -> AdVar
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::cos_a);
     } else if (x.idx == forward_active_idx) {
-        const double& sin_value { -std::sin(x.val) };
+        const double sin_value { -std::sin(x.val) };
         y.d = x.d * sin_value;
         y.dd = x.dd * sin_value - x.d * x.d * y.val;
         y.idx = forward_active_idx;
@@ -463,8 +470,8 @@ auto tan(const AdVar& x) -> AdVar
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::tan_a);
     } else if (x.idx == forward_active_idx) {
-        const double& inv_cos_value { 1.0 / std::cos(x.val) };
-        const double& inv_cos_value2 { inv_cos_value * inv_cos_value };
+        const double inv_cos_value { 1.0 / std::cos(x.val) };
+        const double inv_cos_value2 { inv_cos_value * inv_cos_value };
         y.d = x.d * inv_cos_value2;
         y.dd = x.dd * inv_cos_value2 + 2 * x.d * y.val * y.d;
         y.idx = forward_active_idx;
@@ -486,7 +493,7 @@ auto asin(const AdVar& x) -> AdVar
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::asin_a);
     } else if (x.idx == forward_active_idx) {
-        const double& tmp { 1.0 / std::sqrt(1 - x.val * x.val) };
+        const double tmp { 1.0 / std::sqrt(1 - x.val * x.val) };
         y.d = x.d * tmp;
         y.dd = tmp * (x.dd + x.val * y.d * y.d);
         y.idx = forward_active_idx;
@@ -508,7 +515,7 @@ auto acos(const AdVar& x) -> AdVar
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::acos_a);
     } else if (x.idx == forward_active_idx) {
-        const double& tmp { -1.0 / std::sqrt(1 - x.val * x.val) };
+        const double tmp { -1.0 / std::sqrt(1 - x.val * x.val) };
         y.d = x.d * tmp;
         y.dd = tmp * (x.dd + x.val * y.d * y.d);
         y.idx = forward_active_idx;
@@ -530,7 +537,7 @@ auto atan(const AdVar& x) -> AdVar
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::atan_a);
     } else if (x.idx == forward_active_idx) {
-        const double& tmp { 1.0 / (1 + x.val * x.val) };
+        const double tmp { 1.0 / (1 + x.val * x.val) };
         y.d = x.d * tmp;
         y.dd = x.dd * tmp - 2 * x.val * y.d * y.d;
         y.idx = forward_active_idx;
@@ -552,7 +559,7 @@ auto sinh(const AdVar& x) -> AdVar
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::sinh_a);
     } else if (x.idx == forward_active_idx) {
-        const double& cosh_value { std::cosh(x.val) };
+        const double cosh_value { std::cosh(x.val) };
         y.d = x.d * cosh_value;
         y.dd = x.dd * cosh_value + x.d * x.d * y.val;
         y.idx = forward_active_idx;
@@ -574,7 +581,7 @@ auto cosh(const AdVar& x) -> AdVar
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::cosh_a);
     } else if (x.idx == forward_active_idx) {
-        const double& sinh_value { std::sinh(x.val) };
+        const double sinh_value { std::sinh(x.val) };
         y.d = x.d * sinh_value;
         y.dd = x.dd * sinh_value + x.d * x.d * y.val;
         y.idx = forward_active_idx;
@@ -596,8 +603,8 @@ auto tanh(const AdVar& x) -> AdVar
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::tanh_a);
     } else if (x.idx == forward_active_idx) {
-        const double& inv_cosh_value { 1.0 / std::cosh(x.val) };
-        const double& inv_cosh_value2 { inv_cosh_value * inv_cosh_value };
+        const double inv_cosh_value { 1.0 / std::cosh(x.val) };
+        const double inv_cosh_value2 { inv_cosh_value * inv_cosh_value };
         y.d = x.d * inv_cosh_value2;
         y.dd = x.dd * inv_cosh_value2 - 2 * x.d * y.val * y.d;
         y.idx = forward_active_idx;
@@ -619,7 +626,7 @@ auto asinh(const AdVar& x) -> AdVar
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::asinh_a);
     } else if (x.idx == forward_active_idx) {
-        const double& tmp { 1.0 / std::sqrt(x.val * x.val + 1) };
+        const double tmp { 1.0 / std::sqrt(x.val * x.val + 1) };
         y.d = x.d * tmp;
         y.dd = (x.dd - x.val * y.d * y.d) * tmp;
         y.idx = forward_active_idx;
@@ -641,7 +648,7 @@ auto acosh(const AdVar& x) -> AdVar
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::acosh_a);
     } else if (x.idx == forward_active_idx) {
-        const double& tmp { 1.0 / std::sqrt(x.val * x.val - 1) };
+        const double tmp { 1.0 / std::sqrt(x.val * x.val - 1) };
         y.d = x.d * tmp;
         y.dd = (x.dd - x.val * y.d * y.d) * tmp;
         y.idx = forward_active_idx;
@@ -663,7 +670,7 @@ auto atanh(const AdVar& x) -> AdVar
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::atanh_a);
     } else if (x.idx == forward_active_idx) {
-        const double& tmp { 1.0 / (1 - x.val * x.val) };
+        const double tmp { 1.0 / (1 - x.val * x.val) };
         y.d = x.d * tmp;
         y.dd = (x.dd + 2 * x.val * x.d * y.d) * tmp;
         y.idx = forward_active_idx;
@@ -685,7 +692,7 @@ auto erf(const AdVar& x) -> AdVar
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::erf_a);
     } else if (x.idx == forward_active_idx) {
-        const double& tmp {
+        const double tmp {
             2 * std::numbers::inv_sqrtpi_v<double> * std::exp(-x.val * x.val)
         };
         y.d = x.d * tmp;
@@ -937,6 +944,7 @@ auto returnSweep() -> void
             throw UnknownOperationException { trace[trace_count] };
         }
     }
+    reverse::last_index = reverse::last_index_reset_value;
 }
 
 auto freeAdReverse() -> void

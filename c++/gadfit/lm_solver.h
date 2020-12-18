@@ -1,0 +1,172 @@
+// This Source Code Form is subject to the terms of the GNU General
+// Public License, v. 3.0. If a copy of the GPL was not distributed
+// with this file, You can obtain one at
+// http://gnu.org/copyleft/gpl.txt.
+
+#pragma once
+
+#include "exceptions.h"
+#include "fit_function.h"
+
+#include <memory>
+#include <set>
+#include <vector>
+
+namespace gadfit {
+
+class LMsolver
+{
+private:
+    // Defaults for options
+    static constexpr double default_lambda { 10.0 };
+    static constexpr double default_lambda_down { 10.0 };
+    static constexpr double default_lambda_up { 10.0 };
+    static constexpr int default_lambda_incs { 3 };
+
+    static constexpr int default_iteration_limit { 1000 };
+
+    static constexpr int global_dataset_idx { -1 };
+
+    struct
+    {
+        // Indices of all active parameters. For example, if
+        // active[1].find(3) != active[1].end() is true then the
+        // fourth parameter of the second data set is an active
+        // fitting parameter, otherwise it is passive.
+        std::vector<std::set<int>> active {};
+        // Sum of active fitting parameters over all data sets. Global
+        // parameters should not be double counted here.
+        int n_active {};
+        // Indices of all global active parameters.
+        std::set<int> global {};
+        // Number of all data points
+        int n_datapoints {};
+        // n_datapoints - n_active
+        int degrees_of_freedom {};
+        // Determines which parameters correspond to which columns in
+        // the Jacobian and some other global arrays. Say we have a
+        // fitting function with 3 parameters but only the first and
+        // last one are active. Then jacobian[0] = {0, 1}, i.e. the
+        // counting skips all passive parameters. Now say the first
+        // parameter is global and the other one is local. Then for a
+        // second data set jacobian[1] = {0, 2}. Global indices always
+        // come before local ones in this indexing scheme. If we only
+        // have a single data set then the indexing scheme is always
+        // trivial, i.e. iota(jacobian.begin(), jacobian.end(), 0);
+        std::vector<std::vector<int>> jacobian {};
+    } indices;
+
+    // All data sets must be added before any calls to setPar. This
+    // variable keeps track of that.
+    bool set_par_called { false };
+
+    std::vector<std::vector<double>> x_data {};
+    std::vector<std::vector<double>> y_data {};
+    std::vector<std::vector<double>> errors {};
+    std::vector<FitFunction> fit_functions {};
+    // Main work arrays. These are all publicly available via getters.
+    std::vector<double> Jacobian {};
+    std::vector<double> JTJ {};
+    std::vector<double> DTD {};
+    // JTJ + lambda * diag(JTJ), i.e. everything except delta on the left side
+    std::vector<double> left_side {};
+    // J^T * residuals, where residuals = y - f(beta)
+    std::vector<double> right_side {};
+    std::vector<double> residuals {};
+    std::vector<double> delta1 {};
+    std::vector<double> delta2 {};
+
+public:
+    LMsolver() = delete;
+    LMsolver(const fitSignature& function_body);
+    LMsolver(const LMsolver&) = default;
+    LMsolver(LMsolver&&) = default;
+    auto operator=(const LMsolver&) -> LMsolver& = default;
+    auto operator=(LMsolver&&) -> LMsolver& = default;
+
+    auto enableLogger(const bool enable) -> void;
+
+    template <typename T>
+    auto addDataset(const T& x_data,
+                    const T& y_data,
+                    const std::vector<double>& errors = {}) -> void;
+    // Set a fitting parameter as active/passive and local/global and
+    // initialize it as a passive AD variable. The AD variables are
+    // only activated when calculating the Jacobian.
+    auto setPar(const int i_par,
+                const double val,
+                const bool active = false,
+                const int i_dataset = global_dataset_idx) -> void;
+    auto fit(double lambda = default_lambda) -> void;
+    auto getParValue(const int i_par, const int i_dataset = 0) const -> double;
+    auto getValue(const double arg, const int i_dataset = 0) const -> double;
+
+    [[nodiscard]] auto getJacobian() const -> const std::vector<double>&;
+    [[nodiscard]] auto getJTJ() const -> const std::vector<double>&;
+    [[nodiscard]] auto getDTD() const -> const std::vector<double>&;
+    [[nodiscard]] auto getLeftSide() const -> const std::vector<double>&;
+    [[nodiscard]] auto getRightSide() const -> const std::vector<double>&;
+    [[nodiscard]] auto getResiduals() const -> const std::vector<double>&;
+    [[nodiscard]] auto chi2() const -> double;
+    ~LMsolver();
+
+    struct
+    {
+        int iteration_limit { default_iteration_limit };
+        int lambda_incs { default_lambda_incs };
+        double lambda_down { default_lambda_down };
+        double lambda_up { default_lambda_up };
+    } settings; // NOLINT: exposing this is harmless and convenient
+                // for the user
+
+private:
+    // Determines all relevant dimensions and parameter positions in
+    // the Jacobian. This is called before every fitting procedure in
+    // case the user activates or deactivates some parameters between
+    // multiple calls to fit.
+    auto prepareIndexing() -> void;
+    auto computeLeftHandSide(const double lambda) -> void;
+    auto computeRightHandSide() -> void;
+    // Compute the update vector delta1 and optionally delta2 (the
+    // acceleration term)
+    auto computeDeltas() -> void;
+    auto deactivateParameters(const int i_set) -> void;
+    auto saveParameters(std::vector<std::vector<double>>& old_parameters)
+      -> void;
+    auto updateParameters() -> void;
+    auto revertParameters(const std::vector<std::vector<double>>& parameters)
+      -> void;
+    auto iterationResults(const int i_iteration,
+                          const double lambda,
+                          const double new_chi2) const -> void;
+};
+
+template <typename T>
+auto LMsolver::addDataset(const T& x_data,
+                          const T& y_data,
+                          const std::vector<double>& errors) -> void
+{
+    if (set_par_called) {
+        throw LateAddDatasetCall {};
+    }
+    this->x_data.push_back(std::vector<double>(x_data.size()));
+    this->y_data.push_back(std::vector<double>(y_data.size()));
+    for (int i {}; i < static_cast<int>(x_data.size()); ++i) {
+        this->x_data.back()[i] = x_data[i];
+        this->y_data.back()[i] = y_data[i];
+    }
+    if (errors.size() > 0) {
+        this->errors.push_back(std::vector<double>(errors.size()));
+        for (int i {}; i < static_cast<int>(errors.size()); ++i) {
+            this->errors.back()[i] = errors[i];
+        }
+    } else {
+        this->errors.push_back(std::vector<double>(x_data.size(), 1.0));
+    }
+    if (fit_functions.size() < this->x_data.size()) {
+        fit_functions.push_back(fit_functions.back());
+    }
+    indices.active.push_back({});
+}
+
+} // namespace gadfit

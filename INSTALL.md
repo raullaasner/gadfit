@@ -1,7 +1,7 @@
 Quick installation instructions
 ===============================
 
-GADfit is developed with the CMake build system generator. CMake is a set of tools for configuring, building, and testing software. In comparison to GNU Autotools, it uses a simpler syntax and generally runs faster. It is advised to read the [user guide](https://raullaasner.github.io/gadfit/doc/user_guide/user_guide.pdf) for detailed installation instructions. This document provides quick installation steps aimed mainly at Autotools users.
+GADfit is developed with the CMake build system generator. CMake is a set of tools for configuring, building, and testing software. In comparison to GNU Autotools, it uses a simpler syntax and generally runs faster. It is advised to read the [user guide](https://raullaasner.github.io/gadfit/doc/user_guide/user_guide.pdf) for detailed installation instructions. This document only provides quick steps to get you started.
 
 0. For the impatient
 --------------------
@@ -33,6 +33,7 @@ GADfit comes in two implementations, one in C++ and one in Fortran. The CMake va
 
 * C++ version:
   * **C++ compiler (required)**. GADfit is expected to work with the latest GNU C++ compiler (G++). One is probably present in your system so you don't need to do anything here.
+  * **spdlog (required)**. This is a C++ logger. You may install it using your distribution's package manager or build it manually and point the CMake SPDLOG_PATH variable to the installation directory (see below for how CMake cache variables work).
 
 * Fortran version:
   * **Fortran compiler (required)**. GADfit is expected to work with the latest GNU Fortran compiler (GFortran). In principle, any other F2008 compliant compiler should also work. On Ubuntu, GFortran, released under the GPL 3+ license, can be obtained by issuing

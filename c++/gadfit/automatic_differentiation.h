@@ -1,11 +1,12 @@
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+// This Source Code Form is subject to the terms of the GNU General
+// Public License, v. 3.0. If a copy of the GPL was not distributed
+// with this file, You can obtain one at
+// http://gnu.org/copyleft/gpl.txt.
 
-// Provide an implementation for both the forward and reverse modes of
-// automatic differentiation. Define the AD variable (AdVar), all
-// operations between AD variables and between AD variables and
-// fundamental types, and few additional functions mainly related to
+// Provides an implementation for both the forward and reverse modes
+// of automatic differentiation. Defines the AD variable (AdVar), all
+// operations between AD variables and other AD variables or
+// fundamental types, and a few additional functions mainly related to
 // initialization and memory management of the reverse mode.
 
 #pragma once
@@ -38,7 +39,8 @@ public:
     // NOLINTNEXTLINE(modernize-use-default-member-init)
     int idx;
 
-    // For performance reasons, don't use any default values.
+    // For performance reasons, don't use any default values in the
+    // constructors.
     AdVar() = default;
     // NOLINTNEXTLINE
     explicit AdVar(const double val) : val { val } {}
@@ -51,8 +53,8 @@ public:
     AdVar(const AdVar&) = default;
     AdVar(AdVar&&) = default;
 
-    auto operator=(const AdVar& x) -> AdVar& = default;
-    auto operator=(AdVar &&) -> AdVar& = default;
+    auto operator=(const AdVar&) -> AdVar& = default;
+    auto operator=(AdVar&&) -> AdVar& = default;
     template <typename T>
     auto operator=(const T x) -> AdVar&
     {
@@ -75,8 +77,10 @@ public:
 // Work arrays for the reverse mode
 namespace reverse {
 
+// Value of index assigned to the most recent AD variable
 extern int last_index;
-extern std::vector<double> forwards; // Forward values
+// Forward values
+extern std::vector<double> forwards;
 extern std::vector<double> adjoints;
 extern std::vector<double> constants;
 extern int const_count;

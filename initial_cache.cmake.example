@@ -43,6 +43,11 @@ set(QUAD_PRECISION OFF CACHE BOOL "")
 # the FOR_COARRAY_NUM_IMAGES environment variable.
 #set(TESTS_RUN_PREFIX mpirun -np 8 CACHE STRING "")
 
+# You can probably install spdlog using your distribution's package
+# manager. If not, download, build, and install it manually and
+# SPDLOG_PATH to the installation directory.
+#set(SPDLOG_PATH /usr/local/spdlog CACHE STRING "")
+
 # If the code contains calls to the GSL library, then GSL_DIR should
 # point to the GSL install directory. If GSL_DIR is left empty or is
 # incorrect, GADfit will compile without the GSL related procedures.

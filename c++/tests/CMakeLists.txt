@@ -7,6 +7,7 @@ set(tests
   ad_basic
   ad_forward_mode
   ad_reverse_mode
+  lm_solver
   )
 
 enable_testing()
@@ -27,5 +28,13 @@ else()
     "Error: Testing is disabled because could not find Catch2."
     COMMAND cmake -E false)
 endif()
+
+# Example input
+add_executable(example0 EXCLUDE_FROM_ALL example.cpp)
+add_dependencies(example0 gadfit)
+target_link_libraries(example0 PRIVATE gadfit)
+add_custom_target(example
+  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/example0
+  DEPENDS example0)
 
 include_coverage()

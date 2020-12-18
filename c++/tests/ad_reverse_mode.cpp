@@ -9,7 +9,7 @@ TEST_CASE( "Basic arithmetic (add, subtract, multiply, divide)" )
     constexpr double c_ref { -4.368251216348313 };
     constexpr double val_ref { 67.7091669953527 };
     constexpr double par_d { fix_d[0] };
-    constexpr int par_i { fix_i[8] };
+    constexpr int par_i { static_cast<int>(fix_d[8]) };
     const auto expression {
         [=](const AdVar& a, const AdVar& b, const AdVar& c) {
             return par_d * (a / par_d / par_i + par_d) + b * (par_d - c)
@@ -120,7 +120,7 @@ TEST_CASE( "Exponentiation, logarithm, other" )
     constexpr double b_ref { 387.314505060867 };
     constexpr double val_ref { 402.2477537977381 };
     constexpr double par_d { fix_d[0] };
-    constexpr int par_i { fix_i[8] };
+    constexpr int par_i { static_cast<int>(fix_d[8]) };
     const auto expression {
         [=](const AdVar& a, const AdVar& b) {
             return

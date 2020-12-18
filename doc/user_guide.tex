@@ -508,18 +508,13 @@ GADfit is a library, i.e., not a standalone program, written in \textit{two} dif
 
 \subsection{Building process}
 
-GADfit is dependent on the CMake build system generator. CMake is a set of tools for configuring, building, and testing software. As opposed to the commonly used GNU Autotools, it uses a simpler syntax and generally runs much faster. The prerequisites for installing GADfit are CMake and a Fortran compiler. CMake, released under the New BSD License, can be installed by issuing
+GADfit is dependent on the CMake build system generator. CMake is a set of tools for configuring, building, and testing software. It is released under the New BSD License and can be installed by issuing
 \begin{verbatim}
   sudo apt-get install cmake
 \end{verbatim}
-(Here and elsewhere, we demonstrate how to obtain the relevant packages on Ubuntu; more advanced users can probably skip this section.) For building from source visit \url{http://cmake.org}. GADfit is developed with the requirement that it should work with at least the GNU compilers. It is, however, also tested with the Intel compilers. In principle, any C++ 20 or Fortran 2008 conforming compiler should work, but there is no guarantee. The GNU C++ compiler (G++) is usually pre-installed on a Linux distribution. GFortran, released under the GPL 3+ license, can be obtained with
-\begin{verbatim}
-  sudo apt-get install gfortran
-\end{verbatim}
-or one could build from source by visiting
-\begin{verbatim}
-  http://gcc.gnu.org/wiki/GFortran.
-\end{verbatim}
+(Here and elsewhere, we demonstrate how to obtain the relevant packages on Ubuntu; advanced users can skip this section.) For building from source visit \url{http://cmake.org}. GADfit is developed with the requirement that it should work with at least the GNU compilers. It is, however, also tested with the Intel compilers. In principle, any C++ 20 or Fortran 2008 conforming compiler should work.
+
+The overall build process is similar for the C++ and Fortran versions, although they do have different prerequisites (see Secs.~\ref{sec:cxx_prerequisites} and \ref{sec:fortran_prerequisites} for details).
 
 Steps for configuring and building GADfit are the following. Untar the source code and navigate into the build directory (\verb+~build+)
 \begin{verbatim}
@@ -528,12 +523,12 @@ Steps for configuring and building GADfit are the following. Untar the source co
 \end{verbatim}
 One can also build in the source directory (\verb+~gadfit+) but it is generally a good habit to do out-of-source builds or at least create a separate build directory within the source directory.
 
-For configuring, there is the choice of using either a graphical CMake front end, a text file containing the configuration variables, or specifying the build environment from the command line (\verb+cmake <options> ...+) in analogy to Autotools. The latter is, however, inconvenient and will not be discussed here. The two commonly used graphical front ends are the command line based \texttt{ccmake}, obtained by installing \texttt{cmake-curses-gui}, and the Qt-based \texttt{cmake-gui}, obtained by installing \texttt{cmake-qt-gui}. When using \texttt{ccmake}, issue
+For configuring, there is the choice of using either a graphical CMake front end, a text file containing the configuration variables, or specifying the build environment from the command line (\verb+cmake <options> ...+). The two commonly used graphical front ends are the command line based \texttt{ccmake}, obtained by installing \texttt{cmake-curses-gui}, and the Qt-based \texttt{cmake-gui}, obtained by installing \texttt{cmake-qt-gui}. When using \texttt{ccmake}, issue
 \begin{verbatim}
   cmake ~gadfit
   ccmake .
 \end{verbatim}
-from the build directory. Some CMake variables and options appear, most of which should be self-explanatory. A short help text to each variable is displayed at the bottom in a status bar. Pressing 't' reveals all options. When done editing, press 'c' to reconfigure and 'g' to generate the native build script (the unix makefile on Linux). Pay attention when \texttt{ccmake} warns you that the cache variables have been reset. This will happen, e.g., when changing the compiler, and will necessitate the reconfiguring of some variables. After configuring, it is a good idea to go through all the variables once more to check that everything is correct. When finished, exit \texttt{ccmake} and issue
+from the build directory. Some CMake variables and options appear, most of which should be self-explanatory. A short help text to each variable is displayed at the bottom in a status bar. Pressing 't' reveals all options. When done editing, press 'c' to reconfigure and 'g' to generate the native build script (the unix makefile on Linux). Pay attention when \texttt{ccmake} warns you that the cache variables have been reset. This will happen, e.g., when changing the compiler, and will necessitate the reconfiguring of some variables. After configuring, it is a good idea to go through all the variables once more to check that everything is correct (see Sec.~\ref{sec:cmake_configuration} for configuration variables). When finished, exit \texttt{ccmake} and issue
 \begin{verbatim}
   cmake --build .
   cmake --build . --target test
@@ -556,15 +551,53 @@ The CMake configuration variables can also be put into an external file, an exam
   # Edit initial_cache.cmake if necessary
   cmake -C ~gadfit/initial_cache.cmake ~gadfit
 \end{verbatim}
-from the build directory, followed by the \texttt{make} commands. A change of the content of the configuration file has no effect after the first configuring. Instead, it would be necessary to empty \verb+~build+ before using the configuration file again or, better, use \texttt{ccmake}.
+from the build directory, followed by the build commands. A change of the content of the configuration file has no effect after the first configuring. Instead, it would be necessary to empty \verb+~build+ before using the configuration file again or, better, use \texttt{ccmake}.
 
 When linking GADfit to executable code (such as when running the tests), two dependencies (OpenCoarrays (Fortran) and a linear algebra library; see below) are by default automatically built when needed.
 
-\subsubsection{CMake configuration variables}
+\subsubsection{\label{sec:cxx_prerequisites}C++ prerequisites}
 
-See \verb+initial_cache.cmake.example+ in the root directory for a list of configuration variables. You can copy and work with that file directly. There is thus no need to list them separately in the documentation.
+\begin{itemize}
+\item A C++ compiler. The GNU C++ compiler (g++) is usually pre-installed on a Linux distribution. If not, visit \url{gcc.gnu.org} to build and install one manually.
+\item spdlog, which is a C++ logger. Install it using your distribution's package manager. If not, issue the following steps to download and build it manually:
+\begin{verbatim}
+wget https://github.com/gabime/spdlog/archive/v1.8.2.tar.gz
+tar xf v1.8.2.tar.gz
+mkdir spdlog-1.8.2/build && cd spdlog-1.8.2/build
+cmake -DCMAKE_CXX_FLAGS="-fPIC" -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=$HOME/builds/spdlog-install ..
+cmake --build . --target install
+\end{verbatim}
+  Then, when building GADfit, including this in your initial cache file:
+\begin{verbatim}
+set(SPDLOG_PATH $ENV{HOME}/builds/spdlog-install
+    CACHE STRING "")
+\end{verbatim}
+\end{itemize}
+
+\subsubsection{\label{sec:fortran_prerequisites}Fortran prerequisites}
+
+\begin{itemize}
+\item A Fortran compiler
+  GFortran, released under the GPL 3+ license, can be obtained with
+\begin{verbatim}
+  sudo apt-get install gfortran
+\end{verbatim}
+  or one could build from source by visiting
+\begin{verbatim}
+  http://gcc.gnu.org/wiki/GFortran.
+\end{verbatim}
+\end{itemize}
+
+\subsubsection{\label{sec:cmake_configuration}CMake configuration variables}
+
+See \verb+initial_cache.cmake.example+ in the root directory for a list of configuration variables. You can copy and work with that file directly. There is thus no need to list them separately here. We only mention the most imporant one here, \verb+BUILD_CXX_VERSION+, which determines whether the C++ version or the Fortran version is built. Default is to build the C++ version.
 
 \subsection{\label{sec:runtime}Runtime linking}
+
+\subsubsection{C++}
+
+\subsubsection{Fortran}
 
 This section, for those new to Linux, provides a quick example of how to compile and run a Fortran program with calls to GADfit. Assuming we have successfully compiled GADfit as a shared library and created an input file \verb+main.f90+, the following script, if called from the directory where \verb+main.f90+ resides, should successfully compile and execute. How to write an input file is explained in Sec.~\ref{sec:example}.
 \begin{verbatim}
@@ -599,7 +632,7 @@ $FC $FFLAGS main.f90 -o main -lgadfit $LIBS && \
 mpirun -np 4 ./main # GNU
 #./main             # Intel
 \end{verbatim}
-This may need to be modified to reflect the user's environment. If \verb+libcaf_mpi.a+ was built automatically (see Sec.~\ref{sec:parallelism}), then its location is \verb+~gadfit/fortran/tests+. If GADfit was built in serial, \verb+libcaf_mpi.a+ need not be linked.
+This may need to be modified to reflect the user's environment. If \verb+libcaf_mpi.a+ was built automatically (see Sec.~\ref{sec:parallelism_fortran}), then its location is \verb+~gadfit/fortran/tests+. If GADfit was built in serial, \verb+libcaf_mpi.a+ need not be linked.
 
 \subsection{Using GADfit in other CMake projects}
 
@@ -628,15 +661,20 @@ If you want to link against GADfit without installing it first, the \texttt{PATH
 \end{verbatim}
 This is useful for developers.
 
-\section{Using GADfit (C++ version)}
+\section{Usage}
 
-\section{Using GADfit (Fortran version)}
+\subsection{Parallelism}
 
-\subsection{\label{sec:parallelism}Parallelism}
+\subsubsection{C++}
 
-If the derivatives were calculated with finite differences, using \texttt{do concurrent} would be sufficient to parallelize most of GADfit. However, with AD, both function evaluation and the gradient calculation become impure procedures, which means that a simple parallelization scheme is not possible. GADfit is parallelized using Coarrays, a syntactic extension to the language that was included in the Fortran 2008 standard. Coarrays follow the SPMD parallelization scheme, where the main program is replicated at the start of execution. Each instance, called an image, has its own set of private variables plus so-called co-variables that are addressable by other images. Coarrays allow to parallelize programs with little effort compared to MPI or OpenMP, although it is often still MPI that runs under the hood.
+If the derivatives were calculated with finite differences, a simple usage of OpenMP would be sufficient to parallelize most of GADfit. However, with AD, both function evaluation and the gradient calculation have side effects, which means that a simple parallelization scheme is not possible. At the time of writing, MPI support is being developed. This section will be updated soon.
 
-In order to compile a Coarray program with GFortran, the compiler flag \texttt{-fcoarray=lib} must be used. For GFortran, the Coarray support is provided by the OpenCoarrays project. It can be automatically downloaded and built with \verb+cmake --build . --target example+ or \verb+cmake --build . --target test+. The Coarray communication library, \verb+libcaf_mpi.a+, is installed in \verb+~gadfit/fortran/tests+. Alternatively, one may issue, e.g.,
+\subsubsection{\label{sec:parallelism_fortran}Fortran}
+
+In Fortran, if we were working with finite differences, using \texttt{do concurrent} would be mostly sufficient for parallelization. However, as in the C++ version, with AD both function evaluation and the gradient calculation are impure procedures, which makes parallelization a nontrivial task. The Fortran version of GADfit is parallelized using Coarrays, a syntactic extension to the language that was included in the Fortran 2008 standard. Coarrays follow the SPMD parallelization scheme, where the main program is replicated at the start of execution. Each instance, called an image, has its own set of private variables plus so-called co-variables that are addressable by other images. Coarrays allow to parallelize programs with little effort compared to MPI or OpenMP, although it is often still MPI that runs under the hood.
+
+In order to compile a Coarray program with GFortran, the compiler flag \texttt{-fcoarray=lib} must be used. For GFortran, the Coarray support is provided by the OpenCoarrays project. It can be automatically downloaded and built with \verb+cmake --build . --target example+ or \verb+cmake --build . --target test+. The Coarray communication library, \verb+libcaf_mpi.a+, is installed in \\
+\verb+~gadfit/fortran/tests+. Alternatively, one may issue, e.g.,
 \begin{verbatim}
   wget https://github.com/sourceryinstitute/opencoarrays/\
   archive/2.8.0.tar.gz
@@ -655,11 +693,42 @@ Suppose we have made two measurements of a decay process, which are to be fitted
   \label{eq:exp_decay}
   I(t) = I_0e^{-t/\tau} + bgr.
 \end{equation}
-The decay curves correspond to the same physical phenomenon, meaning they share the same decay time $\tau$, but have been performed in slightly different experimental conditions with different initial amplitudes $I_0$ and backgrounds $bgr$. To get the best estimate for the fitting parameters, the curves should be fitted simultaneously with $\tau$ as a global fitting parameter and $I_{01}$, $I_{02}$, $bgr_1$, and $bgr_2$ as local parameters. The data files \verb+example_data1+ and \verb+example_data2+ along with an example input \verb+example.f90+ that solves a nonlinear least squares problem are found in \verb+~gadfit/fortran/tests+. Run this example by invoking \verb+cmake --build . --target example+. The data files are required to contain at least two columns (the rest are ignored). Any line beginning with a non-number is treated as a comment. In the following, we have chosen to put the fitting function into a Fortran module, followed by the main program which contains a small set of commands to perform the fitting procedure. Users with more knowledge of Fortran may wish to do it differently. We shall first describe how to build the fitting function.
+The decay curves correspond to the same physical phenomenon, meaning they share the same decay time $\tau$, but have been performed in slightly different experimental conditions with different initial amplitudes $I_0$ and backgrounds $bgr$. To get the best estimate for the fitting parameters, the curves should be fitted simultaneously with $\tau$ as a global fitting parameter and $I_{01}$, $I_{02}$, $bgr_1$, and $bgr_2$ as local parameters.
 
-\subsubsection{Defining the fitting function}
+\subsubsection{C++}
 
-In GADfit, all user defined functions are derived from an abstract type \texttt{fitfunc} (making them \textit{derived classes} in OOP terms). Two procedures must always be defined: a constructor, which specifies the number of fitting parameters, and the function body. While the user is advised to work through a full Fortran tutorial, in the following some effort has been made to explain the peculiarities of the language.
+An input file \texttt{example.cpp} that solves the nonlinear least squares problem is found in \verb+~+\texttt{gadfit/c++/tests}. Run it by invoking
+\begin{verbatim}
+cmake --build . --target example
+\end{verbatim}
+
+\subsubsection{Fortran}
+
+An input file \texttt{example.F90} that solves the nonlinear least squares problem is found in \verb+~gadfit/fortran/tests+. Run it by invoking
+\begin{verbatim}
+cmake --build . --target example
+\end{verbatim}
+The data files \verb+example_data1+ and \verb+example_data2+ are required to contain at least two columns (the rest are ignored). Any line beginning with a non-number is treated as a comment. In the following, we have chosen to put the fitting function into a Fortran module, followed by the main program which contains a small set of commands to perform the fitting procedure. Users with more knowledge of Fortran may wish to do it differently. We shall first describe how to build the fitting function.
+
+\subsection{Defining the fitting function}
+
+\subsubsection{\label{sec:fit_function_cxx}C++}
+
+Here is the translation of the fitting function defined by Eq.~\eqref{eq:exp_decay}:
+\begin{verbatim}
+static auto exponential(
+  const std::vector<gadfit::AdVar>& parameters,
+  const double x) -> gadfit::AdVar
+{
+    return parameters[0] * exp(-x / parameters[1])
+           + parameters[2];
+}
+\end{verbatim}
+It takes a parameter vector and an argument at which to evaluate the function. Definition of the function body is very simple. It reads just like a normal statement using floating point variables, except that \texttt{parameters} is a vector of AD variables. One may also use aliases for the parameter names to make it a bit more readable (see \texttt{example.cpp}).
+
+\subsubsection{Fortran}
+
+In the Fortran version, all user defined functions are derived from an abstract type \texttt{fitfunc} (making them \textit{derived classes} in OOP terms). Two procedures must always be defined: a constructor, which specifies the number of fitting parameters, and the function body. While the user is advised to work through a full Fortran tutorial, in the following some effort has been made to explain the peculiarities of the language.
 \begin{verbatim}
 module test_f
   ! This module defines the function I(x) = I0*exp(-t/tau)+bgr.
@@ -710,9 +779,35 @@ The above is a very simple example highlighting only some of the functionality. 
 
 As a comment, we have used the module approach because the user might wish in the future to put the most commonly used fitting functions into a single module that can then be conveniently included, e.g., as a library in any source file. This is just a suggestion.
 
-\subsubsection{Fitting procedure}
+\subsection{Fitting procedure}
 
-Here are the commands necessary to run the example. For a complete overview of input variables, see Sec.~\ref{sec:input}.
+\subsubsection{C++}
+
+First, initialize the Levenberg-Marquardt solver,
+\begin{verbatim}
+gadfit::LMsolver solver { f };
+\end{verbatim}
+where \texttt{f} is any function with the correct signature, e.g. \texttt{exponential} from Sec.~\ref{sec:fit_function_cxx}. Next, add any number of data sets,
+\begin{verbatim}
+solver.addDataset(x_data_1, y_data_1);
+solver.addDataset(x_data_2, y_data_2);
+\end{verbatim}
+where all arguments are of type \texttt{std::vector<double>}. Then set the initial values of all fitting parameters. In this example, all starting values are set to 1.0.
+\begin{verbatim}
+solver.setPar(0, 1.0, true, 0);  // I0 of curve 1
+solver.setPar(2, 1.0, true, 0);  // bgr of curve 1
+solver.setPar(0, 1.0, true, 1);  // I0 of curve 2
+solver.setPar(2, 1.0, true, 1);  // bgr of curve 2
+solver.setPar(1, 1.0, true);     // tau
+\end{verbatim}
+Here the numeration of parameters is 0: $I_0$, 1: $\tau$, 2: bgr. This is determined by how the body of the fitting function is defined (see Sec.~\ref{sec:fit_function_cxx}). Finally, call the fitting procedure:
+\begin{verbatim}
+solver.fit();
+\end{verbatim}
+
+\subsubsection{Fortran}
+
+Here are the commands necessary to run the example. For a complete overview of input variables, see Sec.~\ref{sec:input_fortran}.
 \begin{verbatim}
   use test_f ! Include the above-defined fitting function
   use gadfit ! and the main library.
@@ -786,7 +881,11 @@ The fitting functions used in the tests are
 \end{equation*}
 where $\erf$ is the error function.
 
-\subsection{\label{sec:input}Input}
+\subsection{Input parameters}
+
+\subsubsection{C++}
+
+\subsubsection{\label{sec:input_fortran}Fortran}
 
 Before using GADfit, here are a some general remarks about argument processing in a Fortran.
 \begin{itemize}
@@ -955,7 +1054,7 @@ real(real32)/real(kp) :: val
 \begin{verbatim}
 logical, optional :: active
 \end{verbatim}
-  If \verb+.true.+ the parameter is active, else passive.
+  If \verb+.true.+ the parameter is active, else passive. In the current implementation, if a parameter is local it is either active or passive for all data sets.
 
   Default: \verb+.false.+.
 \end{itemize}
@@ -1335,9 +1434,11 @@ real(kp), optional :: absolute_error
   Default: 0.
 \end{itemize}
 
-\subsection{\label{sec:internals}Internals}
+\subsection{Internals}
 
-The previous section was about the main commands that would normally be used. This section describes more advanced usage of GADfit for experimental, debugging, or other purposes. Some knowledge of Fortran is assumed.
+\subsubsection{Fortran}
+
+The previous sections were about the main commands that would normally be used. This section describes more advanced usage of GADfit for experimental, debugging, or other purposes. Some knowledge of Fortran is assumed.
 
 \paragraph{Basic usage of the \texttt{fitfunc} class.} As was mentioned earlier, the user can test the fitting function by calling \verb+gadf_print+ without performing a fitting procedure. It is, however, possible to work directly with the fitting function, which inherits from the \verb+fitfunc+ class. The following code snippet prints the value of a function with the argument 2.0. It is assumed that GADfit has been compiled with double precision.
 \begin{verbatim}
@@ -1354,7 +1455,7 @@ The previous section was about the main commands that would normally be used. Th
 \end{verbatim}
 Here and elsewhere, a dummy variable must be used since a component of a function result of derived type cannot be directly referenced in Fortran.
 
-If the only aim is to print the function value(s) at some point(s), then the code can be slightly reduced by using the procedures of Sec.~\ref{sec:input}. After calls to \verb+gadf_init+ and \verb+gadf_set+, multiple instances of the function, each with an independent set of parameters, are copied to the \verb+fitfuncs+ array, which is protected (read-only public). The above code then reduces to
+If the only aim is to print the function value(s) at some point(s), then the code can be slightly reduced by using the procedures of Sec.~\ref{sec:input_fortran}. After calls to \verb+gadf_init+ and \verb+gadf_set+, multiple instances of the function, each with an independent set of parameters, are copied to the \verb+fitfuncs+ array, which is protected (read-only public). The above code then reduces to
 \begin{verbatim}
   type(test) :: f
   real(dp) :: dummy
@@ -1463,7 +1564,7 @@ The function body may also refer to an external function. The dilogarithm functi
 
 \subsubsection{Unit tests}
 
-Unit tests are written using the Catch2 framework.
+Unit tests are written using the Catch2 framework. Catch2 needs to be installed separately if not already present on your system.
 
 \subsubsection{Code linters}
 

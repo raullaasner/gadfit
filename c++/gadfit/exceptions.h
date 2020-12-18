@@ -29,7 +29,23 @@ public:
     [[nodiscard]] auto what() const noexcept -> const char* override;
 };
 
+class SetParInvalidIndex : public GADFitException
+{
+private:
+    std::string message;
+
+public:
+    SetParInvalidIndex(const int index);
+    [[nodiscard]] auto what() const noexcept -> const char* override;
+};
+
 class UninitializedParameter : public GADFitException
+{
+public:
+    [[nodiscard]] auto what() const noexcept -> const char* override;
+};
+
+class NegativeDegreesOfFreedom : public GADFitException
 {
 public:
     [[nodiscard]] auto what() const noexcept -> const char* override;

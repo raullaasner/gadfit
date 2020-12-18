@@ -24,9 +24,26 @@ UnknownOperationException::UnknownOperationException(const int op_code)
     return "All calls to addDataset must precede any call to setPar.";
 }
 
+SetParInvalidIndex::SetParInvalidIndex(const int index)
+{
+    message = "Invalid value of i_dataset: " + std::to_string(index)
+              + ". Use a lower value or add more data sets.";
+}
+
+[[nodiscard]] auto SetParInvalidIndex::what() const noexcept -> const char*
+{
+    return message.c_str();
+}
+
 [[nodiscard]] auto UninitializedParameter::what() const noexcept -> const char*
 {
     return "Not all fitting parameters have been initialized.";
+}
+
+[[nodiscard]] auto NegativeDegreesOfFreedom::what() const noexcept -> const
+  char*
+{
+    return "More independent fitting parameters than data points.";
 }
 
 } // namespace gadfit

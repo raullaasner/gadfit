@@ -33,6 +33,8 @@ set(LIBRARY_PATHS "" CACHE STRING
   "Directories containing libraries to be linked against")
 set(LIBRARIES "" CACHE STRING
   "Libraries to be linked against")
+set(SPDLOG_PATH "" CACHE STRING
+  "Path to spdlog installation directory")
 set(GSL_DIR "" CACHE STRING "GSL install directory")
 option(INCLUDE_COVERAGE "Defines new target called 'coverage'" OFF)
 set(COVERAGE_FLAGS "--coverage" CACHE STRING
