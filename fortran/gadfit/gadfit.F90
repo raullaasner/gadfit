@@ -467,14 +467,6 @@ contains
        call error(__FILE__, __LINE__, 'Unknown weight specifier. &
             &Allowed values are NONE, SQRT_Y, PROPTO_Y, INVERSE_Y, and USER.')
     end select
-  contains
-    subroutine minval_error(error_type)
-      character(*), intent(in) :: error_type
-      write(err_msg, '(es18.10e3)') epsilon(1.0_kp)
-      call error(__FILE__, __LINE__, &
-           & 'The value of each datapoint must be greater than '// &
-           & trim(adjustl(err_msg))//' for '//error_type//' weighting.')
-    end subroutine minval_error
   end subroutine init_weights
 
   ! Performs the fitting procedure. See the user guide for a full
