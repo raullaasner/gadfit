@@ -9,7 +9,7 @@
 #include <spdlog/spdlog.h>
 
 // This is the fitting function. Its signature is a bit hard to
-// remember but it's always the same so you may just copy/paste it.
+// remember but it's always the same so you can just copy/paste it.
 static auto exponential(const std::vector<gadfit::AdVar>& parameters,
                         const double x) -> gadfit::AdVar
 {

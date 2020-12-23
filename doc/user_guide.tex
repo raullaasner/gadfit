@@ -77,7 +77,7 @@ where $\sigma_i$ are the data point uncertainties. As with all nonlinear optimiz
 where\footnote{Usually the error factors $\sigma_i$ are not included in the
   definition.}
 \begin{equation}
-  \label{eq:Jacob}
+  \label{eq:Jacobian}
   J_{ij} = \frac{1}{\sigma_i} \frac{\partial f(x_i, \bm \beta)}
   {\partial \beta_j}
 \end{equation}
@@ -200,30 +200,22 @@ When fitting many curves simultaneously with shared parameters, the data sets ar
 
 As an example, take two data sets with sizes $n$ and $m$ and a fitting function $f(x,\alpha,\beta)$, which depends on two parameters $\alpha$ and $\beta$. $\alpha$ is different for the two curves whereas $\beta$ is shared. For instance, for an exponential decay process, these could be different initial amplitudes but the same decay constant. The global Jacobian is then
 \begin{equation}
-  \label{eq:globalJacob}
+  \label{eq:global_Jacobian}
   \bm J =
   \left( \begin{matrix}
-      \frac{1}{\sigma_1} \frac{\partial f(x_1, \alpha, \beta)}
-      {\partial\alpha_1} && 0 && \frac{1}{\sigma_1} \frac{\partial
-        f(x_1, \alpha, \beta)} {\partial\beta} \\
-      \ldots && \ldots && \ldots \\
-      \frac{1}{\sigma_n} \frac{\partial f(x_n, \alpha, \beta)}
-      {\partial\alpha_1} && 0 && \frac{1}{\sigma_n} \frac{\partial
-        f(x_n, \alpha, \beta)} {\partial\beta} \\
-      0 && \frac{1}{\sigma_{n+1}} \frac{\partial f(x_{n+1}, \alpha,
-        \beta)} {\partial\alpha_2} && \frac{1}{\sigma_{n+1}}
-      \frac{\partial f(x_{n+1}, \alpha, \beta)} {\partial\beta} \\
-      \ldots && \ldots && \ldots \\
-      0 && \frac{1}{\sigma_{n+m}} \frac{\partial f(x_{n+m}, \alpha,
-        \beta)} {\partial\alpha_2} && \frac{1}{\sigma_{n+m}}
-      \frac{\partial f(x_{n+m}, \alpha, \beta)} {\partial\beta}
+      \frac{1}{\sigma_1} \frac{\partial f(x_1, \alpha, \beta)} {\partial\beta} & \frac{1}{\sigma_1} \frac{\partial f(x_1, \alpha, \beta)} {\partial\alpha_1} & 0 \\
+      \ldots & \ldots & \ldots \\
+      \frac{1}{\sigma_n} \frac{\partial f(x_n, \alpha, \beta)} {\partial\beta} & \frac{1}{\sigma_n} \frac{\partial f(x_n, \alpha, \beta)} {\partial\alpha_1} & 0 \\
+      \frac{1}{\sigma_{n+1}} \frac{\partial f(x_{n+1}, \alpha, \beta)} {\partial\beta} & 0 & \frac{1}{\sigma_{n+1}} \frac{\partial f(x_{n+1}, \alpha, \beta)} {\partial\alpha_2} & \\
+      \ldots & \ldots & \ldots \\
+      \frac{1}{\sigma_{n+m}} \frac{\partial f(x_{n+m}, \alpha, \beta)} {\partial\beta} & 0 & \frac{1}{\sigma_{n+m}} \frac{\partial f(x_{n+m}, \alpha, \beta)} {\partial\alpha_2}
     \end{matrix} \right),
 \end{equation}
-where the notation is $\partial f / \partial\alpha_i \equiv \partial f / \partial\alpha |_{\alpha = \alpha_i}$. Similarly, with 4 data sets, each consisting of 100 points, and with 4 local and 2 global parameters, the Jacobian would have the dimensions $400\times18$. Sparsity of the Jacobian is not exploited. Since no conceptual change is introduced, the fitting procedure follows the same algorithm as with a single curve.
+where the notation is $\partial f / \partial\alpha_i \equiv \partial f / \partial\alpha |_{\alpha = \alpha_i}$. For easier implementation, the global parameters always occupy the first columns in the Jacobian. Similarly, with 4 data sets, each consisting of 100 points, and with 4 local and 2 global parameters, the Jacobian would have the dimensions $400\times18$. Sparsity of the Jacobian is not exploited. Since no conceptual change is introduced, the fitting procedure follows the same algorithm as with a single curve.
 
 \subsection{\label{sec:ad}Automatic differentiation}
 
-If the Jacobian \eqref{eq:globalJacob} was calculated using finite differences, the maximum accuracy one can hope for is half the number of significant digits corresponding to machine precision (about 7 for double precision). This is often sufficient if the fitting function is a simple combination of elementary functions such as the Gaussian or an exponential. However, problems can arise with difficult functions such as those containing a highly nonlinear combination of elementary or special functions or those requiring numerical integration. In those situations, both accuracy and the computational cost of finite differences can become problematic. Another thing to keep in mind as that with finite differences, the evaluation of $J_{ij}$ always takes two function calls and the evaluation of the whole gradient $(J_{i1}, \ldots, J_{in})$ takes $2n$ function calls.
+If the Jacobian \eqref{eq:global_Jacobian} was calculated using finite differences, the maximum accuracy one can hope for is half the number of significant digits corresponding to machine precision (about 7 for double precision). This is often sufficient if the fitting function is a simple combination of elementary functions such as the Gaussian or an exponential. However, problems can arise with difficult functions such as those containing a highly nonlinear combination of elementary or special functions or those requiring numerical integration. In those situations, both accuracy and the computational cost of finite differences can become problematic. Another thing to keep in mind as that with finite differences, the evaluation of $J_{ij}$ always takes two function calls and the evaluation of the whole gradient $(J_{i1}, \ldots, J_{in})$ takes $2n$ function calls.
 
 In contrast, with automatic differentiation the derivatives are obtained with the same accuracy as function evaluation itself, while the computational cost is 3--4 times that of function evaluation \textit{irrespective} of the number of parameters \cite{griewank08}. AD exploits the fact that any mathematical function, no matter how complicated, is executed as a sequence of elementary arithmetic operations on a computer. By applying the chain rule of calculus at each step of execution, the derivative of a function can be computed automatically, with working accuracy, and using at most a small constant of the computer time required for function evaluation. It should be noted that while AD is not numerical differentiation, it is also not symbolic differentiation. The chain rule is applied directly to the results of elementary operations and the symbolic form of the full derivative is never stored in any way. Only the derivatives of the elementary functions need to be coded by hand (in AD literature, the term ``elemental function'' is more common). Afterwards, the algorithm can be applied to functions of arbitrary complexity.
 
@@ -417,7 +409,7 @@ The first $n$ operations of the forward sweep initialize $n$ independent variabl
 
 \subsubsection{Implementation}
 
-GADfit comes with two implementations --- one in C++ and one in Fortran, both based on operator overloading. The basic variable is the ``AD variable'',
+GADfit comes in two implementations --- in C++ and in Fortran, both based on operator overloading. The basic variable is the ``AD variable'',
 \begin{verbatim}
 // C++
 class AdVar
@@ -507,7 +499,7 @@ The above scheme could be generalized to any order, but it is probably not worth
 
 \section{Building and linking}
 
-GADfit is a library, i.e., not a standalone program, written in \textit{two} different compiled languages. It started out as a Fortran implementation and was later duplicated as a C++ implementation (both implementations are currently maintained though). What this means is that the user is expected to have at least basic knowledge of C++ or Fortran. Specifically, the fitting functions and the driver code would need to be written in C++/Fortran. The structure of the code is such that it is currently not possible to easily interface it with other languages. The C++/Fortran requirement might seem inconvenient for the user, but it allows to make full use of a powerful programming language for writing functions of arbitrary complexity, which is what AD is designed for.
+GADfit is a library, i.e., not a standalone program, written in \textit{two} different compiled languages. It started out as a Fortran implementation and was later duplicated as a C++ implementation (both implementations are currently maintained). What this means is that the user is expected to have at least basic knowledge of C++ or Fortran. Specifically, the fitting functions and the driver code would need to be written in C++/Fortran. The structure of the code is such that it is currently not possible to easily interface it with other languages. The C++/Fortran requirement might seem inconvenient for the user, but it allows to make full use of a powerful programming language for writing functions of arbitrary complexity, which is the primary benefit of using AD.
 
 \subsection{Building process}
 
@@ -515,9 +507,9 @@ GADfit is dependent on the CMake build system generator. CMake is a set of tools
 \begin{verbatim}
   sudo apt-get install cmake
 \end{verbatim}
-(Here and elsewhere, we demonstrate how to obtain the relevant packages on Ubuntu; advanced users can skip this section.) For building from source visit \url{http://cmake.org}. GADfit is developed with the requirement that it should work with at least the GNU compilers. It is, however, also tested with the Intel compilers. In principle, any C++ 20 or Fortran 2008 conforming compiler should work.
+(Here and elsewhere, we demonstrate how to obtain the relevant packages on Ubuntu; advanced users can skip this section.) For building from source visit \url{http://cmake.org}. GADfit is developed with the requirement that it should work with the GNU compilers. It is, however, also tested with the Intel compilers. In principle, any C++ 20 or Fortran 2008 conforming compiler should work.
 
-The overall build process is similar for the C++ and Fortran versions, although they do have different prerequisites (see Secs.~\ref{sec:cxx_prerequisites} and \ref{sec:fortran_prerequisites} for details).
+The overall build process is similar for the C++ and Fortran versions, although they do have different prerequisites (see Secs.~\ref{sec:cxx_prerequisites} and \ref{sec:fortran_prerequisites} for details). Here we lay out instructions that apply for both.
 
 Steps for configuring and building GADfit are the following. Untar the source code and navigate into the build directory (\verb+~build+)
 \begin{verbatim}
@@ -526,7 +518,8 @@ Steps for configuring and building GADfit are the following. Untar the source co
 \end{verbatim}
 One can also build in the source directory (\verb+~gadfit+) but it is generally a good habit to do out-of-source builds or at least create a separate build directory within the source directory.
 
-For configuring, there is the choice of using either a graphical CMake front end, a text file containing the configuration variables, or specifying the build environment from the command line (\verb+cmake <options> ...+). The two commonly used graphical front ends are the command line based \texttt{ccmake}, obtained by installing \texttt{cmake-curses-gui}, and the Qt-based \texttt{cmake-gui}, obtained by installing \texttt{cmake-qt-gui}. When using \texttt{ccmake}, issue
+For configuring, you can use either a graphical CMake front end, a text file containing the configuration variables, or specify the build environment from the command line (\verb+cmake <options> ...+). The two commonly used graphical front ends are the command line based \texttt{ccmake}, obtained by installing \texttt{cmake-curses-gui}, and the Qt-based \texttt{cmake-gui}, obtained by installing \\
+\texttt{cmake-qt-gui}. When using \texttt{ccmake}, issue
 \begin{verbatim}
   cmake ~gadfit
   ccmake .
@@ -537,7 +530,7 @@ from the build directory. Some CMake variables and options appear, most of which
   cmake --build . --target test
   cmake --build . --target install
 \end{verbatim}
-The default build system generated by CMake is GNU makefiles of most systems. A different build system can be chosen by passing an appropriate flag to the CMake generator function. For instance, for using Ninja, use \texttt{-G Ninja} during the initial configuring,
+The default build system generated by CMake is GNU makefiles on Linux. A different build system can be chosen by passing an argument to the CMake generator function. For instance, for using Ninja, use \texttt{-G Ninja} during the initial configuring,
 \begin{verbatim}
   cmake -G Ninja ~gadfit
 \end{verbatim}
@@ -551,12 +544,10 @@ The rest is analogous.
 The CMake configuration variables can also be put into an external file, an example of which is \verb+initial_cache.cmake.example+ in the root directory of GADfit. It can be used as follows:
 \begin{verbatim}
   cp initial_cache.cmake.example initial_cache.cmake
-  # Edit initial_cache.cmake if necessary
+  # Edit initial_cache.cmake to reflect your environment
   cmake -C ~gadfit/initial_cache.cmake ~gadfit
 \end{verbatim}
 from the build directory, followed by the build commands. A change of the content of the configuration file has no effect after the first configuring. Instead, it would be necessary to empty \verb+~build+ before using the configuration file again or, better, use \texttt{ccmake}.
-
-When linking GADfit to executable code (such as when running the tests), two dependencies (OpenCoarrays (Fortran) and a linear algebra library; see below) are by default automatically built when needed.
 
 \subsubsection{\label{sec:cxx_prerequisites}C++ prerequisites}
 
@@ -594,15 +585,87 @@ set(SPDLOG_PATH $ENV{HOME}/builds/spdlog-install
 
 \subsubsection{\label{sec:cmake_configuration}CMake configuration variables}
 
-See \verb+initial_cache.cmake.example+ in the root directory for a list of configuration variables. You can copy and work with that file directly. There is thus no need to list them separately here. We only mention the most imporant one here, \verb+BUILD_CXX_VERSION+, which determines whether the C++ version or the Fortran version is built. Default is to build the C++ version.
+See \verb+initial_cache.cmake.example+ in the root directory for a list of configuration variables. You can copy and work with that file directly. There is thus no need to list them separately here. We only mention the most imporant one here, \verb+BUILD_CXX_VERSION+, which determines whether the C++ version or the Fortran version of GADfit is built. Default is to build the C++ version.
 
 \subsection{\label{sec:runtime}Runtime linking}
 
+This section demonstrates how to compile and run a C++/Fortran program with calls to GADfit. Assuming we have successfully compiled GADfit as a shared library and created an input file \verb+main.cpp+/\verb+main.f90+, the following steps, if executed from the working directory, should successfully compile and execute. How to write an input file is explained in Sec.~\ref{sec:example}.
+
+Note that you are free to use a different build system or build system generator, write your own makefile, or issue everything from the command line. However, those approaches tend to be more system specific. Here we are only focusing on how to include GADfit in CMake projects.
+
 \subsubsection{C++}
+
+Create a file called \verb+CMakeLists.txt+ with the following contents:
+\begin{verbatim}
+cmake_minimum_required(VERSION 3.13)
+project(run LANGUAGES CXX)
+add_executable(main main.cpp)
+# If spdlog is installed to a non-standard location, specify it
+# here. If installed to a standard system location or not
+# installed at all, no need to do anything here.
+set(spdlog_dir /usr/local/spdlog)
+# Directory where GADfit is installed. Can also point to the
+# build directory.
+set(gadfit_dir /usr/local/gadfit)
+find_package(spdlog QUIET HINTS ${spdlog_dir})
+find_package(gadfit HINTS ${gadfit_dir})
+target_link_libraries(main PUBLIC gadfit::gadfit)
+\end{verbatim}
+Edit this file to reflect your environment. Next, create a build directory, configure and compile:
+\begin{verbatim}
+mkdir build && cd build
+# cmake -DCMAKE_CXX_COMPILER=mpicxx ..
+cmake ..
+cmake --build .
+\end{verbatim}
+If GADfit was compiled with MPI support, uncomment the line that includes compiler specification. The executable is produced in the same directory so you can run it with
+\begin{verbatim}
+./main
+\end{verbatim}
+or
+\begin{verbatim}
+mpirun -np 2 main
+\end{verbatim}
+for the MPI version.
 
 \subsubsection{Fortran}
 
-This section, for those new to Linux, provides a quick example of how to compile and run a Fortran program with calls to GADfit. Assuming we have successfully compiled GADfit as a shared library and created an input file \verb+main.f90+, the following script, if called from the directory where \verb+main.f90+ resides, should successfully compile and execute. How to write an input file is explained in Sec.~\ref{sec:example}.
+Create a file called \verb+CMakeLists.txt+ with the following contents:
+\begin{verbatim}
+cmake_minimum_required(VERSION 3.13)
+project(run LANGUAGES Fortran)
+add_executable(main main.F90)
+# Directory where GADfit is installed. Can also point to the
+# build directory.
+set(gadfit_dir /usr/local/gadfit)
+find_package(gadfit HINTS ${gadfit_dir})
+# Uncomment the MKL libraries or specify your own
+target_link_libraries(main PUBLIC
+  gadfit::gadfit
+  # /opt/intel/mkl/lib/intel64/libmkl_intel_lp64.so
+  # /opt/intel/mkl/lib/intel64/libmkl_sequential.so
+  # /opt/intel/mkl/lib/intel64/libmkl_core.so
+  )
+\end{verbatim}
+Edit this file to reflect your environment. Next, create a build directory, configure and compile:
+\begin{verbatim}
+mkdir build && cd build
+# cmake -DCMAKE_BUILD_TYPE=Release ..
+# cmake -DCMAKE_Fortran_FLAGS_RELEASE="-fcoarray=lib" ..
+cmake ..
+cmake --build .
+\end{verbatim}
+If GADfit was compiled with multi-image support, uncomment the two lines above. The executable is produced in the same directory so you can run it with
+\begin{verbatim}
+./main
+\end{verbatim}
+or
+\begin{verbatim}
+mpirun -np 2 main
+\end{verbatim}
+for the multi-image version.
+
+For legacy reasons, we also include here a shell script for compiling and running a Fortran program with calls to GADfit.
 \begin{verbatim}
 #!/bin/bash
 
@@ -635,16 +698,16 @@ $FC $FFLAGS main.f90 -o main -lgadfit $LIBS && \
 mpirun -np 4 ./main # GNU
 #./main             # Intel
 \end{verbatim}
-This may need to be modified to reflect the user's environment. If \verb+libcaf_mpi.a+ was built automatically (see Sec.~\ref{sec:parallelism_fortran}), then its location is \verb+~gadfit/fortran/tests+. If GADfit was built in serial, \verb+libcaf_mpi.a+ need not be linked.
+This may need to be modified to reflect the user's environment. If \verb+libcaf_mpi.a+ was built automatically (see Sec.~\ref{sec:parallelism_fortran}), then its location is \\ \verb+~gadfit/fortran/tests+. If GADfit was built in serial, \verb+libcaf_mpi.a+ need not be linked.
 
-\subsection{Using GADfit in other CMake projects}
+\subsection{Notes on using GADfit in other CMake projects}
 
-If you have built and installed GADfit and want to use it in a CMake project, only two CMake statements are necessary. Assuming that GADfit has been installed at a standard system location and the target name you want to link against GADfit is \texttt{myproject}, include the lines
+If you have built and installed GADfit and want to use it in a CMake project, only two CMake statements are necessary as demonstrated in the above examples. Assuming that GADfit has been installed at a standard system location and the target name you want to link against GADfit is \texttt{myproject}, include the lines
 \begin{verbatim}
   find_package(gadfit)
   target_link_libraries(myproject PRIVATE gadfit::gadfit)
 \end{verbatim}
-in that project. If GADfit is not installed in a standard location, use the \texttt{PATHS} argument to \verb+find_package+, e.g.,
+in that project. If GADfit is not installed in a standard location, use the \texttt{PATHS} or \texttt{HINTS} argument to \verb+find_package+, e.g.,
 \begin{verbatim}
   find_package(gadfit PATHS $ENV{HOME}/libs/gadfit)
 \end{verbatim}
@@ -670,7 +733,7 @@ This is useful for developers.
 
 \subsubsection{C++}
 
-If the derivatives were calculated with finite differences, a simple usage of OpenMP would be sufficient to parallelize most of GADfit. However, with AD, both function evaluation and the gradient calculation have side effects, which means that a simple parallelization scheme is not possible. At the time of writing, MPI support is being developed. This section will be updated soon.
+If the derivatives were calculated with finite differences, a simple usage of OpenMP would be sufficient to parallelize most of GADfit. However, with AD, both function evaluation and the gradient calculation have side effects, which means that a simple parallelization scheme is not possible. The C++ version of GADfit is parallelized using MPI. In particular, all computations that run over the number of data points (Jacobian, residuals, sum of squares, \ldots), are divided into fragments of roughly equal size and distributed among the MPI processes. The rest of the linear algebra is done in serial.
 
 \subsubsection{\label{sec:parallelism_fortran}Fortran}
 
@@ -884,9 +947,81 @@ The fitting functions used in the tests are
 \end{equation*}
 where $\erf$ is the error function.
 
-\subsection{Input parameters}
+\subsection{User interface}
 
 \subsubsection{C++}
+
+You will mainly be interacting with the \verb+gadfit::LMsolver+ class. Here is an overview of the most important member functions and variables. Several of the functions and variables come with default values. These are easily found in the source code.
+
+\begin{verbatim}
+gadfit::LMsolver::LMsolver(const fitSignature& function_body,
+                           const MPI_Comm mpi_comm = MPI_COMM_NULL)
+\end{verbatim}
+\begin{itemize}
+\item \verb+function_body+: the function body. See Sec.~\ref{sec:fit_function_cxx} for how to define one.
+\item \verb+mpi_comm+: if present, runs the fitting procedure in parallel. Default is to run in serial.
+\end{itemize}
+
+\begin{verbatim}
+gadfit::LMsolver::addDataset(const T& x_data,
+                             const T& y_data,
+                             const std::vector<double>& errors
+\end{verbatim}
+Function template for adding a data set.
+\begin{itemize}
+\item \verb+x_data+: array of independent variables of a data set of type \texttt{T} (e.g., \texttt{double}).
+\item \verb+y_data+: array of dependent variables of a data set of type \texttt{T}.
+\item \verb+errors+: if present, defines data point errors. Default is to set all errors equal to 1, i.e. all data points have the same weight.
+\end{itemize}
+
+\begin{verbatim}
+gadfit::LMsolver::setPar(const int i_par,
+                         const double val,
+                         const bool active = false,
+                         const int i_dataset = global_dataset_idx)
+\end{verbatim}
+Set fitting parameters.
+\begin{itemize}
+\item \verb+i_par+: index corresponding to a parameter in the parameter array defined in the fitting function.
+\item \verb+val+: initial value of a fitting parameter.
+\item \verb+active+: whether this is an active or a passive (constant) fitting parameter.
+\item \verb+i_dataset+: if present, specifies a data set. If not present, defines a global fitting parameter.
+\end{itemize}
+
+\begin{verbatim}
+gadfit::LMsolver::settings
+\end{verbatim}
+A struct containing parameters that define runtime behavior.
+\begin{itemize}
+\item \verb+iteration_limit+: iteration limit.
+\item \verb+default_lambda_down+: Factor by which $\lambda$ is increased for accepted steps..
+\item \verb+default_lambda_up+: Factor by which $\lambda$ is decreased for rejected steps..
+\item \verb+default_lambda_incs+: Number of times $\lambda$ is allowed to increase consecutively without terminating the fitting procedure.
+\end{itemize}
+
+\begin{verbatim}
+gadfit::LMsolver::fit(double lambda = default_lambda)
+\end{verbatim}
+Performs the fitting procedure.
+\begin{itemize}
+\item \verb+lambda+: the adaptive damping parameter.
+\end{itemize}
+
+\begin{verbatim}
+spdlog::set_pattern(pattern_string)
+\end{verbatim}
+GADfit makes of spdlog for writing output. See the spdlog project's homepage for full documentation. Here we only describe functions that are most relevant to GADfit.
+\begin{itemize}
+\item \verb+pattern_string+: format for writing output. For instance, if the default output is too verbose, include something like \verb+spdlog::set_pattern("%v");+ before the first call to \verb+gadfit::LMsolver::fit+.
+\end{itemize}
+
+\begin{verbatim}
+spdlog::set_level(spdlog::level)
+\end{verbatim}
+Set global log level
+\begin{itemize}
+\item \verb+spdlog::level+: logging level. For instance, use \verb+spdlog::level::debug+ for a more verbose output or \verb+spdlog::level::off+ to turn off all output. Default is \verb+spdlog::level::info+.
+\end{itemize}
 
 \subsubsection{\label{sec:input_fortran}Fortran}
 
@@ -907,8 +1042,6 @@ Internally, most procedures use at least double precision. However, for user con
 \item Procedure arguments can be given as a value (\verb+call gadf_fit(1.0)+) or as a name-value pair (\verb+call gadf_fit(lambda=1.0)+). When using the latter option, the arguments can be given in any order. It is also useful when calling a procedure that has many optional arguments but the user wishes to provide only some of them.
 \end{itemize}
 The next section contains a detailed list of all procedures that are required for normal use. The procedure arguments are given according to the format \verb+<type-specifier>::<variable>+, where the type-specifier can be \verb+real(kp)+ -- double or quad precision real number; \verb+real(real32)+ -- single precision real number; \verb+integer+ -- integer; \verb+character(*)+ -- character array (\verb+'asdf'+); \verb+logical+ -- truth value, can be either \verb+.true.+ or \verb+.false.+. If there is more than one allowed type for the argument, the choices are separated by a slash. Optional arguments have the keyword \verb+optional+. All procedures are subroutines except \verb+integrate+, which is a function.
-
-\subsubsection{\label{sec:user}User controlled routines}
 
 \begin{verbatim}
 gadf_init(f, num_datasets, ad_memory, sweep_size, trace_size,
@@ -1169,7 +1302,7 @@ character(*), optional :: output
 \begin{verbatim}
 gadf_set_errors(e)
 \end{verbatim}
-Specifies the data point errors -- $\sigma_i$ in Eq.~\eqref{eq:Jacob}. If this procedure is not called, the errors are set to 1.
+Specifies the data point errors -- $\sigma_i$ in Eq.~\eqref{eq:Jacobian}. If this procedure is not called, the errors are set to 1.
 \begin{itemize}
 \item
 \begin{verbatim}
@@ -1561,7 +1694,7 @@ contains
 \end{itemize}
 The function body may also refer to an external function. The dilogarithm function, $\Li2$, is an example of importing special functions from GSL. $\Li2$ is available if \verb+GSL_DIR+ points to the GSL root directory during configuration. This is not required for running any of the tests.
 
-\section{Developers notes}
+\section{Developer notes}
 
 \subsection{C++}
 

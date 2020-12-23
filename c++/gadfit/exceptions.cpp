@@ -53,4 +53,10 @@ SetParInvalidIndex::SetParInvalidIndex(const int index)
     return "More independent fitting parameters than data points.";
 }
 
+[[nodiscard]] auto MPIUninitialized::what() const noexcept -> const char*
+{
+    return "LMsolver initialized with an MPI communicator but MPI itself not "
+           "initialized.";
+}
+
 } // namespace gadfit

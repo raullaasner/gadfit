@@ -3,6 +3,7 @@
 #include "lm_solver_data.h"
 
 #include <lm_solver.h>
+#include <spdlog/spdlog.h>
 
 static auto exponential(const std::vector<gadfit::AdVar>& parameters,
                         const double x) -> gadfit::AdVar
@@ -16,8 +17,8 @@ static auto exponential(const std::vector<gadfit::AdVar>& parameters,
 
 TEST_CASE( "Indexing scheme" )
 {
+    spdlog::set_level(spdlog::level::off);
     gadfit::LMsolver solver { exponential };
-    solver.enableLogger(false);
     solver.addDataset(x_data_1, y_data_1);
     solver.addDataset(x_data_2, y_data_2);
     solver.settings.iteration_limit = 4;

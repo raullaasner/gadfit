@@ -22,6 +22,16 @@ target_sources(gadfit PRIVATE
   numerical_integration.F90
   )
 
+# Options and variables (Fortran only)
+option(USE_AD "If disabled, use finite differences" ON)
+option(QUAD_PRECISION "Whether to use quadruple or double precision" OFF)
+
+# Compiler capabilities
+set(HAS_CO_SUM TRUE)
+if (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
+  set(HAS_CO_SUM FALSE)
+endif()
+
 target_include_directories(gadfit PRIVATE ${PROJECT_BINARY_DIR})
 
 target_compile_definitions(gadfit PRIVATE

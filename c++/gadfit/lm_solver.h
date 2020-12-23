@@ -10,10 +10,14 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
+// Provides the main class of the solver. This is what the user
+// directly interacts with for performing a fitting procedure.
+
 #pragma once
 
 #include "exceptions.h"
 #include "fit_function.h"
+#include "parallel.h"
 
 #include <memory>
 #include <set>
@@ -32,7 +36,12 @@ private:
 
     static constexpr int default_iteration_limit { 1000 };
 
+    // If setPar is called with this value, denotes a global fitting parameter
     static constexpr int global_dataset_idx { -1 };
+    // If data_ranges[i].back() equals this value, where i is a data
+    // set, then no data points from that data set are processed by
+    // the given MPI process.
+    static constexpr int passive_data_range_idx { -1 };
 
     struct
     {
@@ -61,7 +70,26 @@ private:
         // have a single data set then the indexing scheme is always
         // trivial, i.e. iota(jacobian.begin(), jacobian.end(), 0);
         std::vector<std::vector<int>> jacobian {};
+        // When looping over all data points, specifies the range of
+        // data attributed to the given MPI process. If, for example,
+        // this process processes data points 13-18 from data set 1,
+        // 0-71 from set 2, and no data points from data set 3, then
+        // data_ranges = {{13, 18}, {0, 71}, {0, -1}}. This scheme
+        // handles any number of data sets, each with a different
+        // size, and any number of MPI processes.
+        std::vector<std::array<int, 2>> data_ranges {};
+        // Total number of data points processed by different MPI
+        // processes
+        std::vector<int> workloads {};
+        // If all data sets were stacked into a single global array,
+        // marks the starting index for different MPI processes.
+        std::vector<int> global_starts {};
     } indices;
+
+    // MPI
+    MPI_Comm mpi_comm {};
+    int my_rank {};
+    int num_procs { 1 };
 
     // All data sets must be added before any calls to setPar. This
     // variable keeps track of that.
@@ -77,7 +105,7 @@ private:
     std::vector<double> DTD {};
     // JTJ + lambda * diag(JTJ), i.e. everything except delta on the left side
     std::vector<double> left_side {};
-    // J^T * residuals, where residuals = y - f(beta)
+    // J^T * residuals, where residuals = (y - f(beta))/sigma
     std::vector<double> right_side {};
     std::vector<double> residuals {};
     std::vector<double> delta1 {};
@@ -85,13 +113,14 @@ private:
 
 public:
     LMsolver() = delete;
-    LMsolver(const fitSignature& function_body);
+    // With an MPI communicator, runs in parallel. Default is to run
+    // in serial.
+    LMsolver(const fitSignature& function_body,
+             const MPI_Comm mpi_comm = MPI_COMM_NULL);
     LMsolver(const LMsolver&) = default;
     LMsolver(LMsolver&&) = default;
     auto operator=(const LMsolver&) -> LMsolver& = default;
     auto operator=(LMsolver&&) -> LMsolver& = default;
-
-    auto enableLogger(const bool enable) -> void;
 
     template <typename T>
     auto addDataset(const T& x_data,
@@ -128,11 +157,14 @@ public:
 
 private:
     // Determines all relevant dimensions and parameter positions in
-    // the Jacobian. This is called before every fitting procedure in
+    // the Jacobian. Also, if using MPI, distributes all data among
+    // the processes. This is called before every fitting procedure in
     // case the user activates or deactivates some parameters between
     // multiple calls to fit.
     auto prepareIndexing() -> void;
-    auto computeLeftHandSide(const double lambda) -> void;
+    auto computeLeftHandSide(const double lambda,
+                             std::vector<double>& Jacobian_fragment,
+                             std::vector<double>& residuals_fragment) -> void;
     auto computeRightHandSide() -> void;
     // Compute the update vector delta1 and optionally delta2 (the
     // acceleration term)
@@ -143,9 +175,9 @@ private:
     auto updateParameters() -> void;
     auto revertParameters(const std::vector<std::vector<double>>& parameters)
       -> void;
-    auto iterationResults(const int i_iteration,
-                          const double lambda,
-                          const double new_chi2) const -> void;
+    auto printIterationResults(const int i_iteration,
+                               const double lambda,
+                               const double new_chi2) const -> void;
 };
 
 template <typename T>

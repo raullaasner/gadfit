@@ -12,7 +12,6 @@
 
 #pragma once
 
-#include <mkl_cblas.h>
 #include <vector>
 
 namespace gadfit {

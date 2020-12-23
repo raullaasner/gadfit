@@ -20,19 +20,20 @@
 
 namespace gadfit {
 
-LMsolver::LMsolver(const fitSignature& function_body)
+LMsolver::LMsolver(const fitSignature& function_body, const MPI_Comm mpi_comm)
+  : mpi_comm { mpi_comm }
 {
+    if (mpi_comm != MPI_COMM_NULL) {
+        int mpi_initialized {};
+        MPI_Initialized(&mpi_initialized);
+        if (!mpi_initialized) {
+            throw MPIUninitialized {};
+        }
+        MPI_Comm_rank(mpi_comm, &my_rank);
+        MPI_Comm_size(mpi_comm, &num_procs);
+    }
     initializeADReverse();
     fit_functions.emplace_back(FitFunction { function_body });
-}
-
-auto LMsolver::enableLogger(const bool enable) -> void
-{
-    if (enable) {
-        spdlog::set_level(spdlog::level::info);
-    } else {
-        spdlog::set_level(spdlog::level::off);
-    }
 }
 
 auto LMsolver::setPar(const int i_par,
@@ -80,14 +81,18 @@ auto LMsolver::setPar(const int i_par,
 auto LMsolver::fit(double lambda) -> void
 {
     prepareIndexing();
-    if (indices.n_active == 0) {
+    if (indices.n_active == 0 && my_rank == 0) {
         spdlog::warn("No active fitting parameters.");
     }
     // Prepare the main work arrays
-    Jacobian.resize(indices.n_datapoints * indices.n_active);
+    Jacobian.resize(indices.n_datapoints * indices.n_active, 0.0);
     residuals.resize(indices.n_datapoints);
+    // Each MPI process is assigned a segment of the Jacobian and the residuals.
+    std::vector<double> Jacobian_fragment(
+      indices.workloads.at(my_rank) * indices.n_active, 0.0);
+    std::vector<double> residuals_fragment(indices.workloads.at(my_rank));
     JTJ.resize(indices.n_active * indices.n_active);
-    DTD.resize(JTJ.size());
+    DTD.resize(JTJ.size(), 0.0);
     left_side.resize(JTJ.size());
     right_side.resize(indices.n_active);
     delta1.resize(right_side.size());
@@ -95,9 +100,6 @@ auto LMsolver::fit(double lambda) -> void
     for (auto& parameters : old_parameters) {
         parameters.resize(fit_functions.front().getNumPars());
     }
-    // A few sparse matrices need to be initialized here
-    std::fill(Jacobian.begin(), Jacobian.end(), 0.0);
-    std::fill(DTD.begin(), DTD.end(), 0.0);
     for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
         deactivateParameters(i_set);
     }
@@ -106,7 +108,7 @@ auto LMsolver::fit(double lambda) -> void
     bool finished { settings.iteration_limit == 0 || indices.n_active == 0 };
     while (!finished) {
         ++i_iteration;
-        computeLeftHandSide(lambda);
+        computeLeftHandSide(lambda, Jacobian_fragment, residuals_fragment);
         computeRightHandSide();
         computeDeltas();
         saveParameters(old_parameters);
@@ -115,14 +117,16 @@ auto LMsolver::fit(double lambda) -> void
         // lambda_incs times consecutively.
         for (int i_lambda {}; i_lambda <= settings.lambda_incs; ++i_lambda) {
             const double new_chi2 { chi2() };
-            spdlog::debug("Current lambda: {}, new chi2 = {}, old chi2: {}",
-                          lambda,
-                          new_chi2,
-                          old_chi2);
+            if (my_rank == 0) {
+                spdlog::debug("Current lambda: {}, new chi2 = {}, old chi2: {}",
+                              lambda,
+                              new_chi2,
+                              old_chi2);
+            }
             if (new_chi2 < old_chi2) {
                 lambda /= settings.lambda_down;
                 old_chi2 = new_chi2;
-                iterationResults(i_iteration, lambda, new_chi2);
+                printIterationResults(i_iteration, lambda, new_chi2);
                 break;
             }
             if (i_lambda < settings.lambda_incs) {
@@ -135,18 +139,22 @@ auto LMsolver::fit(double lambda) -> void
                 updateParameters();
             } else {
                 revertParameters(old_parameters);
-                spdlog::info("Lambda increased {} times in a row\n",
-                             settings.lambda_incs);
+                if (my_rank == 0) {
+                    spdlog::info("Lambda increased {} times in a row\n",
+                                 settings.lambda_incs);
+                }
                 finished = true;
             }
         }
         if (i_iteration == settings.iteration_limit) {
-            spdlog::info("Iteration limit reached");
+            if (my_rank == 0) {
+                spdlog::info("Iteration limit reached");
+            }
             finished = true;
         }
     }
     if (settings.iteration_limit == 0) {
-        iterationResults(0, lambda, old_chi2);
+        printIterationResults(0, lambda, old_chi2);
     }
 }
 
@@ -166,7 +174,7 @@ auto LMsolver::prepareIndexing() -> void
     if (indices.degrees_of_freedom < 0) {
         throw NegativeDegreesOfFreedom {};
     }
-    if (indices.degrees_of_freedom == 0) {
+    if (indices.degrees_of_freedom == 0 && my_rank == 0) {
         spdlog::warn(
           "There are no degrees of freedom - chi2/DOF has no meaning.");
         indices.degrees_of_freedom = 1;
@@ -206,7 +214,6 @@ auto LMsolver::prepareIndexing() -> void
                  ++i_par) {
                 if (indices.global.find(*active_index++)
                     != indices.global.cend()) {
-                    // cur_jacobian.at(i_par) = i_par;
                     cur_jacobian.at(i_par) = next_global_pos++;
                 } else {
                     cur_jacobian.at(i_par) = next_idx++;
@@ -214,21 +221,71 @@ auto LMsolver::prepareIndexing() -> void
             }
         }
     }
+    // Distribute data points over all data sets among the MPI processes
+    indices.workloads =
+      std::vector<int>(num_procs, indices.n_datapoints / num_procs);
+    for (int i_rank {}; i_rank < indices.n_datapoints % num_procs; ++i_rank) {
+        ++indices.workloads.at(i_rank);
+    }
+    indices.global_starts.resize(num_procs);
+    indices.global_starts.front() = 0;
+    for (int i_rank { 1 }; i_rank < num_procs; ++i_rank) {
+        indices.global_starts.at(i_rank) = indices.global_starts.at(i_rank - 1)
+                                           + indices.workloads.at(i_rank - 1);
+    }
+    const std::array<int, 2> my_global_range {
+        indices.global_starts.at(my_rank),
+        indices.global_starts.at(my_rank) + indices.workloads.at(my_rank) - 1
+    };
+    indices.data_ranges = std::vector<std::array<int, 2>>(
+      x_data.size(), { 0, passive_data_range_idx });
+    // Auxiliary variable that maps the current data set range onto a
+    // global range. For instance, with two data sets of sizes 79 and
+    // 93, cur_range is initialized to { 0, 78 } and updated to { 79, 171 }
+    // in the loop below.
+    std::array<int, 2> cur_range {
+        0, static_cast<int>(x_data.front().size()) - 1
+    };
+    for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
+        if (my_global_range.front() >= cur_range.front()
+            && my_global_range.front() <= cur_range.back()) {
+            indices.data_ranges.at(i_set).front() =
+              my_global_range.front() - cur_range.front();
+        }
+        if (my_global_range.back() >= cur_range.front()) {
+            if (my_global_range.back() <= cur_range.back()) {
+                indices.data_ranges.at(i_set).back() =
+                  my_global_range.back() - cur_range.front();
+            } else if (my_global_range.front() <= cur_range.back()) {
+                indices.data_ranges.at(i_set).back() =
+                  static_cast<int>(x_data.at(i_set).size()) - 1;
+            }
+        }
+        if (i_set < static_cast<int>(x_data.size()) - 1) {
+            cur_range.front() += static_cast<int>(x_data.at(i_set).size());
+            cur_range.back() += static_cast<int>(x_data.at(i_set + 1).size());
+        }
+    }
 }
 
-auto LMsolver::computeLeftHandSide(const double lambda) -> void
+auto LMsolver::computeLeftHandSide(const double lambda,
+                                   std::vector<double>& Jacobian_fragment,
+                                   std::vector<double>& residuals_fragment)
+  -> void
 {
-    int datapoint_shift {}; // Sum of data points over previous data sets
+    auto cur_residual { residuals_fragment.begin() };
+    auto cur_Jacobian { Jacobian_fragment.begin() };
     for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
-        const int this_set_size { static_cast<int>(x_data[i_set].size()) };
         adResetSweep();
         int cur_idx { -1 };
         for (const auto& idx : indices.active.at(i_set)) {
             fit_functions.at(i_set).activateParReverse(idx, ++cur_idx);
             addADSeed(fit_functions.at(i_set).par(idx));
         }
-        for (int i_point {}; i_point < this_set_size; ++i_point) {
-            residuals[datapoint_shift + i_point] =
+        for (int i_point { indices.data_ranges.at(i_set).front() };
+             i_point <= indices.data_ranges.at(i_set).back();
+             ++i_point) {
+            *cur_residual++ =
               (y_data[i_set][i_point]
                - fit_functions[i_set](x_data[i_set][i_point]).val)
               / errors[i_set][i_point];
@@ -236,14 +293,37 @@ auto LMsolver::computeLeftHandSide(const double lambda) -> void
             for (int i_par {};
                  i_par < static_cast<int>(indices.jacobian[i_set].size());
                  ++i_par) {
-                Jacobian[(datapoint_shift + i_point) * indices.n_active
-                         + indices.jacobian[i_set][i_par]] =
+                *(cur_Jacobian + indices.jacobian[i_set][i_par]) =
                   gadfit::reverse::adjoints[i_par] / errors[i_set][i_point];
             }
+            cur_Jacobian += indices.n_active;
         }
         deactivateParameters(i_set);
-        datapoint_shift += this_set_size;
     }
+    std::vector<int> sendcounts(num_procs, indices.workloads.at(my_rank));
+    std::vector<int> sdispls(num_procs, 0);
+    fragmentToGlobal(residuals_fragment.data(),
+                     sendcounts.data(),
+                     sdispls.data(),
+                     residuals.data(),
+                     indices.workloads.data(),
+                     indices.global_starts.data(),
+                     mpi_comm);
+    std::vector<int> recvcounts(num_procs);
+    std::vector<int> rdispls(num_procs);
+    for (int i_rank {}; i_rank < num_procs; ++i_rank) {
+        sendcounts.at(i_rank) *= indices.n_active;
+        rdispls.at(i_rank) =
+          indices.global_starts.at(i_rank) * indices.n_active;
+        recvcounts.at(i_rank) = indices.workloads.at(i_rank) * indices.n_active;
+    }
+    fragmentToGlobal(Jacobian_fragment.data(),
+                     sendcounts.data(),
+                     sdispls.data(),
+                     Jacobian.data(),
+                     recvcounts.data(),
+                     rdispls.data(),
+                     mpi_comm);
     dsyrk_wrapper(indices.n_active, indices.n_datapoints, Jacobian, JTJ);
     for (int i_par {}; i_par < indices.n_active; ++i_par) {
         DTD[i_par * indices.n_active + i_par] =
@@ -349,10 +429,13 @@ auto LMsolver::getResiduals() const -> const std::vector<double>&
     return residuals;
 }
 
-auto LMsolver::iterationResults(const int i_iteration,
-                                const double lambda,
-                                const double new_chi2) const -> void
+auto LMsolver::printIterationResults(const int i_iteration,
+                                     const double lambda,
+                                     const double new_chi2) const -> void
 {
+    if (my_rank != 0) {
+        return;
+    }
     spdlog::info("Iteration: {}", i_iteration);
     spdlog::info("Lambda: {}", lambda);
     spdlog::info("Chi2/DOF: {}", new_chi2 / indices.degrees_of_freedom);

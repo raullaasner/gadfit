@@ -26,7 +26,17 @@ if (Catch2_FOUND)
   foreach(_test ${tests})
     add_executable(${_test} EXCLUDE_FROM_ALL ${_test}.cpp)
     target_link_libraries(${_test} PRIVATE catch2_init)
-    add_test(${_test} ${_test})
+    if (USE_MPI)
+      add_test(NAME ${_test} COMMAND
+        ${TESTS_RUN_PREFIX}
+        ${CMAKE_CURRENT_BINARY_DIR}/${_test})
+    else()
+      add_test(${_test} ${_test})
+    endif()
+    if (NOT TARGET spdlog::spdlog)
+      target_include_directories(${_test} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}\
+/../../c++/gadfit/spdlog-prefix/src/spdlog/include")
+    endif()
   endforeach()
   add_custom_target(test COMMAND ctest -V DEPENDS ${tests})
 else()

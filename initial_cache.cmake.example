@@ -28,6 +28,9 @@ set(BUILD_CXX_VERSION ON CACHE BOOL "")
 # Whether to build in Release or Debug configuration.
 set(CMAKE_BUILD_TYPE Release CACHE STRING "")
 
+# Whether to build with MPI support (C++ only)
+#set(USE_MPI ON CACHE BOOL "")
+
 # Whether to build a shared or a static library.
 set(BUILD_SHARED ON CACHE BOOL "")
 

@@ -10,15 +10,15 @@
 # implied.  See the License for the specific language governing
 # permissions and limitations under the License.
 
-# CMAKE
+# CMake
 cmake_minimum_required(VERSION 3.13)
 
-# PROJECT
+# Project
 project(GADfit VERSION 1.3 LANGUAGES C)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 
-# OPTIONS AND VARIABLES
+# Options and variables
 option(BUILD_CXX_VERSION
   "If enabled, build the C++ version of GADFit, else the Fortran version" ON)
 if (BUILD_CXX_VERSION)
@@ -26,11 +26,9 @@ if (BUILD_CXX_VERSION)
 else()
   enable_language(Fortran)
 endif()
-option(USE_AD
-  "If disabled, use finite differences (Fortran only)" ON)
 option(BUILD_SHARED_LIBS
   "If enabled, builds a shared library, else static" ON)
-set(TESTS_RUN_PREFIX "" CACHE STRING
+set(TESTS_RUN_PREFIX mpirun -np 8 CACHE STRING
   "Prefix used for running tests, e.g., 'mpirun ...'")
 set(LINALG_FLAVOR "" CACHE STRING
   "Choose the linear algebra library (lapack, atlas, mkl)")
@@ -40,8 +38,6 @@ set(LIBRARY_PATHS "" CACHE STRING
   "Directories containing libraries to be linked against")
 set(LIBRARIES "" CACHE STRING
   "Libraries to be linked against")
-set(SPDLOG_PATH "" CACHE STRING
-  "Path to spdlog installation directory")
 set(GSL_DIR "" CACHE STRING "GSL install directory")
 option(INCLUDE_COVERAGE "Defines new target called 'coverage'" OFF)
 set(COVERAGE_FLAGS "--coverage" CACHE STRING
@@ -54,13 +50,13 @@ if (INCLUDE_COVERAGE)
   endif()
 endif()
 
-# DEFINE TARGET
+# Define main target
 add_library(gadfit "")
 target_compile_definitions(gadfit PRIVATE
   PROJECT_VERSION="${PROJECT_VERSION}"
   CMAKE_PLATFORM="${CMAKE_HOST_SYSTEM}")
 
-# PROCESS USER DEFINED INCLUDE PATHS AND LIBRARIES
+# Process user defined include paths and libraries
 include(Tools)
 target_include_directories(gadfit PRIVATE ${INCLUDE_PATHS})
 # Convert variables to list first
@@ -85,20 +81,12 @@ if (GSL_DIR)
     set(GSL_DIR FALSE)
   endif()
 endif()
-option(QUAD_PRECISION
-  "Whether to use quadruple or double precision (Fortran only)" OFF)
 set(OPEN_COARRAYS "" CACHE STRING "Full path to libcaf_mpi.a")
 if (OPEN_COARRAYS)
   target_link_libraries(gadfit PRIVATE ${OPEN_COARRAYS})
 endif()
 
-# COMPILER CAPABILITIES
-set(HAS_CO_SUM TRUE)
-if (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
-  set(HAS_CO_SUM FALSE)
-endif()
-
-# SOURCES
+# Sources
 if (BUILD_CXX_VERSION)
   add_subdirectory(c++/gadfit)
   add_subdirectory(c++/tests)
@@ -107,15 +95,17 @@ else()
   add_subdirectory(fortran/tests)
 endif()
 
-# SUMMARY
+# Summary
 message("")
 message("Summary")
 message("=======")
 if (BUILD_CXX_VERSION)
-  message("C++ compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+  message(
+    "C++ compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
   get_all_flags(CXX all_flags)
 else()
-  message("Fortran compiler: ${CMAKE_Fortran_COMPILER_ID} ${CMAKE_Fortran_COMPILER_VERSION}")
+  message(
+    "Fortran compiler: ${CMAKE_Fortran_COMPILER_ID} ${CMAKE_Fortran_COMPILER_VERSION}")
   get_all_flags(Fortran all_flags)
 endif()
 message("Compiler flags: ${all_flags}")

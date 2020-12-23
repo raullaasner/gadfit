@@ -58,4 +58,10 @@ public:
     [[nodiscard]] auto what() const noexcept -> const char* override;
 };
 
+class MPIUninitialized : public GADFitException
+{
+public:
+    [[nodiscard]] auto what() const noexcept -> const char* override;
+};
+
 } // namespace gadfit
