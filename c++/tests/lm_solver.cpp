@@ -192,3 +192,213 @@ TEST_CASE( "Indexing scheme" )
         REQUIRE( solver.getParValue(2, 1) == approx(fix_d[5]) );
     }
 }
+
+TEST_CASE( "Access functions" )
+{
+    spdlog::set_level(spdlog::level::off);
+    gadfit::LMsolver solver { exponential };
+    solver.addDataset(x_data_1, y_data_1);
+    solver.addDataset(x_data_2, y_data_2);
+    solver.settings.iteration_limit = 4;
+    solver.setPar(0, fix_d[0], true, 0);
+    solver.setPar(2, fix_d[1], true, 0);
+    solver.setPar(0, fix_d[4], true, 1);
+    solver.setPar(2, fix_d[5], true, 1);
+    solver.setPar(1, fix_d[3], true);
+    REQUIRE( solver.getValue(fix_d[2]) == approx(2.960644529912441) );
+    solver.fit(1.0);
+    REQUIRE( solver.getValue(fix_d[2]) == approx(37.07089678775328) );
+    {
+        double sum {};
+        for (const auto& el : solver.getJacobian()) {
+            sum += el;
+        }
+        REQUIRE( sum == approx(331.8214061379837) );
+    }
+    {
+        double sum {};
+        for (const auto& el : solver.getJTJ()) {
+            sum += el;
+        }
+        REQUIRE( sum == approx(786.5700259460133) );
+    }
+    {
+        double sum {};
+        for (const auto& el : solver.getDTD()) {
+            sum += el;
+        }
+        REQUIRE( sum == approx(465.1656068124079) );
+    }
+    {
+        double sum {};
+        for (const auto& el : solver.getLeftSide()) {
+            sum += el;
+        }
+         REQUIRE( sum == approx(791.2216820141374) );
+    }
+    {
+        double sum {};
+        for (const auto& el : solver.getRightSide()) {
+            sum += el;
+        }
+        REQUIRE( sum == approx(4096.69145240406) );
+    }
+    {
+        double sum {};
+        for (const auto& el : solver.getResiduals()) {
+            sum += el;
+        }
+        REQUIRE( sum == approx(353.1929743320203) );
+    }
+}
+
+TEST_CASE( "Exceptions" )
+{
+    spdlog::set_level(spdlog::level::off);
+    gadfit::LMsolver solver { exponential };
+    solver.settings.iteration_limit = 4;
+
+    SECTION( "Incorrect or of calls" ) {
+        try {
+            solver.addDataset(x_data_1, y_data_1);
+            solver.setPar(0, fix_d[0], true, 0);
+            solver.addDataset(x_data_2, y_data_2);
+            solver.setPar(2, fix_d[1], true, 0);
+            solver.setPar(0, fix_d[4], true, 1);
+            solver.setPar(2, fix_d[5], true, 1);
+            solver.setPar(1, fix_d[3], true);
+            solver.fit(1.0);
+            REQUIRE( 1 == 0 );
+        } catch (const gadfit::LateAddDatasetCall& e) {
+            e.what();
+            REQUIRE( 0 == 0 );
+        }
+    }
+    SECTION( "Invalid data set index" ) {
+        try {
+            solver.addDataset(x_data_1, y_data_1);
+            solver.addDataset(x_data_2, y_data_2);
+            solver.setPar(0, fix_d[0], true, 0);
+            solver.setPar(2, fix_d[1], true, 0);
+            solver.setPar(0, fix_d[4], true, 1);
+            solver.setPar(2, fix_d[5], true, 1);
+            solver.setPar(1, fix_d[3], true, 2);
+            solver.fit(1.0);
+            REQUIRE( 1 == 0 );
+        } catch (const gadfit::SetParInvalidIndex& e) {
+            e.what();
+            REQUIRE( 0 == 0 );
+        }
+    }
+    SECTION( "Uninitialized fitting parameter" ) {
+        try {
+            solver.addDataset(x_data_1, y_data_1);
+            solver.addDataset(x_data_2, y_data_2);
+            solver.setPar(0, fix_d[0], true, 0);
+            solver.setPar(2, fix_d[1], true, 0);
+            solver.setPar(0, fix_d[4], true, 1);
+            solver.setPar(1, fix_d[3], true);
+            solver.fit(1.0);
+            REQUIRE( 1 == 0 );
+        } catch (const gadfit::UninitializedParameter& e) {
+            e.what();
+            REQUIRE( 0 == 0 );
+        }
+    }
+    const auto reduceVector { [](const auto& in, const int N) {
+        return std::vector<double>(in.cbegin(), in.cbegin() + N);
+    } };
+    SECTION( "Too few data points (or too many fitting parameters)" ) {
+        try {
+
+            solver.addDataset(
+              reduceVector(x_data_1, 2), reduceVector(y_data_1, 2));
+            solver.addDataset(
+              reduceVector(x_data_2, 2), reduceVector(y_data_2, 2));
+            solver.setPar(0, fix_d[0], true, 0);
+            solver.setPar(2, fix_d[1], true, 0);
+            solver.setPar(0, fix_d[4], true, 1);
+            solver.setPar(2, fix_d[5], true, 1);
+            solver.setPar(1, fix_d[3], true);
+            solver.fit(1.0);
+            REQUIRE( 1 == 0 );
+        } catch (const gadfit::NegativeDegreesOfFreedom& e) {
+            e.what();
+            REQUIRE( 0 == 0 );
+        }
+    }
+    SECTION( "No degrees of freedom" ) {
+        solver.addDataset(reduceVector(x_data_1, 3), reduceVector(y_data_1, 3));
+        solver.addDataset(reduceVector(x_data_2, 2), reduceVector(y_data_2, 2));
+        solver.setPar(0, fix_d[0], true, 0);
+        solver.setPar(2, fix_d[1], true, 0);
+        solver.setPar(0, fix_d[4], true, 1);
+        solver.setPar(2, fix_d[5], true, 1);
+        solver.setPar(1, fix_d[3], true);
+        solver.fit(1.0);
+        REQUIRE( solver.chi2() == approx(409.5387799144992) );
+        REQUIRE( solver.getParValue(1) == approx(4.224317491642794) );
+        REQUIRE( solver.getParValue(0, 0) == approx(24.67898685099651) );
+        REQUIRE( solver.getParValue(2, 0) == approx(35.84110743027947) );
+        REQUIRE( solver.getParValue(0, 1) == approx(108.2684165067531) );
+        REQUIRE( solver.getParValue(2, 1) == approx(70.48326918227681) );
+    }
+}
+
+TEST_CASE( "Other" )
+{
+    spdlog::set_level(spdlog::level::off);
+    gadfit::LMsolver solver { exponential };
+
+    SECTION( "No iterations" ) {
+        solver.addDataset(x_data_1, y_data_1);
+        solver.addDataset(x_data_2, y_data_2);
+        solver.setPar(0, fix_d[0], true, 0);
+        solver.setPar(2, fix_d[1], true, 0);
+        solver.setPar(0, fix_d[4], true, 1);
+        solver.setPar(2, fix_d[5], true, 1);
+        solver.setPar(1, fix_d[3], true);
+        solver.settings.iteration_limit = 0;
+        solver.fit(1.0);
+        REQUIRE( solver.chi2() == approx(284681.4650859555) );
+        REQUIRE( solver.getParValue(1) == approx(0.5356792380861322) );
+        REQUIRE( solver.getParValue(0, 0) == approx(6.13604207015635) );
+        REQUIRE( solver.getParValue(2, 0) == approx(2.960644474827888) );
+        REQUIRE( solver.getParValue(0, 1) == approx(-1.472720596147903) );
+        REQUIRE( solver.getParValue(2, 1) == approx(4.251266120087788) );
+    }
+    SECTION( "No active parameters" ) {
+        solver.addDataset(x_data_1, y_data_1);
+        solver.addDataset(x_data_2, y_data_2);
+        solver.setPar(0, fix_d[0], false, 0);
+        solver.setPar(2, fix_d[1], false, 0);
+        solver.setPar(0, fix_d[4], false, 1);
+        solver.setPar(2, fix_d[5], false, 1);
+        solver.setPar(1, fix_d[3], false);
+        spdlog::set_level(spdlog::level::info);
+        solver.fit(1.0);
+        REQUIRE( solver.chi2() == approx(284681.4650859555) );
+        REQUIRE( solver.getParValue(1) == approx(0.5356792380861322) );
+        REQUIRE( solver.getParValue(0, 0) == approx(6.13604207015635) );
+        REQUIRE( solver.getParValue(2, 0) == approx(2.960644474827888) );
+        REQUIRE( solver.getParValue(0, 1) == approx(-1.472720596147903) );
+        REQUIRE( solver.getParValue(2, 1) == approx(4.251266120087788) );
+    }
+    SECTION( "No iteration limit" ) {
+        solver.addDataset(x_data_1, y_data_1);
+        solver.addDataset(x_data_2, y_data_2);
+        solver.setPar(0, fix_d[0], true, 0);
+        solver.setPar(2, fix_d[1], true, 0);
+        solver.setPar(0, fix_d[4], true, 1);
+        solver.setPar(2, fix_d[5], true, 1);
+        solver.setPar(1, fix_d[3], true);
+        solver.settings.iteration_limit = 100;
+        solver.fit(1.0);
+        REQUIRE( solver.chi2() == approx(5640.175130917764) );
+        REQUIRE( solver.getParValue(1) == approx(20.85609539369426) );
+        REQUIRE( solver.getParValue(0, 0) == approx(46.44788540483412) );
+        REQUIRE( solver.getParValue(2, 0) == approx(10.32140443497198) );
+        REQUIRE( solver.getParValue(0, 1) == approx(152.2711588181074) );
+        REQUIRE( solver.getParValue(2, 1) == approx(5.533936916048498) );
+    }
+}
