@@ -23,17 +23,25 @@ namespace gadfit {
 
 namespace reverse {
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 int last_index;
 // Value of index of the most recent seed AD variable. It is
 // determined in the most recent call to addADSeed and should equal
 // the number of active parameters in the LM procedure. Each call to
 // returnSweep resets last_index to this value.
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 int last_index_reset_value;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 std::vector<double> forwards;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 std::vector<double> adjoints;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 std::vector<double> constants;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 int const_count;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 std::vector<int> trace;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 int trace_count;
 
 } // namespace reverse

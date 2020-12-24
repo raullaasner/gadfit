@@ -85,13 +85,20 @@ public:
 namespace reverse {
 
 // Value of index assigned to the most recent AD variable
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern int last_index;
 // Forward values
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern std::vector<double> forwards;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern std::vector<double> adjoints;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern std::vector<double> constants;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern int const_count;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern std::vector<int> trace;
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 extern int trace_count;
 
 } // namespace reverse

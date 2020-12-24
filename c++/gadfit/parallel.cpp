@@ -42,10 +42,10 @@ auto fragmentToGlobal(const double* const fragment,
                       double* const result,
                       const int* const recvcounts,
                       const int* const rdispls,
-                      const MPI_Comm mpi_comm) -> void
+                      MPI_Comm mpi_comm) -> void
 {
     if (mpi_comm == MPI_COMM_NULL) {
-        memcpy(result, fragment, sendcounts[0] * sizeof(double));
+        memcpy(result, fragment, *sendcounts * sizeof(double));
     } else {
         MPI_Alltoallv(fragment,
                       sendcounts,

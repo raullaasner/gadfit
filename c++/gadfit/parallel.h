@@ -43,4 +43,4 @@ auto fragmentToGlobal(const double* const fragment,
                       double* const result,
                       const int* const recvcounts,
                       const int* const rdispls,
-                      const MPI_Comm mpi_comm) -> void;
+                      MPI_Comm mpi_comm) -> void;

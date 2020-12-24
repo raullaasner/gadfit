@@ -116,7 +116,7 @@ public:
     // With an MPI communicator, runs in parallel. Default is to run
     // in serial.
     LMsolver(const fitSignature& function_body,
-             const MPI_Comm mpi_comm = MPI_COMM_NULL);
+             MPI_Comm mpi_comm = MPI_COMM_NULL);
     LMsolver(const LMsolver&) = default;
     LMsolver(LMsolver&&) = default;
     auto operator=(const LMsolver&) -> LMsolver& = default;
@@ -134,8 +134,10 @@ public:
                 const bool active = false,
                 const int i_dataset = global_dataset_idx) -> void;
     auto fit(double lambda = default_lambda) -> void;
-    auto getParValue(const int i_par, const int i_dataset = 0) const -> double;
-    auto getValue(const double arg, const int i_dataset = 0) const -> double;
+    [[nodiscard]] auto getParValue(const int i_par,
+                                   const int i_dataset = 0) const -> double;
+    [[nodiscard]] auto getValue(const double arg, const int i_dataset = 0) const
+      -> double;
 
     [[nodiscard]] auto getJacobian() const -> const std::vector<double>&;
     [[nodiscard]] auto getJTJ() const -> const std::vector<double>&;
@@ -194,18 +196,18 @@ auto LMsolver::addDataset(const T& x_data,
         this->x_data.back()[i] = x_data[i];
         this->y_data.back()[i] = y_data[i];
     }
-    if (errors.size() > 0) {
-        this->errors.push_back(std::vector<double>(errors.size()));
+    if (!errors.empty()) {
+        this->errors.emplace_back(std::vector<double>(errors.size()));
         for (int i {}; i < static_cast<int>(errors.size()); ++i) {
             this->errors.back()[i] = errors[i];
         }
     } else {
-        this->errors.push_back(std::vector<double>(x_data.size(), 1.0));
+        this->errors.emplace_back(std::vector<double>(x_data.size(), 1.0));
     }
     if (fit_functions.size() < this->x_data.size()) {
         fit_functions.push_back(fit_functions.back());
     }
-    indices.active.push_back({});
+    indices.active.emplace_back(std::set<int>{});
 }
 
 } // namespace gadfit

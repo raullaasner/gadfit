@@ -20,13 +20,13 @@
 
 namespace gadfit {
 
-LMsolver::LMsolver(const fitSignature& function_body, const MPI_Comm mpi_comm)
+LMsolver::LMsolver(const fitSignature& function_body, MPI_Comm mpi_comm)
   : mpi_comm { mpi_comm }
 {
     if (mpi_comm != MPI_COMM_NULL) {
         int mpi_initialized {};
         MPI_Initialized(&mpi_initialized);
-        if (!mpi_initialized) {
+        if (!static_cast<bool>(mpi_initialized)) {
             throw MPIUninitialized {};
         }
         MPI_Comm_rank(mpi_comm, &my_rank);
@@ -357,7 +357,7 @@ auto LMsolver::saveParameters(std::vector<std::vector<double>>& old_parameters)
   -> void
 {
     for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
-        for (auto& idx : indices.active.at(i_set)) {
+        for (const auto& idx : indices.active.at(i_set)) {
             old_parameters.at(i_set).at(idx) =
               fit_functions.at(i_set).par(idx).val;
         }
@@ -368,7 +368,7 @@ auto LMsolver::updateParameters() -> void
 {
     for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
         auto idx_jacobian { indices.jacobian.at(i_set).cbegin() };
-        for (auto& idx : indices.active.at(i_set)) {
+        for (const auto& idx : indices.active.at(i_set)) {
             fit_functions.at(i_set).par(idx).val += delta1.at(*idx_jacobian++);
         }
     }
@@ -378,7 +378,7 @@ auto LMsolver::revertParameters(
   const std::vector<std::vector<double>>& old_parameters) -> void
 {
     for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
-        for (auto& idx : indices.active.at(i_set)) {
+        for (const auto& idx : indices.active.at(i_set)) {
             fit_functions.at(i_set).par(idx).val =
               old_parameters.at(i_set).at(idx);
         }
@@ -445,7 +445,6 @@ auto LMsolver::printIterationResults(const int i_iteration,
     const bool single_dataset { x_data.size() == 1 };
     if (!single_dataset) {
         spdlog::info("  Global parameters");
-        auto idx { indices.active.at(0).cbegin() };
         for (int i_par {}; i_par < fit_functions.front().getNumPars();
              ++i_par) {
             if (indices.global.find(i_par) != indices.global.cend()) {
