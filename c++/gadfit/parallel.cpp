@@ -22,6 +22,8 @@ auto MPI_Comm_size(MPI_Comm, int*) -> void {}
 
 auto MPI_Initialized(int*) -> void {}
 
+auto MPI_Finalized(int*) -> void {}
+
 // This should never be called
 static auto MPI_Alltoallv(const double* const,
                           const int* const,

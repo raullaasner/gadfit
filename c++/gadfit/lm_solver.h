@@ -207,7 +207,7 @@ auto LMsolver::addDataset(const T& x_data,
     if (fit_functions.size() < this->x_data.size()) {
         fit_functions.push_back(fit_functions.back());
     }
-    indices.active.emplace_back(std::set<int>{});
+    indices.active.emplace_back(std::set<int> {});
 }
 
 } // namespace gadfit

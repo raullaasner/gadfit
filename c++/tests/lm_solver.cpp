@@ -310,7 +310,6 @@ TEST_CASE( "Exceptions" )
     } };
     SECTION( "Too few data points (or too many fitting parameters)" ) {
         try {
-
             solver.addDataset(
               reduceVector(x_data_1, 2), reduceVector(y_data_1, 2));
             solver.addDataset(
@@ -375,7 +374,6 @@ TEST_CASE( "Other" )
         solver.setPar(0, fix_d[4], false, 1);
         solver.setPar(2, fix_d[5], false, 1);
         solver.setPar(1, fix_d[3], false);
-        spdlog::set_level(spdlog::level::info);
         solver.fit(1.0);
         REQUIRE( solver.chi2() == approx(284681.4650859555) );
         REQUIRE( solver.getParValue(1) == approx(0.5356792380861322) );

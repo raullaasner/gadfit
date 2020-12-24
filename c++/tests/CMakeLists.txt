@@ -17,6 +17,10 @@ set(tests
   lm_solver
   )
 
+if (USE_MPI)
+  list(APPEND tests mpi_basic)
+endif()
+
 enable_testing()
 
 find_package(Catch2 QUIET)
@@ -33,6 +37,7 @@ if (Catch2_FOUND)
     else()
       add_test(${_test} ${_test})
     endif()
+    find_package(spdlog QUIET)
     if (NOT TARGET spdlog::spdlog)
       target_include_directories(${_test} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}\
 /../../c++/gadfit/spdlog-prefix/src/spdlog/include")

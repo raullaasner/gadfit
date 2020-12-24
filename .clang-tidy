@@ -4,6 +4,7 @@ bugprone-*,\
 clang-analyzer-*,\
 cppcoreguidelines-*,\
 -cppcoreguidelines-pro-bounds-array-to-pointer-decay,\
+-cppcoreguidelines-pro-bounds-constant-array-index,\
 misc-*,\
 modernize-*,\
 mpi-*,\

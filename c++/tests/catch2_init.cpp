@@ -6,8 +6,12 @@
 
 int main(int argc, char* argv[]) {
     MPI_Init(&argc, &argv);
-    int result = Catch::Session().run( argc, argv );
-    MPI_Finalize();
+    int result = Catch::Session().run(argc, argv);
+    int mpi_finalized {};
+    MPI_Finalized(&mpi_finalized);
+    if (!static_cast<bool>(mpi_finalized)) {
+        MPI_Finalize();
+    }
     return result;
 }
 

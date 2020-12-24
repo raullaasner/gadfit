@@ -26,7 +26,10 @@ LMsolver::LMsolver(const fitSignature& function_body, MPI_Comm mpi_comm)
     if (mpi_comm != MPI_COMM_NULL) {
         int mpi_initialized {};
         MPI_Initialized(&mpi_initialized);
-        if (!static_cast<bool>(mpi_initialized)) {
+        int mpi_finalized {};
+        MPI_Finalized(&mpi_finalized);
+        if (!static_cast<bool>(mpi_initialized)
+            || static_cast<bool>(mpi_finalized)) {
             throw MPIUninitialized {};
         }
         MPI_Comm_rank(mpi_comm, &my_rank);
