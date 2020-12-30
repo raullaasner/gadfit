@@ -19,11 +19,21 @@
 #include "fit_function.h"
 #include "parallel.h"
 
+#include <bitset>
 #include <memory>
 #include <set>
 #include <vector>
 
 namespace gadfit {
+
+namespace io {
+
+using flag = std::bitset<3>;
+static constexpr flag all { 0b0000'0001 };
+static constexpr flag delta1 { 0b0000'0010 };
+static constexpr flag delta2 { 0b0000'0100 };
+
+} // namespace io
 
 class LMsolver
 {
@@ -35,6 +45,7 @@ private:
     static constexpr int default_lambda_incs { 3 };
     static constexpr bool default_damp_max { true };
     static constexpr double default_DTD_min {};
+    static constexpr double default_acceleration_threshold { -1.0 };
 
     static constexpr int default_iteration_limit { 1000 };
 
@@ -111,6 +122,8 @@ private:
     std::vector<double> right_side {};
     std::vector<double> residuals {};
     std::vector<double> delta1 {};
+    // Second directional derivative
+    std::vector<double> omega {};
     std::vector<double> delta2 {};
 
 public:
@@ -158,10 +171,16 @@ public:
         double lambda_up { default_lambda_up };
         bool damp_max { default_damp_max };
         std::vector<double> DTD_min { default_DTD_min };
+        double acceleration_threshold { default_acceleration_threshold };
+        io::flag verbosity {};
     } settings; // NOLINT: exposing this is harmless and convenient
                 // for the user
 
 private:
+    // General purpose work array for storing intermediate
+    // results. Size can vary throughout the code.
+    std::vector<double> work_tmp {};
+
     // Determines all relevant dimensions and parameter positions in
     // the Jacobian. Also, if using MPI, distributes all data among
     // the processes. This is called before every fitting procedure in
@@ -174,7 +193,7 @@ private:
     auto computeRightHandSide() -> void;
     // Compute the update vector delta1 and optionally delta2 (the
     // acceleration term)
-    auto computeDeltas() -> void;
+    auto computeDeltas(std::vector<double>& omega_fragment) -> void;
     auto deactivateParameters(const int i_set) -> void;
     auto saveParameters(std::vector<std::vector<double>>& old_parameters)
       -> void;
@@ -184,6 +203,8 @@ private:
     auto printIterationResults(const int i_iteration,
                                const double lambda,
                                const double new_chi2) const -> void;
+    // Test whether an IO flag is enabled
+    auto ioTest(io::flag flag) const -> bool;
 };
 
 template <typename T>

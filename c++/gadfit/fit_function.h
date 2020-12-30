@@ -50,7 +50,7 @@ public:
     // Activate a parameter for the reverse mode
     auto activateParReverse(const int par_i, const int idx) -> void;
     // Activate a parameter for the forward mode
-    auto activateParForward(const int par_i) -> void;
+    auto activateParForward(const int par_i, const double seed = 1.0) -> void;
     // Deactivate a parameter regardless of mode
     auto deactivatePar(const int par_i) -> void;
 

@@ -38,10 +38,10 @@ auto FitFunction::activateParReverse(const int par_i, const int idx) -> void
     par.idx = idx;
 }
 
-auto FitFunction::activateParForward(const int par_i) -> void
+auto FitFunction::activateParForward(const int par_i, const double seed) -> void
 {
     AdVar& par { parameters.at(par_i) };
-    par.d = 1.0;
+    par.d = seed;
     par.dd = 0.0;
     par.idx = forward_active_idx;
 }

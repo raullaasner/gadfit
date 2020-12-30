@@ -999,6 +999,22 @@ A struct containing parameters that define runtime behavior.
 \item \verb+lambda_incs (int)+: Number of times $\lambda$ is allowed to increase consecutively without terminating the fitting procedure.
 \item \verb+damp_max (bool)+: Whether to update the damping matrix with the largest entries of $J^TJ$ yet encountered. If \texttt{false}, the classical Marquardt scheme is used.
 \item \verb+DTD_min (std::vector<double>)+: Minimum initial values of the diagonal entries of the damping matrix. Only relevant if \verb+damp_max == true+. Length of this array must equal the number of fitting parameters.
+\item \verb+acceleration_threshold (double)+: Acceleration threshold [$\alpha$ in Eq.~\eqref{eq:acc_alpha}]. If negative, the acceleration term is not calculated.
+\end{itemize}
+
+\begin{verbatim}
+gadfit::LMsolver::settings::verbosity
+\end{verbatim}
+Flags for controlling output. Usage follows the standard rules of bit manipulation in C++. For example, for turning on the \verb+delta1+ and \verb+delta2+ flags,
+\begin{verbatim}
+gadfit::LMsolver solver { f };
+f.settings.verbosity = gadfit::io::delta1 | gadfit::io::delta2;
+\end{verbatim}
+The following flags are supported.
+\begin{itemize}
+\item \verb+delta1+: Show the change in parameter value after each iteration.
+\item \verb+delta2+: Show the acceleration term of each parameter after each iteration. Note that the actual contribution to the update vector is $-\frac{1}{2}\bm\delta_2$. Only shown if \verb+acceleration_threshold+ is also set.
+\item \verb+all+: Turn on all flags.
 \end{itemize}
 
 \begin{verbatim}

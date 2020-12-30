@@ -15,8 +15,10 @@
 #include "cblas_wrapper.h"
 #include "fit_function.h"
 
+#include <iomanip>
 #include <numeric>
 #include <spdlog/spdlog.h>
+#include <sstream>
 
 namespace gadfit {
 
@@ -62,7 +64,7 @@ auto LMsolver::setPar(const int i_par,
         for (int i_group {}; i_group < static_cast<int>(fit_functions.size());
              ++i_group) {
             fit_functions.at(i_group).par(i_par) =
-              AdVar { val, 0.0, 0.0, passive_idx };
+              AdVar { val };
             if (active) {
                 indices.active.at(i_group).insert(i_par);
             } else {
@@ -91,10 +93,18 @@ auto LMsolver::fit(double lambda) -> void
     Jacobian =
       std::vector<double>(indices.n_datapoints * indices.n_active, 0.0);
     residuals.resize(indices.n_datapoints);
-    // Each MPI process is assigned a segment of the Jacobian and the residuals.
+    if (settings.acceleration_threshold > 0.0) {
+        omega.resize(indices.n_datapoints);
+    }
+    // Each MPI process is assigned a segment of some of work arrays
+    // such as the Jacobian.
     std::vector<double> Jacobian_fragment(
       indices.workloads.at(my_rank) * indices.n_active, 0.0);
     std::vector<double> residuals_fragment(indices.workloads.at(my_rank));
+    std::vector<double> omega_fragment;
+    if (settings.acceleration_threshold > 0.0) {
+        omega_fragment.resize(indices.workloads.at(my_rank));
+    }
     JTJ.resize(indices.n_active * indices.n_active);
     DTD = std::vector<double>(JTJ.size(), 0.0);
     if (static_cast<int>(settings.DTD_min.size()) > 1) {
@@ -105,6 +115,9 @@ auto LMsolver::fit(double lambda) -> void
     left_side.resize(JTJ.size());
     right_side.resize(indices.n_active);
     delta1.resize(right_side.size());
+    if (settings.acceleration_threshold > 0.0) {
+        delta2.resize(delta1.size());
+    }
     std::vector<std::vector<double>> old_parameters(x_data.size());
     for (auto& parameters : old_parameters) {
         parameters.resize(fit_functions.front().getNumPars());
@@ -119,7 +132,7 @@ auto LMsolver::fit(double lambda) -> void
         ++i_iteration;
         computeLeftHandSide(lambda, Jacobian_fragment, residuals_fragment);
         computeRightHandSide();
-        computeDeltas();
+        computeDeltas(omega_fragment);
         saveParameters(old_parameters);
         updateParameters();
         // Update lambda, which is allowed to increase no more than
@@ -144,7 +157,7 @@ auto LMsolver::fit(double lambda) -> void
                 for (int i {}; i < static_cast<int>(left_side.size()); ++i) {
                     left_side[i] = JTJ[i] + lambda * DTD[i];
                 }
-                computeDeltas();
+                computeDeltas(omega_fragment);
                 updateParameters();
             } else {
                 revertParameters(old_parameters);
@@ -351,10 +364,60 @@ auto LMsolver::computeRightHandSide() -> void
       indices.n_datapoints, indices.n_active, Jacobian, residuals, right_side);
 }
 
-auto LMsolver::computeDeltas() -> void
+auto LMsolver::computeDeltas(std::vector<double>& omega_fragment) -> void
 {
     delta1 = right_side;
     dpotrs_wrapper(indices.n_active, left_side, delta1);
+    if (settings.acceleration_threshold > 0.0) {
+        // This is a similar loop as for the residuals or the Jacobian
+        // above, except only the second directional derivatives are
+        // computed.
+        auto cur_omega { omega_fragment.begin() };
+        for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
+            auto idx_jacobian { indices.jacobian.at(i_set).cbegin() };
+            for (const auto& idx : indices.active.at(i_set)) {
+                fit_functions.at(i_set).activateParForward(
+                  idx, delta1.at(*idx_jacobian++));
+            }
+            for (int i_point { indices.data_ranges.at(i_set).front() };
+                 i_point <= indices.data_ranges.at(i_set).back();
+                 ++i_point) {
+                *cur_omega++ = fit_functions[i_set](x_data[i_set][i_point]).dd
+                               / errors[i_set][i_point];
+            }
+            deactivateParameters(i_set);
+        }
+        std::vector<int> sendcounts(num_procs, indices.workloads.at(my_rank));
+        std::vector<int> sdispls(num_procs, 0);
+        fragmentToGlobal(omega_fragment.data(),
+                         sendcounts.data(),
+                         sdispls.data(),
+                         omega.data(),
+                         indices.workloads.data(),
+                         indices.global_starts.data(),
+                         mpi_comm);
+        dgemv_tr_wrapper(
+          indices.n_datapoints, indices.n_active, Jacobian, omega, delta2);
+        dpotrs_wrapper(indices.n_active, left_side, delta2);
+        // Use acceleration only if
+        // sqrt((delta2 D delta2)/(delta1 D delta1)) < alpha, where
+        // alpha is the acceleration ratio threshold.
+        if (static_cast<int>(work_tmp.size()) < indices.n_active) {
+            work_tmp.resize(indices.n_active);
+        }
+        dgemv_tr_wrapper(
+          indices.n_active, indices.n_active, DTD, delta2, work_tmp);
+        double acc_ratio { std::inner_product(
+          delta2.cbegin(), delta2.cend(), work_tmp.cbegin(), 0.0) };
+        dgemv_tr_wrapper(
+          indices.n_active, indices.n_active, DTD, delta1, work_tmp);
+        acc_ratio /= std::inner_product(
+          delta1.cbegin(), delta1.cend(), work_tmp.cbegin(), 0.0);
+        acc_ratio = std::sqrt(acc_ratio);
+        if (acc_ratio > settings.acceleration_threshold) {
+            std::fill(delta2.begin(), delta2.end(), 0.0);
+        }
+    }
 }
 
 auto LMsolver::deactivateParameters(const int i_set) -> void
@@ -381,6 +444,15 @@ auto LMsolver::updateParameters() -> void
         auto idx_jacobian { indices.jacobian.at(i_set).cbegin() };
         for (const auto& idx : indices.active.at(i_set)) {
             fit_functions.at(i_set).par(idx).val += delta1.at(*idx_jacobian++);
+        }
+    }
+    if (settings.acceleration_threshold > 0.0) {
+        for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
+            auto idx_jacobian { indices.jacobian.at(i_set).cbegin() };
+            for (const auto& idx : indices.active.at(i_set)) {
+                fit_functions.at(i_set).par(idx).val -=
+                  0.5 * delta2.at(*idx_jacobian++);
+            }
         }
     }
 }
@@ -451,6 +523,29 @@ auto LMsolver::printIterationResults(const int i_iteration,
     spdlog::info("Iteration: {}", i_iteration);
     spdlog::info("Lambda: {}", lambda);
     spdlog::info("Chi2/DOF: {}", new_chi2 / indices.degrees_of_freedom);
+    // Constructs the line that shows the parameter value and other
+    // quantities if requested
+    const auto parameterLine { [&](const int i_set, const int i_par) {
+        const bool is_active { indices.active.at(i_set).find(i_par)
+                               != indices.active.at(i_set).end() };
+        std::ostringstream line {};
+        line << std::setprecision(std::numeric_limits<double>::digits10)
+             << "    Parameter " << i_par << ": "
+             << fit_functions.at(i_set).getParValue(i_par);
+        if (is_active) {
+            if (ioTest(io::delta1)) {
+                line << " (" << delta1.at(indices.jacobian[i_set][i_par])
+                     << ')';
+            }
+            if (ioTest(io::delta2) && delta2.size() > 0) {
+                line << " (" << delta2.at(indices.jacobian[i_set][i_par])
+                     << ')';
+            }
+        } else {
+            line << " (fixed)";
+        }
+        spdlog::info(line.str());
+    } };
     // When fitting more than one curve, print all global and local
     // active fitting parameters separately. Otherwise, there is no
     // distinction.
@@ -460,9 +555,7 @@ auto LMsolver::printIterationResults(const int i_iteration,
         for (int i_par {}; i_par < fit_functions.front().getNumPars();
              ++i_par) {
             if (indices.global.find(i_par) != indices.global.cend()) {
-                spdlog::info("    Parameter {}: {}",
-                             i_par,
-                             fit_functions.front().getParValue(i_par));
+                parameterLine(0, i_par);
             }
         }
     }
@@ -474,13 +567,17 @@ auto LMsolver::printIterationResults(const int i_iteration,
              ++i_par) {
             if (single_dataset
                 || indices.global.find(i_par) == indices.global.cend()) {
-                spdlog::info("    Parameter {}: {}",
-                             i_par,
-                             fit_functions.at(i_set).getParValue(i_par));
+                parameterLine(i_set, i_par);
             }
         }
     }
     spdlog::info("");
+}
+
+auto LMsolver::ioTest(io::flag flag) const -> bool
+{
+    return (settings.verbosity & io::all).any()
+           || (settings.verbosity & flag).any();
 }
 
 auto LMsolver::getParValue(const int i_par, const int i_dataset) const -> double

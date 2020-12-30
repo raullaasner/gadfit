@@ -405,3 +405,26 @@ TEST_CASE( "Constraining the damping matrix DTD" )
         REQUIRE( solver.getParValue(2, 1) == approx(5.56046342286098) );
     }
 }
+
+TEST_CASE( "Geodesic acceleration" )
+{
+    spdlog::set_level(spdlog::level::off);
+    gadfit::LMsolver solver { exponential };
+    solver.addDataset(x_data_1, y_data_1);
+    solver.addDataset(x_data_2, y_data_2);
+    solver.setPar(0, fix_d[0], true, 0);
+    solver.setPar(2, fix_d[1], true, 0);
+    solver.setPar(0, fix_d[4], true, 1);
+    solver.setPar(2, fix_d[5], true, 1);
+    solver.setPar(1, fix_d[3], true);
+    solver.settings.iteration_limit = 5;
+    solver.settings.acceleration_threshold = 0.9;
+    solver.settings.verbosity = gadfit::io::all;
+    solver.fit(1.0);
+    REQUIRE( solver.chi2() == approx(5641.660305504621) );
+    REQUIRE( solver.getParValue(1) == approx(20.70654799943915) );
+    REQUIRE( solver.getParValue(0, 0) == approx(46.48065799723028) );
+    REQUIRE( solver.getParValue(2, 0) == approx(10.39142422387267) );
+    REQUIRE( solver.getParValue(0, 1) == approx(152.4514268293043) );
+    REQUIRE( solver.getParValue(2, 1) == approx(5.748941149916492) );
+}
