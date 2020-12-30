@@ -30,12 +30,12 @@ TEST_CASE( "Indexing scheme" )
         solver.setPar(2, fix_d[5], true, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE( solver.chi2() == approx(13419.2324476273) );
-        REQUIRE( solver.getParValue(1) == approx(22.884827826053) );
-        REQUIRE( solver.getParValue(0, 0) == approx(37.25455194786) );
-        REQUIRE( solver.getParValue(2, 0) == approx(12.9262098123123) );
-        REQUIRE( solver.getParValue(0, 1) == approx(120.679337652733) );
-        REQUIRE( solver.getParValue(2, 1) == approx(13.9172100518583) );
+        REQUIRE( solver.chi2() == approx(11620.08672704751) );
+        REQUIRE( solver.getParValue(1) == approx(17.86502436229641) );
+        REQUIRE( solver.getParValue(0, 0) == approx(39.77705004578391) );
+        REQUIRE( solver.getParValue(2, 0) == approx(13.57729652858559) );
+        REQUIRE( solver.getParValue(0, 1) == approx(129.0275065609782) );
+        REQUIRE( solver.getParValue(2, 1) == approx(16.09079665934463) );
     }
     SECTION( "Active: bgr-0, bgr-1, tau" ) {
         solver.setPar(0, fix_d[0], false, 0);
@@ -44,12 +44,12 @@ TEST_CASE( "Indexing scheme" )
         solver.setPar(2, fix_d[5], true, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE( solver.chi2() == approx(153626.6200123923) );
-        REQUIRE( solver.getParValue(1) == approx(28.0465962138761) );
+        REQUIRE( solver.chi2() == approx(153628.8903849508) );
+        REQUIRE( solver.getParValue(1) == approx(31.95892116514992) );
         REQUIRE( solver.getParValue(0, 0) == approx(fix_d[0]) );
-        REQUIRE( solver.getParValue(2, 0) == approx(18.0670378013166) );
+        REQUIRE( solver.getParValue(2, 0) == approx(17.81484199806565) );
         REQUIRE( solver.getParValue(0, 1) == approx(fix_d[4]) );
-        REQUIRE( solver.getParValue(2, 1) == approx(36.6704549176379) );
+        REQUIRE( solver.getParValue(2, 1) == approx(36.73244337347508) );
     }
     SECTION( "Active: I0-0, I0-1, tau" ) {
         solver.setPar(0, fix_d[0], true, 0);
@@ -58,11 +58,11 @@ TEST_CASE( "Indexing scheme" )
         solver.setPar(2, fix_d[5], false, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE( solver.chi2() == approx(41226.1757537588) );
-        REQUIRE( solver.getParValue(1) == approx(37.4716876348651) );
-        REQUIRE( solver.getParValue(0, 0) == approx(61.8928662074328) );
+        REQUIRE( solver.chi2() == approx(10810.65153981583) );
+        REQUIRE( solver.getParValue(1) == approx(21.30228862988602) );
+        REQUIRE( solver.getParValue(0, 0) == approx(56.42893238415446) );
         REQUIRE( solver.getParValue(2, 0) == approx(fix_d[1]) );
-        REQUIRE( solver.getParValue(0, 1) == approx(138.921164968188) );
+        REQUIRE( solver.getParValue(0, 1) == approx(139.4901380914605) );
         REQUIRE( solver.getParValue(2, 1) == approx(fix_d[5]) );
     }
     SECTION( "Active: I0-0, bgr-0, I0-1, bgr-1" ) {
@@ -74,10 +74,10 @@ TEST_CASE( "Indexing scheme" )
         solver.fit(1.0);
         REQUIRE( solver.chi2() == approx(133479.8243379537) );
         REQUIRE( solver.getParValue(1) == approx(fix_d[3]) );
-        REQUIRE( solver.getParValue(0, 0) == approx(269.304141722311) );
-        REQUIRE( solver.getParValue(2, 0) == approx(19.2074379001413) );
-        REQUIRE( solver.getParValue(0, 1) == approx(884.063475394066) );
-        REQUIRE( solver.getParValue(2, 1) == approx(34.6630429778281) );
+        REQUIRE( solver.getParValue(0, 0) == approx(269.3041417223106) );
+        REQUIRE( solver.getParValue(2, 0) == approx(19.20743790014125) );
+        REQUIRE( solver.getParValue(0, 1) == approx(884.0634753940659) );
+        REQUIRE( solver.getParValue(2, 1) == approx(34.66304297782811) );
     }
     SECTION( "Active: tau" ) {
         solver.setPar(0, fix_d[16], false, 0);
@@ -86,8 +86,8 @@ TEST_CASE( "Indexing scheme" )
         solver.setPar(2, fix_d[5], false, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE( solver.chi2() == approx(49961.1602751974) );
-        REQUIRE( solver.getParValue(1) == approx(11.2589241454522) );
+        REQUIRE( solver.chi2() == approx(51624.83919460662) );
+        REQUIRE( solver.getParValue(1) == approx(10.99329301695744) );
         REQUIRE( solver.getParValue(0, 0) == approx(fix_d[16]) );
         REQUIRE( solver.getParValue(2, 0) == approx(fix_d[1]) );
         REQUIRE( solver.getParValue(0, 1) == approx(fix_d[17]) );
@@ -100,12 +100,12 @@ TEST_CASE( "Indexing scheme" )
         solver.setPar(2, fix_d[5], true, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE( solver.chi2() == approx(16946.5517452934) );
-        REQUIRE( solver.getParValue(1) == approx(23.5087805124599) );
+        REQUIRE( solver.chi2() == approx(15974.61260816282) );
+        REQUIRE( solver.getParValue(1) == approx(20.47926391663428) );
         REQUIRE( solver.getParValue(0, 0) == approx(fix_d[0]) );
-        REQUIRE( solver.getParValue(2, 0) == approx(18.2926838650648) );
-        REQUIRE( solver.getParValue(0, 1) == approx(143.247753089907) );
-        REQUIRE( solver.getParValue(2, 1) == approx(7.41966861364184) );
+        REQUIRE( solver.getParValue(2, 0) == approx(18.47600900933105) );
+        REQUIRE( solver.getParValue(0, 1) == approx(143.0431252627764) );
+        REQUIRE( solver.getParValue(2, 1) == approx(9.453915929181857) );
     }
     SECTION( "Active: I0-0, bgr-0, bgr-1, tau" ) {
         solver.setPar(0, fix_d[0], true, 0);
@@ -114,12 +114,12 @@ TEST_CASE( "Indexing scheme" )
         solver.setPar(2, fix_d[5], true, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE( solver.chi2() == approx(145969.6460672426) );
-        REQUIRE( solver.getParValue(1) == approx(9.6493001540062) );
-        REQUIRE( solver.getParValue(0, 0) == approx(38.8125594831746) );
-        REQUIRE( solver.getParValue(2, 0) == approx(16.3892170419466) );
+        REQUIRE( solver.chi2() == approx(145780.4588072045) );
+        REQUIRE( solver.getParValue(1) == approx(8.408237957600139) );
+        REQUIRE( solver.getParValue(0, 0) == approx(45.87087327322399) );
+        REQUIRE( solver.getParValue(2, 0) == approx(16.59126759913267) );
         REQUIRE( solver.getParValue(0, 1) == approx(fix_d[4]) );
-        REQUIRE( solver.getParValue(2, 1) == approx(36.4005406565312) );
+        REQUIRE( solver.getParValue(2, 1) == approx(36.38255403506549) );
     }
     SECTION( "Active: I0-0, I0-1, bgr-1, tau" ) {
         solver.setPar(0, fix_d[0], true, 0);
@@ -128,12 +128,12 @@ TEST_CASE( "Indexing scheme" )
         solver.setPar(2, fix_d[5], true, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE( solver.chi2() == approx(20328.9274178601) );
-        REQUIRE( solver.getParValue(1) == approx(29.8006091499258) );
-        REQUIRE( solver.getParValue(0, 0) == approx(58.7510164156725) );
+        REQUIRE( solver.chi2() == approx(11623.17388899667) );
+        REQUIRE( solver.getParValue(1) == approx(20.61333132315124) );
+        REQUIRE( solver.getParValue(0, 0) == approx(56.51395760213281) );
         REQUIRE( solver.getParValue(2, 0) == approx(fix_d[1]) );
-        REQUIRE( solver.getParValue(0, 1) == approx(134.596382423157) );
-        REQUIRE( solver.getParValue(2, 1) == approx(8.18765519687475) );
+        REQUIRE( solver.getParValue(0, 1) == approx(134.8973104943701) );
+        REQUIRE( solver.getParValue(2, 1) == approx(11.77612256514583) );
     }
     SECTION( "Active: I0-0, bgr-0, I0-1, tau" ) {
         solver.setPar(0, fix_d[0], true, 0);
@@ -142,11 +142,11 @@ TEST_CASE( "Indexing scheme" )
         solver.setPar(2, fix_d[5], false, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE( solver.chi2() == approx(19110.8917974984) );
-        REQUIRE( solver.getParValue(1) == approx(31.644340100719) );
-        REQUIRE( solver.getParValue(0, 0) == approx(26.5687296086344) );
-        REQUIRE( solver.getParValue(2, 0) == approx(10.314778623254) );
-        REQUIRE( solver.getParValue(0, 1) == approx(136.057802762212) );
+        REQUIRE( solver.chi2() == approx(30610.67204238355) );
+        REQUIRE( solver.getParValue(1) == approx(16.54682323514368) );
+        REQUIRE( solver.getParValue(0, 0) == approx(29.98632400541694) );
+        REQUIRE( solver.getParValue(2, 0) == approx(12.99477135618182) );
+        REQUIRE( solver.getParValue(0, 1) == approx(124.6991105597199) );
         REQUIRE( solver.getParValue(2, 1) == approx(fix_d[5]) );
     }
     SECTION( "Active: I0-0, bgr-1, tau" ) {
@@ -156,12 +156,12 @@ TEST_CASE( "Indexing scheme" )
         solver.setPar(2, fix_d[5], true, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE( solver.chi2() == approx(152198.4612377039) );
-        REQUIRE( solver.getParValue(1) == approx(20.647406018572) );
-        REQUIRE( solver.getParValue(0, 0) == approx(39.5446097854515) );
+        REQUIRE( solver.chi2() == approx(150672.9869101835) );
+        REQUIRE( solver.getParValue(1) == approx(16.73368044360274) );
+        REQUIRE( solver.getParValue(0, 0) == approx(53.73848940201644) );
         REQUIRE( solver.getParValue(2, 0) == approx(fix_d[1]) );
         REQUIRE( solver.getParValue(0, 1) == approx(fix_d[4]) );
-        REQUIRE( solver.getParValue(2, 1) == approx(36.5609695432337) );
+        REQUIRE( solver.getParValue(2, 1) == approx(36.50405720192947) );
     }
     SECTION( "Active: bgr-0, I0-1, tau" ) {
         solver.setPar(0, fix_d[0], false, 0);
@@ -170,11 +170,11 @@ TEST_CASE( "Indexing scheme" )
         solver.setPar(2, fix_d[5], false, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE( solver.chi2() == approx(17084.6857044287) );
-        REQUIRE( solver.getParValue(1) == approx(25.2416940612762) );
+        REQUIRE( solver.chi2() == approx(15348.60122706107) );
+        REQUIRE( solver.getParValue(1) == approx(21.87456778662339) );
         REQUIRE( solver.getParValue(0, 0) == approx(fix_d[0]) );
-        REQUIRE( solver.getParValue(2, 0) == approx(18.1899933794028) );
-        REQUIRE( solver.getParValue(0, 1) == approx(146.208847896439) );
+        REQUIRE( solver.getParValue(2, 0) == approx(18.39176693290169) );
+        REQUIRE( solver.getParValue(0, 1) == approx(147.1783948678938) );
         REQUIRE( solver.getParValue(2, 1) == approx(fix_d[5]) );
     }
     SECTION( "Active: bgr-0, I0-1" ) {
@@ -207,49 +207,17 @@ TEST_CASE( "Access functions" )
     solver.setPar(1, fix_d[3], true);
     REQUIRE( solver.getValue(fix_d[2]) == approx(2.960644529912441) );
     solver.fit(1.0);
-    REQUIRE( solver.getValue(fix_d[2]) == approx(37.07089678775328) );
-    {
-        double sum {};
-        for (const auto& el : solver.getJacobian()) {
-            sum += el;
-        }
-        REQUIRE( sum == approx(331.8214061379837) );
-    }
-    {
-        double sum {};
-        for (const auto& el : solver.getJTJ()) {
-            sum += el;
-        }
-        REQUIRE( sum == approx(786.5700259460133) );
-    }
-    {
-        double sum {};
-        for (const auto& el : solver.getDTD()) {
-            sum += el;
-        }
-        REQUIRE( sum == approx(465.1656068124079) );
-    }
-    {
-        double sum {};
-        for (const auto& el : solver.getLeftSide()) {
-            sum += el;
-        }
-         REQUIRE( sum == approx(791.2216820141374) );
-    }
-    {
-        double sum {};
-        for (const auto& el : solver.getRightSide()) {
-            sum += el;
-        }
-        REQUIRE( sum == approx(4096.69145240406) );
-    }
-    {
-        double sum {};
-        for (const auto& el : solver.getResiduals()) {
-            sum += el;
-        }
-        REQUIRE( sum == approx(353.1929743320203) );
-    }
+    REQUIRE( solver.getValue(fix_d[2]) == approx(36.39905496310918) );
+    const auto sum { [](const std::vector<double>& x, const int limit = -1) {
+        return std::accumulate(
+          x.cbegin(), limit == -1 ? x.cend() : x.cbegin() + limit, 0.0);
+    } };
+    REQUIRE( sum(solver.getJacobian()) == approx(353.6485673748525) );
+    REQUIRE( sum(solver.getJTJ(), 5) == approx(580.3488115472478) );
+    REQUIRE( sum(solver.getDTD(), 5) == approx(34340.67196549198) );
+    REQUIRE( sum(solver.getLeftSide(), 5) == approx(614.6894835127398) );
+    REQUIRE( sum(solver.getRightSide(), 5) == approx(4410.585412402702) );
+    REQUIRE( sum(solver.getResiduals()) == approx(213.3530475167955) );
 }
 
 TEST_CASE( "Exceptions" )
@@ -335,28 +303,28 @@ TEST_CASE( "Exceptions" )
         solver.setPar(2, fix_d[5], true, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE( solver.chi2() == approx(409.5387799144992) );
-        REQUIRE( solver.getParValue(1) == approx(4.224317491642794) );
-        REQUIRE( solver.getParValue(0, 0) == approx(24.67898685099651) );
-        REQUIRE( solver.getParValue(2, 0) == approx(35.84110743027947) );
-        REQUIRE( solver.getParValue(0, 1) == approx(108.2684165067531) );
-        REQUIRE( solver.getParValue(2, 1) == approx(70.48326918227681) );
+        REQUIRE( solver.chi2() == approx(12.06947119410627) );
+        REQUIRE( solver.getParValue(1) == approx(2.945868346541738) );
+        REQUIRE( solver.getParValue(0, 0) == approx(7.351966871429208) );
+        REQUIRE( solver.getParValue(2, 0) == approx(49.68674387147235) );
+        REQUIRE( solver.getParValue(0, 1) == approx(-13.18731292934496) );
+        REQUIRE( solver.getParValue(2, 1) == approx(162.1781165060048) );
     }
 }
 
-TEST_CASE( "Other" )
+TEST_CASE( "Number of iterations" )
 {
     spdlog::set_level(spdlog::level::off);
     gadfit::LMsolver solver { exponential };
+    solver.addDataset(x_data_1, y_data_1);
+    solver.addDataset(x_data_2, y_data_2);
+    solver.setPar(0, fix_d[0], true, 0);
+    solver.setPar(2, fix_d[1], true, 0);
+    solver.setPar(0, fix_d[4], true, 1);
+    solver.setPar(2, fix_d[5], true, 1);
+    solver.setPar(1, fix_d[3], true);
 
     SECTION( "No iterations" ) {
-        solver.addDataset(x_data_1, y_data_1);
-        solver.addDataset(x_data_2, y_data_2);
-        solver.setPar(0, fix_d[0], true, 0);
-        solver.setPar(2, fix_d[1], true, 0);
-        solver.setPar(0, fix_d[4], true, 1);
-        solver.setPar(2, fix_d[5], true, 1);
-        solver.setPar(1, fix_d[3], true);
         solver.settings.iteration_limit = 0;
         solver.fit(1.0);
         REQUIRE( solver.chi2() == approx(284681.4650859555) );
@@ -367,8 +335,6 @@ TEST_CASE( "Other" )
         REQUIRE( solver.getParValue(2, 1) == approx(4.251266120087788) );
     }
     SECTION( "No active parameters" ) {
-        solver.addDataset(x_data_1, y_data_1);
-        solver.addDataset(x_data_2, y_data_2);
         solver.setPar(0, fix_d[0], false, 0);
         solver.setPar(2, fix_d[1], false, 0);
         solver.setPar(0, fix_d[4], false, 1);
@@ -383,20 +349,59 @@ TEST_CASE( "Other" )
         REQUIRE( solver.getParValue(2, 1) == approx(4.251266120087788) );
     }
     SECTION( "No iteration limit" ) {
-        solver.addDataset(x_data_1, y_data_1);
-        solver.addDataset(x_data_2, y_data_2);
-        solver.setPar(0, fix_d[0], true, 0);
-        solver.setPar(2, fix_d[1], true, 0);
-        solver.setPar(0, fix_d[4], true, 1);
-        solver.setPar(2, fix_d[5], true, 1);
-        solver.setPar(1, fix_d[3], true);
         solver.settings.iteration_limit = 100;
         solver.fit(1.0);
-        REQUIRE( solver.chi2() == approx(5640.175130917764) );
-        REQUIRE( solver.getParValue(1) == approx(20.85609539369426) );
-        REQUIRE( solver.getParValue(0, 0) == approx(46.44788540483412) );
-        REQUIRE( solver.getParValue(2, 0) == approx(10.32140443497198) );
-        REQUIRE( solver.getParValue(0, 1) == approx(152.2711588181074) );
-        REQUIRE( solver.getParValue(2, 1) == approx(5.533936916048498) );
+        REQUIRE( solver.chi2() == approx(5640.175130917763) );
+        REQUIRE( solver.getParValue(1) == approx(20.85609539806552) );
+        REQUIRE( solver.getParValue(0, 0) == approx(46.44788540130083) );
+        REQUIRE( solver.getParValue(2, 0) == approx(10.32140443375086) );
+        REQUIRE( solver.getParValue(0, 1) == approx(152.2711588120757) );
+        REQUIRE( solver.getParValue(2, 1) == approx(5.533936910924339) );
+    }
+}
+
+TEST_CASE( "Constraining the damping matrix DTD" )
+{
+    spdlog::set_level(spdlog::level::off);
+    gadfit::LMsolver solver { exponential };
+    solver.addDataset(x_data_1, y_data_1);
+    solver.addDataset(x_data_2, y_data_2);
+    solver.setPar(0, fix_d[0], true, 0);
+    solver.setPar(2, fix_d[1], true, 0);
+    solver.setPar(0, fix_d[4], true, 1);
+    solver.setPar(2, fix_d[5], true, 1);
+    solver.setPar(1, fix_d[3], true);
+    solver.settings.iteration_limit = 5;
+
+    SECTION( "No constraints" ) {
+        solver.settings.damp_max = false;
+        // Next line should have no effect
+        solver.settings.DTD_min = { 2.0, 1.0, 3.0, 1.0, 7.0 };
+        solver.fit(1.0);
+        REQUIRE( solver.chi2() == approx(5761.320550200893) );
+        REQUIRE( solver.getParValue(1) == approx(20.15808767822607) );
+        REQUIRE( solver.getParValue(0, 0) == approx(46.33952661438988) );
+        REQUIRE( solver.getParValue(2, 0) == approx(10.4069642674494) );
+        REQUIRE( solver.getParValue(0, 1) == approx(151.8449704289686) );
+        REQUIRE( solver.getParValue(2, 1) == approx(5.793008018375243) );
+    }
+    SECTION( "Default constraint" ) {
+        solver.fit(1.0);
+        REQUIRE( solver.chi2() == approx(5687.451130305411) );
+        REQUIRE( solver.getParValue(1) == approx(21.01892108898218) );
+        REQUIRE( solver.getParValue(0, 0) == approx(46.18357253310398) );
+        REQUIRE( solver.getParValue(2, 0) == approx(10.48386354002993) );
+        REQUIRE( solver.getParValue(0, 1) == approx(151.5283959798011) );
+        REQUIRE( solver.getParValue(2, 1) == approx(6.087406702661866) );
+    }
+    SECTION( "Minimal values for the diagonal elements" ) {
+        solver.settings.DTD_min = { 2.0, 1.0, 3.0, 1.0, 7.0 };
+        solver.fit(1.0);
+        REQUIRE( solver.chi2() == approx(5640.443443547636) );
+        REQUIRE( solver.getParValue(1) == approx(20.81941350480559) );
+        REQUIRE( solver.getParValue(0, 0) == approx(46.44560357121117) );
+        REQUIRE( solver.getParValue(2, 0) == approx(10.33411834275264) );
+        REQUIRE( solver.getParValue(0, 1) == approx(152.2267670731584) );
+        REQUIRE( solver.getParValue(2, 1) == approx(5.56046342286098) );
     }
 }

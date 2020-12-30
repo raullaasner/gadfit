@@ -215,6 +215,7 @@ contains
     integer :: max_error_index
     ! For turning on/off AD by swapping indices
     integer :: saved_indices(size(pars))
+    real(kp) :: errors_sum, sums_sum
     integer :: i
     int_order = int_order + 1
     ! Auto-initialize workspaces
@@ -260,10 +261,10 @@ contains
        ws(int_order)%upper(max_error_index) = middle
        ws(int_order)%lower(current_size+1) = middle
        ws(int_order)%upper(current_size+1) = bb
-       if (sum(ws(int_order)%abs_error(:current_size+1)) < abs_error_loc .or. &
-            & sum(ws(int_order)%abs_error(:current_size+1))/ &
-            & sum(ws(int_order)%sums(:current_size+1)%val) < rel_error_loc) &
-            & then
+       errors_sum = sum(ws(int_order)%abs_error(:current_size+1))
+       sums_sum = sum(ws(int_order)%sums(:current_size+1)%val)
+       if (errors_sum < abs_error_loc .or. &
+            & errors_sum/sums_sum < rel_error_loc) then
           ! Turn on AD for the final result
           call swap(pars%index, saved_indices)
           y = 0.0_kp

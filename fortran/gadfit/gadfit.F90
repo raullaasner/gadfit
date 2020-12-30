@@ -224,8 +224,8 @@ contains
   ! Saves pointers to the data arrays provided by the user. The global
   ! arrays x_data, y_data, and weights are constructed in read_data.
   subroutine gadf_add_dataset_data(x_data, y_data, weights)
-    real(dp), intent(in), target :: x_data(:), y_data(:)
-    real(dp), intent(in), target, optional :: weights(:)
+    real(kp), intent(in), target :: x_data(:), y_data(:)
+    real(kp), intent(in), target, optional :: weights(:)
     integer :: i_dataset
     if (.not. allocated(fitfuncs)) &
          & call error(__FILE__, __LINE__, &

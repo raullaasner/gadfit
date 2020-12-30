@@ -24,7 +24,8 @@
 
 namespace gadfit {
 
-using fitSignature = std::function<AdVar(const std::vector<AdVar>&, double)>;
+using fitSignature =
+  std::function<AdVar(const std::vector<AdVar>&, const double)>;
 
 class FitFunction
 {

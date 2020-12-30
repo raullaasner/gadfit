@@ -16,7 +16,6 @@
 
 #include <cassert>
 #include <iomanip>
-#include <iostream>
 #include <numbers>
 
 namespace gadfit {
@@ -727,7 +726,6 @@ auto returnSweep() -> void
     using reverse::forwards;
     using reverse::trace;
     using reverse::trace_count;
-    assert(trace_count > 0);
     assert(reverse::last_index < static_cast<int>(forwards.size()));
     assert(reverse::const_count < static_cast<int>(reverse::constants.size()));
     assert(trace_count < static_cast<int>(trace.size()));

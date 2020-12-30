@@ -17,10 +17,10 @@
 
 namespace gadfit {
 
-class GADFitException : public std::exception
+class GADfitException : public std::exception
 {};
 
-class UnknownOperationException : public GADFitException
+class UnknownOperationException : public GADfitException
 {
 private:
     std::string message;
@@ -30,13 +30,13 @@ public:
     [[nodiscard]] auto what() const noexcept -> const char* override;
 };
 
-class LateAddDatasetCall : public GADFitException
+class LateAddDatasetCall : public GADfitException
 {
 public:
     [[nodiscard]] auto what() const noexcept -> const char* override;
 };
 
-class SetParInvalidIndex : public GADFitException
+class SetParInvalidIndex : public GADfitException
 {
 private:
     std::string message;
@@ -46,19 +46,19 @@ public:
     [[nodiscard]] auto what() const noexcept -> const char* override;
 };
 
-class UninitializedParameter : public GADFitException
+class UninitializedParameter : public GADfitException
 {
 public:
     [[nodiscard]] auto what() const noexcept -> const char* override;
 };
 
-class NegativeDegreesOfFreedom : public GADFitException
+class NegativeDegreesOfFreedom : public GADfitException
 {
 public:
     [[nodiscard]] auto what() const noexcept -> const char* override;
 };
 
-class MPIUninitialized : public GADFitException
+class MPIUninitialized : public GADfitException
 {
 public:
     [[nodiscard]] auto what() const noexcept -> const char* override;

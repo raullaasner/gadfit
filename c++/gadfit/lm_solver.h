@@ -33,6 +33,8 @@ private:
     static constexpr double default_lambda_down { 10.0 };
     static constexpr double default_lambda_up { 10.0 };
     static constexpr int default_lambda_incs { 3 };
+    static constexpr bool default_damp_max { true };
+    static constexpr double default_DTD_min {};
 
     static constexpr int default_iteration_limit { 1000 };
 
@@ -154,6 +156,8 @@ public:
         int lambda_incs { default_lambda_incs };
         double lambda_down { default_lambda_down };
         double lambda_up { default_lambda_up };
+        bool damp_max { default_damp_max };
+        std::vector<double> DTD_min { default_DTD_min };
     } settings; // NOLINT: exposing this is harmless and convenient
                 // for the user
 

@@ -24,7 +24,7 @@ module gauss_kronrod_parameters
   private :: kp
 
   ! Evaluated with 80 decimal digit arithmetic by L. W. Fullerton,
-  ! Bell Labs, Nov. 1981.
+  ! Bell Labs, Nov. 1981. Values extracted from QUADPACK source code.
 
   ! 7-point Gauss rule with 15-point Kronrod rule
   real(kp), parameter :: roots_15p(*) = [ &

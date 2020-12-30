@@ -88,14 +88,20 @@ auto LMsolver::fit(double lambda) -> void
         spdlog::warn("No active fitting parameters.");
     }
     // Prepare the main work arrays
-    Jacobian.resize(indices.n_datapoints * indices.n_active, 0.0);
+    Jacobian =
+      std::vector<double>(indices.n_datapoints * indices.n_active, 0.0);
     residuals.resize(indices.n_datapoints);
     // Each MPI process is assigned a segment of the Jacobian and the residuals.
     std::vector<double> Jacobian_fragment(
       indices.workloads.at(my_rank) * indices.n_active, 0.0);
     std::vector<double> residuals_fragment(indices.workloads.at(my_rank));
     JTJ.resize(indices.n_active * indices.n_active);
-    DTD.resize(JTJ.size(), 0.0);
+    DTD = std::vector<double>(JTJ.size(), 0.0);
+    if (static_cast<int>(settings.DTD_min.size()) > 1) {
+        for (int i {}; i < indices.n_active; ++i) {
+            DTD.at(i * indices.n_active + i) = settings.DTD_min.at(i);
+        }
+    }
     left_side.resize(JTJ.size());
     right_side.resize(indices.n_active);
     delta1.resize(right_side.size());
@@ -330,7 +336,9 @@ auto LMsolver::computeLeftHandSide(const double lambda,
     dsyrk_wrapper(indices.n_active, indices.n_datapoints, Jacobian, JTJ);
     for (int i_par {}; i_par < indices.n_active; ++i_par) {
         DTD[i_par * indices.n_active + i_par] =
-          JTJ[i_par * indices.n_active + i_par];
+          settings.damp_max ? std::max(DTD[i_par * indices.n_active + i_par],
+                                       JTJ[i_par * indices.n_active + i_par])
+                            : JTJ[i_par * indices.n_active + i_par];
     }
     for (int i {}; i < static_cast<int>(left_side.size()); ++i) {
         left_side[i] = JTJ[i] + lambda * DTD[i];
@@ -394,8 +402,9 @@ auto LMsolver::chi2() const -> double
     for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
         for (int i_point {}; i_point < static_cast<int>(x_data[i_set].size());
              ++i_point) {
-            double diff { y_data[i_set][i_point]
-                          - fit_functions[i_set](x_data[i_set][i_point]).val };
+            double diff { (y_data[i_set][i_point]
+                           - fit_functions[i_set](x_data[i_set][i_point]).val)
+                          / errors[i_set][i_point] };
             sum += diff * diff;
         }
     }
