@@ -63,8 +63,7 @@ auto LMsolver::setPar(const int i_par,
         }
         for (int i_group {}; i_group < static_cast<int>(fit_functions.size());
              ++i_group) {
-            fit_functions.at(i_group).par(i_par) =
-              AdVar { val };
+            fit_functions.at(i_group).par(i_par) = AdVar { val };
             if (active) {
                 indices.active.at(i_group).insert(i_par);
             } else {
@@ -196,9 +195,12 @@ auto LMsolver::prepareIndexing() -> void
     if (indices.degrees_of_freedom < 0) {
         throw NegativeDegreesOfFreedom {};
     }
-    if (indices.degrees_of_freedom == 0 && my_rank == 0) {
-        spdlog::warn(
-          "There are no degrees of freedom - chi2/DOF has no meaning.");
+    if (indices.degrees_of_freedom == 0) {
+        if (my_rank == 0) {
+            spdlog::warn(
+              "Warning: there are no degrees of freedom - chi2/DOF has "
+              "no meaning.");
+        }
         indices.degrees_of_freedom = 1;
     }
     for (auto& func : fit_functions) {
@@ -243,7 +245,24 @@ auto LMsolver::prepareIndexing() -> void
             }
         }
     }
-    // Distribute data points over all data sets among the MPI processes
+    if (indices.n_datapoints < num_procs) {
+        if (my_rank == 0) {
+            spdlog::warn(
+              "Warning: less data points than MPI processes. Splitting the "
+              "communicator and continuing with a subset of the MPI "
+              "processes.");
+        }
+        const int color { my_rank < indices.n_datapoints ? 1 : 0 };
+        MPI_Comm_split(mpi_comm, color, my_rank, &mpi_comm);
+        if (color == 1) {
+            MPI_Comm_rank(mpi_comm, &my_rank);
+            MPI_Comm_size(mpi_comm, &num_procs);
+        } else {
+            throw UnusedMPIProcess {};
+        }
+    }
+    // Distribute data points over all data sets among the remaining
+    // MPI processes
     indices.workloads =
       std::vector<int>(num_procs, indices.n_datapoints / num_procs);
     for (int i_rank {}; i_rank < indices.n_datapoints % num_procs; ++i_rank) {
@@ -472,13 +491,30 @@ auto LMsolver::chi2() const -> double
 {
     double sum {};
     for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
-        for (int i_point {}; i_point < static_cast<int>(x_data[i_set].size());
-             ++i_point) {
-            double diff { (y_data[i_set][i_point]
-                           - fit_functions[i_set](x_data[i_set][i_point]).val)
-                          / errors[i_set][i_point] };
+        // Normally we would loop over indices.data_ranges if MPI has
+        // been initialized. However, if chi2() is call before fit(),
+        // then indices.data_ranges is not yet initialized so we do
+        // this operation in serial.
+        int i_point_beg {};
+        int i_point_end {};
+        if (indices.data_ranges.size() > 0) {
+            i_point_beg = indices.data_ranges.at(i_set).front();
+            i_point_end = indices.data_ranges.at(i_set).back();
+        } else {
+            i_point_beg = 0;
+            i_point_end = static_cast<int>(x_data.at(i_set).size()) - 1;
+        }
+        for (int i_point { i_point_beg }; i_point <= i_point_end; ++i_point) {
+            const double diff {
+                (y_data[i_set][i_point]
+                 - fit_functions[i_set](x_data[i_set][i_point]).val)
+                / errors[i_set][i_point]
+            };
             sum += diff * diff;
         }
+    }
+    if (mpi_comm != MPI_COMM_NULL && indices.data_ranges.size() > 0) {
+        MPI_Allreduce(MPI_IN_PLACE, &sum, 1, MPI_DOUBLE, MPI_SUM, mpi_comm);
     }
     return sum;
 }

@@ -35,13 +35,13 @@ static auto setSolverState(gadfit::LMsolver& solver) {
 TEST_CASE( "Basic tests" )
 {
     static constexpr double ref_chi2 { 13083.80579217767 };
-    static constexpr double ref_1    { 20.78511352367124 };
-    static constexpr double ref_0_0  { 46.47983473999140 };
-    static constexpr double ref_2_0  { 10.34639928875443 };
-    static constexpr double ref_0_1  { 217.5845943344953 };
-    static constexpr double ref_2_1  { 18.03661166310318 };
-    static constexpr double ref_0_2  { 152.2129181816552 };
-    static constexpr double ref_2_2  { 5.698662116424666 };
+    static constexpr double ref_1    { 20.78511330961546 };
+    static constexpr double ref_0_0  { 46.47983491330410 };
+    static constexpr double ref_2_0  { 10.34639934873397 };
+    static constexpr double ref_0_1  { 217.5845947842725 };
+    static constexpr double ref_2_1  { 18.03661200603774 };
+    static constexpr double ref_0_2  { 152.2129184602429 };
+    static constexpr double ref_2_2  { 5.698662376973664 };
 
     spdlog::set_level(spdlog::level::off);
 
@@ -58,6 +58,7 @@ TEST_CASE( "Basic tests" )
         // we should always get the same results.
         gadfit::LMsolver solver_1 { exponential };
         setSolverState(solver_1);
+        solver_1.settings.iteration_limit = 8;
         solver_1.fit();
         CHECK( solver_1.chi2() == approx(ref_chi2) );
         CHECK( solver_1.getParValue(1) == approx(ref_1) );
@@ -69,6 +70,7 @@ TEST_CASE( "Basic tests" )
         CHECK( solver_1.getParValue(2, 2) == approx(ref_2_2) );
         gadfit::LMsolver solver_2 { exponential, MPI_COMM_WORLD };
         setSolverState(solver_2);
+        solver_2.settings.iteration_limit = 8;
         solver_2.fit();
         CHECK( solver_2.chi2() == approx(ref_chi2) );
         CHECK( solver_2.getParValue(1) == approx(ref_1) );
@@ -80,6 +82,7 @@ TEST_CASE( "Basic tests" )
         CHECK( solver_2.getParValue(2, 2) == approx(ref_2_2) );
         gadfit::LMsolver solver_3 { exponential, mpi_sub_comm };
         setSolverState(solver_3);
+        solver_3.settings.iteration_limit = 8;
         solver_3.fit();
         CHECK( solver_3.chi2() == approx(ref_chi2) );
         CHECK( solver_3.getParValue(1) == approx(ref_1) );
@@ -103,8 +106,10 @@ TEST_CASE( "Basic tests" )
         solver_2.setPar(2, fix_d[5], true, 1);
         solver_2.setPar(1, fix_d[1], true);
         if (color == 0) {
+            solver_1.settings.iteration_limit = 8;
             solver_1.fit();
         } else {
+            solver_2.settings.iteration_limit = 8;
             solver_2.fit(1.0);
         }
         if (color == 0) {
@@ -114,13 +119,13 @@ TEST_CASE( "Basic tests" )
             // the converged parameters and the second solver outputs
             // the initial values.
             CHECK( solver_1.chi2() == approx(ref_chi2) );
-            CHECK( solver_1.getParValue(1) == approx(20.78511352367124) );
-            CHECK( solver_1.getParValue(0, 0) == approx(46.4798347399914) );
-            CHECK( solver_1.getParValue(2, 0) == approx(10.34639928875443) );
-            CHECK( solver_1.getParValue(0, 1) == approx(217.5845943344953) );
-            CHECK( solver_1.getParValue(2, 1) == approx(18.03661166310318) );
-            CHECK( solver_1.getParValue(0, 2) == approx(152.2129181816552) );
-            CHECK( solver_1.getParValue(2, 2) == approx(5.698662116424666) );
+            CHECK( solver_1.getParValue(1) == approx(20.78511330961546) );
+            CHECK( solver_1.getParValue(0, 0) == approx(46.4798349133041) );
+            CHECK( solver_1.getParValue(2, 0) == approx(10.34639934873397) );
+            CHECK( solver_1.getParValue(0, 1) == approx(217.5845947842725) );
+            CHECK( solver_1.getParValue(2, 1) == approx(18.03661200603774) );
+            CHECK( solver_1.getParValue(0, 2) == approx(152.2129184602429) );
+            CHECK( solver_1.getParValue(2, 2) == approx(5.698662376973664) );
             CHECK( solver_2.chi2() == approx(445170.488068111) );
             CHECK( solver_2.getParValue(1) == approx(fix_d[1]) );
             CHECK( solver_2.getParValue(0, 0) == approx(fix_d[0]) );
@@ -138,11 +143,11 @@ TEST_CASE( "Basic tests" )
             CHECK( solver_1.getParValue(0, 2) == approx(fix_d[16]) );
             CHECK( solver_1.getParValue(2, 2) == approx(fix_d[12]) );
             CHECK( solver_2.chi2() == approx(9258.726275249157) );
-            CHECK( solver_2.getParValue(1) == approx(20.80254627729537) );
-            CHECK( solver_2.getParValue(0, 0) == approx(46.47196343749851) );
-            CHECK( solver_2.getParValue(2, 0) == approx(10.3402597263546) );
-            CHECK( solver_2.getParValue(0, 1) == approx(217.5480332417258) );
-            CHECK( solver_2.getParValue(2, 1) == approx(18.0086760215376) );
+            CHECK( solver_2.getParValue(1) == approx(20.80254628279121) );
+            CHECK( solver_2.getParValue(0, 0) == approx(46.4719634330144) );
+            CHECK( solver_2.getParValue(2, 0) == approx(10.34025972482301) );
+            CHECK( solver_2.getParValue(0, 1) == approx(217.5480332306478) );
+            CHECK( solver_2.getParValue(2, 1) == approx(18.00867601264374) );
         }
     }
 }

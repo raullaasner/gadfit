@@ -59,4 +59,8 @@ SetParInvalidIndex::SetParInvalidIndex(const int index)
            "initialized.";
 }
 
+[[nodiscard]] auto UnusedMPIProcess::what() const noexcept -> const char*
+{
+    return "Rank of this MPI process exceeds the number of data points.";
+}
 } // namespace gadfit

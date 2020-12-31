@@ -18,7 +18,7 @@ static auto exponential(const std::vector<gadfit::AdVar>& parameters,
 TEST_CASE( "Indexing scheme" )
 {
     spdlog::set_level(spdlog::level::off);
-    gadfit::LMsolver solver { exponential };
+    gadfit::LMsolver solver { exponential, MPI_COMM_WORLD };
     solver.addDataset(x_data_1, y_data_1);
     solver.addDataset(x_data_2, y_data_2);
     solver.settings.iteration_limit = 4;
@@ -196,7 +196,7 @@ TEST_CASE( "Indexing scheme" )
 TEST_CASE( "Access functions" )
 {
     spdlog::set_level(spdlog::level::off);
-    gadfit::LMsolver solver { exponential };
+    gadfit::LMsolver solver { exponential, MPI_COMM_WORLD };
     solver.addDataset(x_data_1, y_data_1);
     solver.addDataset(x_data_2, y_data_2);
     solver.settings.iteration_limit = 4;
@@ -223,7 +223,7 @@ TEST_CASE( "Access functions" )
 TEST_CASE( "Exceptions" )
 {
     spdlog::set_level(spdlog::level::off);
-    gadfit::LMsolver solver { exponential };
+    gadfit::LMsolver solver { exponential, MPI_COMM_WORLD };
     solver.settings.iteration_limit = 4;
 
     SECTION( "Incorrect or of calls" ) {
@@ -302,20 +302,24 @@ TEST_CASE( "Exceptions" )
         solver.setPar(0, fix_d[4], true, 1);
         solver.setPar(2, fix_d[5], true, 1);
         solver.setPar(1, fix_d[3], true);
-        solver.fit(1.0);
-        REQUIRE( solver.chi2() == approx(12.06947119410627) );
-        REQUIRE( solver.getParValue(1) == approx(2.945868346541738) );
-        REQUIRE( solver.getParValue(0, 0) == approx(7.351966871429208) );
-        REQUIRE( solver.getParValue(2, 0) == approx(49.68674387147235) );
-        REQUIRE( solver.getParValue(0, 1) == approx(-13.18731292934496) );
-        REQUIRE( solver.getParValue(2, 1) == approx(162.1781165060048) );
+        try {
+            solver.fit(1.0);
+            REQUIRE( solver.chi2() == approx(12.06947119410627) );
+            REQUIRE( solver.getParValue(1) == approx(2.945868346541738) );
+            REQUIRE( solver.getParValue(0, 0) == approx(7.351966871429208) );
+            REQUIRE( solver.getParValue(2, 0) == approx(49.68674387147235) );
+            REQUIRE( solver.getParValue(0, 1) == approx(-13.18731292934496) );
+            REQUIRE( solver.getParValue(2, 1) == approx(162.1781165060048) );
+        } catch (const gadfit::UnusedMPIProcess& e) {
+            e.what();
+        }
     }
 }
 
 TEST_CASE( "Number of iterations" )
 {
     spdlog::set_level(spdlog::level::off);
-    gadfit::LMsolver solver { exponential };
+    gadfit::LMsolver solver { exponential, MPI_COMM_WORLD };
     solver.addDataset(x_data_1, y_data_1);
     solver.addDataset(x_data_2, y_data_2);
     solver.setPar(0, fix_d[0], true, 0);
@@ -352,18 +356,18 @@ TEST_CASE( "Number of iterations" )
         solver.settings.iteration_limit = 100;
         solver.fit(1.0);
         REQUIRE( solver.chi2() == approx(5640.175130917763) );
-        REQUIRE( solver.getParValue(1) == approx(20.85609539806552) );
-        REQUIRE( solver.getParValue(0, 0) == approx(46.44788540130083) );
-        REQUIRE( solver.getParValue(2, 0) == approx(10.32140443375086) );
-        REQUIRE( solver.getParValue(0, 1) == approx(152.2711588120757) );
-        REQUIRE( solver.getParValue(2, 1) == approx(5.533936910924339) );
+        REQUIRE( solver.getParValue(1) == approx(20.85609539806552, 1e7) );
+        REQUIRE( solver.getParValue(0, 0) == approx(46.44788540130083, 1e6) );
+        REQUIRE( solver.getParValue(2, 0) == approx(10.32140443375086, 1e7) );
+        REQUIRE( solver.getParValue(0, 1) == approx(152.2711588120757, 1e6) );
+        REQUIRE( solver.getParValue(2, 1) == approx(5.533936910924339, 1e8) );
     }
 }
 
 TEST_CASE( "Constraining the damping matrix DTD" )
 {
     spdlog::set_level(spdlog::level::off);
-    gadfit::LMsolver solver { exponential };
+    gadfit::LMsolver solver { exponential, MPI_COMM_WORLD };
     solver.addDataset(x_data_1, y_data_1);
     solver.addDataset(x_data_2, y_data_2);
     solver.setPar(0, fix_d[0], true, 0);
@@ -409,7 +413,7 @@ TEST_CASE( "Constraining the damping matrix DTD" )
 TEST_CASE( "Geodesic acceleration" )
 {
     spdlog::set_level(spdlog::level::off);
-    gadfit::LMsolver solver { exponential };
+    gadfit::LMsolver solver { exponential, MPI_COMM_WORLD };
     solver.addDataset(x_data_1, y_data_1);
     solver.addDataset(x_data_2, y_data_2);
     solver.setPar(0, fix_d[0], true, 0);

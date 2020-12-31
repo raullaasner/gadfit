@@ -25,6 +25,7 @@
 using MPI_Comm = int;
 
 constexpr MPI_Comm MPI_COMM_NULL {};
+constexpr MPI_Comm MPI_COMM_WORLD { MPI_COMM_NULL };
 constexpr int MPI_DOUBLE {};
 
 auto MPI_Comm_rank(MPI_Comm, int*) -> void;

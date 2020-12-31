@@ -64,4 +64,10 @@ public:
     [[nodiscard]] auto what() const noexcept -> const char* override;
 };
 
+class UnusedMPIProcess : public GADfitException
+{
+public:
+    [[nodiscard]] auto what() const noexcept -> const char* override;
+};
+
 } // namespace gadfit

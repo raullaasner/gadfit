@@ -25,10 +25,11 @@ constexpr std::array fix_d {
 };
 
 // Tolerance in units of epsilon for all floating point comparisons
-constexpr double tolerance_factor { 1e2 };
+constexpr double defeault_tolerance_factor { 1e2 };
 
 template <typename T>
-auto approx(const T x) -> Approx
+auto approx(const T x,
+            const double tolerance_factor = defeault_tolerance_factor) -> Approx
 {
     Approx app { x };
     return app.epsilon(tolerance_factor * std::numeric_limits<T>::epsilon())
