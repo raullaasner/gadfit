@@ -157,3 +157,77 @@ jobs:
           cmake --build build --target test
           cmake -D TESTS_RUN_PREFIX="mpirun;-np;8" build
           cmake --build build --target test
+  Fortran_Debug_fallback_linear_algebra:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: configure
+        run: |
+          mkdir build && cd build
+          cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
+          -D CMAKE_BUILD_TYPE=Debug \
+          -D BUILD_CXX_VERSION=OFF \
+          -D OPEN_COARRAYS=/usr/local/opencoarrays/lib/libcaf_mpi.a \
+          -D LIBRARY_PATHS=/usr/lib/openmpi \
+          -D LIBRARIES=mpi \
+          ..
+      - name: build
+        run: cmake --build build
+      - name: test
+        run: cmake --build build --target test
+  Fortran_Release_fallback_linear_algebra:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: configure
+        run: |
+          mkdir build && cd build
+          cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
+          -D CMAKE_BUILD_TYPE=Release \
+          -D BUILD_CXX_VERSION=OFF \
+          -D OPEN_COARRAYS=/usr/local/opencoarrays/lib/libcaf_mpi.a \
+          -D LIBRARY_PATHS=/usr/lib/openmpi \
+          -D LIBRARIES=mpi \
+          ..
+      - name: build
+        run: cmake --build build
+      - name: test
+        run: cmake --build build --target test
+  Fortran_Debug_MKL:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: configure
+        run: |
+          mkdir build && cd build
+          cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
+          -D CMAKE_BUILD_TYPE=Debug \
+          -D BUILD_CXX_VERSION=OFF \
+          -D OPEN_COARRAYS=/usr/local/opencoarrays/lib/libcaf_mpi.a \
+          -D LIBRARY_PATHS=/usr/lib/openmpi \
+          -D LIBRARIES=mpi \
+          -D LINALG_FLAVOR=mkl \
+          ..
+      - name: build
+        run: cmake --build build
+      - name: test
+        run: cmake --build build --target test
+  Fortran_Release_MKL:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: configure
+        run: |
+          mkdir build && cd build
+          cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
+          -D CMAKE_BUILD_TYPE=Release \
+          -D BUILD_CXX_VERSION=OFF \
+          -D OPEN_COARRAYS=/usr/local/opencoarrays/lib/libcaf_mpi.a \
+          -D LIBRARY_PATHS=/usr/lib/openmpi \
+          -D LIBRARIES=mpi \
+          -D LINALG_FLAVOR=mkl \
+          ..
+      - name: build
+        run: cmake --build build
+      - name: test
+        run: cmake --build build --target test
