@@ -1,3 +1,5 @@
+[![Build Status](https://github.com/raullaasner/gadfit/workflows/main/badge.svg)](https://github.com/raullaasner/gadfit/actions)
+
 GADfit
 ======
 
