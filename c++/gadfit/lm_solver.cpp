@@ -64,6 +64,7 @@ auto LMsolver::setPar(const int i_par,
         for (int i_group {}; i_group < static_cast<int>(fit_functions.size());
              ++i_group) {
             fit_functions.at(i_group).par(i_par) = AdVar { val };
+            fit_functions.at(i_group).deactivatePar(i_par);
             if (active) {
                 indices.active.at(i_group).insert(i_par);
             } else {
@@ -72,8 +73,8 @@ auto LMsolver::setPar(const int i_par,
         }
     } else {
         indices.global.erase(i_par);
-        fit_functions.at(i_dataset).par(i_par) =
-          AdVar { val, 0.0, 0.0, passive_idx };
+        fit_functions.at(i_dataset).par(i_par) = AdVar { val };
+        fit_functions.at(i_dataset).deactivatePar(i_par);
         if (active) {
             indices.active.at(i_dataset).insert(i_par);
         } else {
