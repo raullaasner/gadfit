@@ -4,9 +4,6 @@
 
   implicit none
 
-  ! Run these tests only in serial
-  if (this_image() /= 1) return
-
   ! Comparisons
   block
     type(advar) :: a, b

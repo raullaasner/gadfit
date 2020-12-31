@@ -4,12 +4,8 @@
 
   implicit none
 
-  ! Run these tests only in serial
-  if (this_image() /= 1) return
-
   ! Initialization
   block
-    character(2) :: memory
     call ad_init_reverse('64 B')
     call test(POS, size(trace), 4)
     call ad_close()
