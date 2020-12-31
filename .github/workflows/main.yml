@@ -3,7 +3,7 @@ name: main
 on: [push]
 
 jobs:
-  CXX_GNU_Debug_serial_fallback_linear_algebra:
+  CXX_Debug_serial_fallback_linear_algebra:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
@@ -17,7 +17,7 @@ jobs:
         run: cmake --build build
       - name: test
         run: cmake --build build --target test
-  CXX_GNU_Release_serial_fallback_linear_algebra:
+  CXX_Release_serial_fallback_linear_algebra:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
@@ -31,7 +31,7 @@ jobs:
         run: cmake --build build
       - name: test
         run: cmake --build build --target test
-  CXX_GNU_Debug_MPI_fallback_linear_algebra:
+  CXX_Debug_MPI_fallback_linear_algebra:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
@@ -62,7 +62,7 @@ jobs:
           cmake --build build --target test
           cmake -D TESTS_RUN_PREFIX="mpirun;-np;8" build
           cmake --build build --target test
-  CXX_GNU_Release_MPI_fallback_linear_algebra:
+  CXX_Release_MPI_fallback_linear_algebra:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2

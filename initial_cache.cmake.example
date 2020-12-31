@@ -15,9 +15,6 @@
 
 # Intel compilers and flags
 #set(CMAKE_C_COMPILER icc CACHE STRING "")
-#set(CMAKE_CXX_COMPILER icpc CACHE STRING "")
-#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -ipo -xHost -fp-model precise " CACHE STRING "")
-#set(CMAKE_CXX_FLAGS_DEBUG "-O3 -g -debug all -traceback" CACHE STRING "")
 #set(CMAKE_Fortran_COMPILER ifort CACHE STRING "")
 #set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -ipo -xHost -fp-model precise -coarray=shared" CACHE STRING "" FORCE)
 #set(CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -debug all -check all -fpe0 -traceback -warn -coarray=shared -std08" CACHE STRING "")
