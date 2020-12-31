@@ -63,4 +63,12 @@ SetParInvalidIndex::SetParInvalidIndex(const int index)
 {
     return "Rank of this MPI process exceeds the number of data points.";
 }
+
+[[nodiscard]] auto NoGlobalParameters::what() const noexcept -> const char*
+{
+    return "With multiple data sets must have at least one global fitting "
+           "parameter. Current algorithm is not optimized for a block-diagonal "
+           "JTJ matrix.";
+}
+
 } // namespace gadfit

@@ -65,20 +65,6 @@ TEST_CASE( "Indexing scheme" )
         REQUIRE( solver.getParValue(0, 1) == approx(139.4901380914605) );
         REQUIRE( solver.getParValue(2, 1) == approx(fix_d[5]) );
     }
-    SECTION( "Active: I0-0, bgr-0, I0-1, bgr-1" ) {
-        solver.setPar(0, fix_d[0], true, 0);
-        solver.setPar(2, fix_d[1], true, 0);
-        solver.setPar(0, fix_d[4], true, 1);
-        solver.setPar(2, fix_d[5], true, 1);
-        solver.setPar(1, fix_d[3], false);
-        solver.fit(1.0);
-        REQUIRE( solver.chi2() == approx(133479.8243379537) );
-        REQUIRE( solver.getParValue(1) == approx(fix_d[3]) );
-        REQUIRE( solver.getParValue(0, 0) == approx(269.3041417223106) );
-        REQUIRE( solver.getParValue(2, 0) == approx(19.20743790014125) );
-        REQUIRE( solver.getParValue(0, 1) == approx(884.0634753940659) );
-        REQUIRE( solver.getParValue(2, 1) == approx(34.66304297782811) );
-    }
     SECTION( "Active: tau" ) {
         solver.setPar(0, fix_d[16], false, 0);
         solver.setPar(2, fix_d[1], false, 0);
@@ -177,19 +163,19 @@ TEST_CASE( "Indexing scheme" )
         REQUIRE( solver.getParValue(0, 1) == approx(147.1783948678938) );
         REQUIRE( solver.getParValue(2, 1) == approx(fix_d[5]) );
     }
-    SECTION( "Active: bgr-0, I0-1" ) {
+    SECTION( "No active parameters" ) {
         solver.setPar(0, fix_d[0], false, 0);
-        solver.setPar(2, fix_d[1], true, 0);
-        solver.setPar(0, fix_d[4], true, 1);
+        solver.setPar(2, fix_d[1], false, 0);
+        solver.setPar(0, fix_d[4], false, 1);
         solver.setPar(2, fix_d[5], false, 1);
-        solver.setPar(1, fix_d[12], false);
+        solver.setPar(1, fix_d[3], false);
         solver.fit(1.0);
-        REQUIRE( solver.chi2() == approx(80628.4089204265) );
-        REQUIRE( solver.getParValue(1) == approx(6.76382444846188) );
-        REQUIRE( solver.getParValue(0, 0) == approx(fix_d[0]) );
-        REQUIRE( solver.getParValue(2, 0) == approx(19.3148861774975) );
-        REQUIRE( solver.getParValue(0, 1) == approx(244.850164021374) );
-        REQUIRE( solver.getParValue(2, 1) == approx(fix_d[5]) );
+        REQUIRE( solver.chi2() == approx(284681.4650859555) );
+        REQUIRE( solver.getParValue(1) == approx(0.5356792380861322) );
+        REQUIRE( solver.getParValue(0, 0) == approx(6.13604207015635) );
+        REQUIRE( solver.getParValue(2, 0) == approx(2.960644474827888) );
+        REQUIRE( solver.getParValue(0, 1) == approx(-1.472720596147903) );
+        REQUIRE( solver.getParValue(2, 1) == approx(4.251266120087788) );
     }
 }
 
@@ -314,6 +300,22 @@ TEST_CASE( "Exceptions" )
             e.what();
         }
     }
+    SECTION( "Active: bgr-0, I0-1" ) {
+        solver.addDataset(x_data_1, y_data_1);
+        solver.addDataset(x_data_2, y_data_2);
+        solver.setPar(0, fix_d[0], false, 0);
+        solver.setPar(2, fix_d[1], true, 0);
+        solver.setPar(0, fix_d[4], true, 1);
+        solver.setPar(2, fix_d[5], false, 1);
+        solver.setPar(1, fix_d[12], false);
+        try {
+            solver.fit(1.0);
+            REQUIRE( 1 == 0 );
+        } catch (const gadfit::NoGlobalParameters& e) {
+            e.what();
+            REQUIRE( 0 == 0 );
+        }
+    }
 }
 
 TEST_CASE( "Number of iterations" )
@@ -330,20 +332,6 @@ TEST_CASE( "Number of iterations" )
 
     SECTION( "No iterations" ) {
         solver.settings.iteration_limit = 0;
-        solver.fit(1.0);
-        REQUIRE( solver.chi2() == approx(284681.4650859555) );
-        REQUIRE( solver.getParValue(1) == approx(0.5356792380861322) );
-        REQUIRE( solver.getParValue(0, 0) == approx(6.13604207015635) );
-        REQUIRE( solver.getParValue(2, 0) == approx(2.960644474827888) );
-        REQUIRE( solver.getParValue(0, 1) == approx(-1.472720596147903) );
-        REQUIRE( solver.getParValue(2, 1) == approx(4.251266120087788) );
-    }
-    SECTION( "No active parameters" ) {
-        solver.setPar(0, fix_d[0], false, 0);
-        solver.setPar(2, fix_d[1], false, 0);
-        solver.setPar(0, fix_d[4], false, 1);
-        solver.setPar(2, fix_d[5], false, 1);
-        solver.setPar(1, fix_d[3], false);
         solver.fit(1.0);
         REQUIRE( solver.chi2() == approx(284681.4650859555) );
         REQUIRE( solver.getParValue(1) == approx(0.5356792380861322) );

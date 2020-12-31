@@ -187,6 +187,9 @@ auto LMsolver::prepareIndexing() -> void
     }
     indices.n_active -=
       static_cast<int>((indices.active.size() - 1) * indices.global.size());
+    if (indices.n_active > 0 && x_data.size() > 1 && indices.global.empty()) {
+        throw NoGlobalParameters {};
+    }
     indices.n_datapoints = 0;
     for (const auto& dataset : x_data) {
         indices.n_datapoints += static_cast<int>(dataset.size());

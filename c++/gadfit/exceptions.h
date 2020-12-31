@@ -70,4 +70,10 @@ public:
     [[nodiscard]] auto what() const noexcept -> const char* override;
 };
 
+class NoGlobalParameters : public GADfitException
+{
+public:
+    [[nodiscard]] auto what() const noexcept -> const char* override;
+};
+
 } // namespace gadfit
