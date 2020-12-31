@@ -228,7 +228,7 @@ module ad
      module procedure erf_advar
   end interface erf
 
-#ifdef GSL_DIR
+#ifdef USE_GSL
   interface Li2
      real(c_double) function Li2_real(arg) bind(c, name='gsl_sf_dilog')
        import c_double
@@ -1468,7 +1468,7 @@ contains
     end if
   end function erf_advar
 
-#ifdef GSL_DIR
+#ifdef USE_GSL
   type(advar) function Li2_advar(x) result(y)
     type(advar), intent(in) :: x
     y%val = Li2(real(x%val, dp))
@@ -1668,7 +1668,7 @@ contains
                  & adjoints(trace(i-1))*2.0_kp/sqrtpi* &
                  & exp(-forward_values(trace(i-2))**2)
             i = i - 3
-#ifdef GSL_DIR
+#ifdef USE_GSL
          case(LI2_A)
             adjoints(trace(i-2)) = adjoints(trace(i-2)) - &
                  & adjoints(trace(i-1))* &

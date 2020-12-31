@@ -32,6 +32,9 @@ if (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   set(HAS_CO_SUM FALSE)
 endif()
 
+if (TARGET GSL::gsl)
+  target_compile_definitions(gadfit PRIVATE USE_GSL)
+endif()
 target_include_directories(gadfit PRIVATE ${PROJECT_BINARY_DIR})
 
 target_compile_definitions(gadfit PRIVATE
@@ -62,3 +65,15 @@ install(FILES ${PROJECT_BINARY_DIR}/gadfitConfigVersion.cmake
 
 export(EXPORT gadfitConfig NAMESPACE gadfit::
   FILE ${PROJECT_BINARY_DIR}/gadfitConfig.cmake)
+
+# Print info
+if (QUAD_PRECISION)
+  message("Using quadruple precision")
+else()
+  message("Using double precision")
+endif()
+if (USE_AD)
+  message("Using automatic differentiation")
+else()
+  message("Using finite differences")
+endif()

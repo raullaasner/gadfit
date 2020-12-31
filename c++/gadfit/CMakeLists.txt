@@ -35,6 +35,9 @@ target_sources(gadfit PRIVATE cblas_wrapper_fallback.cpp)
 # MPI
 if (USE_MPI)
   target_compile_definitions(gadfit PUBLIC USE_MPI)
+  message("Using MPI")
+else()
+  message("Not using MPI")
 endif()
 
 # Logging

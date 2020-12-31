@@ -1710,7 +1710,7 @@ contains
 \item In the reverse mode, the operation body is supposed to do the following: the function body is evaluated; the newly created result variable is given a unique index; the result of evaluation is saved in \verb+forward_values+; the indices of all arguments, that of the result variable, and the operation code are saved in \verb+trace+; any constants are saved in \verb+ad_constants+; \verb+index_count+, \verb+trace_count+, and \verb+const_count+ are increased accordingly. In the forward mode, the implementation is straightforward. In either case, if the argument is a passive variable, only the function body is evaluated. For a better understanding, have a look at the implementation of any unary operation in the source code.
 \item In the reverse mode, the calculation of the adjoints is implemented in the return sweep (\verb+ad_grad+).
 \end{itemize}
-The function body may also refer to an external function. The dilogarithm function, $\Li2$, is an example of importing special functions from GSL. $\Li2$ is available if \verb+GSL_DIR+ points to the GSL root directory during configuration. This is not required for running any of the tests.
+The function body may also refer to an external function. The dilogarithm function, $\Li2$, is an example of importing special functions from GSL. $\Li2$ is available if the CMake option \verb+USE_GSL+ is enabled (default) and CMake is able to automatically find the library (if not, try the \verb+GSL_ROOT_DIR+ variable). This is not required for running any of the tests.
 
 \section{Developer notes}
 

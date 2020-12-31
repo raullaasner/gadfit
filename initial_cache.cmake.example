@@ -51,10 +51,10 @@ set(QUAD_PRECISION OFF CACHE BOOL "")
 # SPDLOG_PATH to the installation directory.
 #set(SPDLOG_PATH /usr/local/spdlog CACHE STRING "")
 
-# If the code contains calls to the GSL library, then GSL_DIR should
-# point to the GSL install directory. If GSL_DIR is left empty or is
-# incorrect, GADfit will compile without the GSL related procedures.
-#set(GSL_DIR /usr/local/gsl CACHE STRING "")
+# If true, links against the GSL library.
+set(USE_GSL ON CACHE BOOL "")
+# If GSL was not automatically found by CMake try setting this variable.
+#set(GSL_ROOT_DIR /usr/local/gsl CACHE STRING "")
 
 # A linear algebra library is necessary when using GADfit or when
 # running the examples, but not while building the main library. If
