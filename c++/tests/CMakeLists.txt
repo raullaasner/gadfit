@@ -43,7 +43,7 @@ if (Catch2_FOUND)
 /../../c++/gadfit/spdlog-prefix/src/spdlog/include")
     endif()
   endforeach()
-  add_custom_target(test COMMAND ctest -V DEPENDS ${tests})
+  add_custom_target(test COMMAND ctest --output-on-failure DEPENDS ${tests})
 else()
   add_custom_target(test
     COMMAND cmake -E echo
