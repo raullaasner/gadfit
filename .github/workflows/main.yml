@@ -1,0 +1,95 @@
+name: main
+
+on: [push]
+
+jobs:
+  CXX_GNU_Debug_serial_fallback_linear_algebra:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: configure
+        run: |
+          mkdir build && cd build
+          cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
+          -D CMAKE_BUILD_TYPE=Debug \
+          ..
+      - name: build
+        run: cmake --build build
+      - name: test
+        run: cmake --build build --target test
+  CXX_GNU_Release_serial_fallback_linear_algebra:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: configure
+        run: |
+          mkdir build && cd build
+          cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
+          -D CMAKE_BUILD_TYPE=Release \
+          ..
+      - name: build
+        run: cmake --build build
+      - name: test
+        run: cmake --build build --target test
+  CXX_GNU_Debug_MPI_fallback_linear_algebra:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: configure
+        run: |
+          mkdir build && cd build
+          cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
+          -D CMAKE_CXX_COMPILER=mpicxx \
+          -D CMAKE_BUILD_TYPE=Debug \
+          ..
+      - name: build
+        run: cmake --build build
+      - name: test
+        run: |
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;1" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;2" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;3" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;4" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;5" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;6" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;7" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;8" build
+          cmake --build build --target test
+  CXX_GNU_Release_MPI_fallback_linear_algebra:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: configure
+        run: |
+          mkdir build && cd build
+          cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
+          -D CMAKE_CXX_COMPILER=mpicxx \
+          -D CMAKE_BUILD_TYPE=Release \
+          ..
+      - name: build
+        run: cmake --build build
+      - name: test
+        run: |
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;1" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;2" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;3" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;4" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;5" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;6" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;7" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;8" build
+          cmake --build build --target test
