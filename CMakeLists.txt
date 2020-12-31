@@ -28,16 +28,13 @@ else()
 endif()
 option(BUILD_SHARED_LIBS
   "If enabled, builds a shared library, else static" ON)
-set(TESTS_RUN_PREFIX mpirun -np 8 CACHE STRING
-  "Prefix used for running tests, e.g., 'mpirun ...'")
-set(LINALG_FLAVOR "" CACHE STRING
-  "Choose the linear algebra library (lapack, atlas, mkl)")
+set(TESTS_RUN_PREFIX mpirun -np 8 CACHE STRING "Prefix used for running tests")
+set(LINALG_FLAVOR "" CACHE STRING "Choose the linear algebra library")
 set(INCLUDE_PATHS "" CACHE STRING
   "Directories containing necessary header files")
 set(LIBRARY_PATHS "" CACHE STRING
   "Directories containing libraries to be linked against")
-set(LIBRARIES "" CACHE STRING
-  "Libraries to be linked against")
+set(LIBRARIES "" CACHE STRING "Libraries to be linked against")
 option(USE_GSL "Whether to link against GSL" ON)
 option(INCLUDE_COVERAGE "Defines new target called 'coverage'" OFF)
 set(COVERAGE_FLAGS "--coverage" CACHE STRING

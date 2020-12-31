@@ -290,11 +290,12 @@ TEST_CASE( "Exceptions" )
         solver.setPar(1, fix_d[3], true);
         try {
             solver.fit(1.0);
-            REQUIRE( solver.chi2() == approx(12.06947119410627) );
+            REQUIRE( solver.chi2() == approx(12.06947119410627, 1e3) );
             REQUIRE( solver.getParValue(1) == approx(2.945868346541738) );
             REQUIRE( solver.getParValue(0, 0) == approx(7.351966871429208) );
             REQUIRE( solver.getParValue(2, 0) == approx(49.68674387147235) );
-            REQUIRE( solver.getParValue(0, 1) == approx(-13.18731292934496) );
+            REQUIRE( solver.getParValue(0, 1)
+                     == approx(-13.18731292934496, 1e3) );
             REQUIRE( solver.getParValue(2, 1) == approx(162.1781165060048) );
         } catch (const gadfit::UnusedMPIProcess& e) {
             e.what();

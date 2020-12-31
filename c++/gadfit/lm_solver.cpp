@@ -390,7 +390,7 @@ auto LMsolver::computeRightHandSide() -> void
 auto LMsolver::computeDeltas(std::vector<double>& omega_fragment) -> void
 {
     delta1 = right_side;
-    dpotrs_wrapper(indices.n_active, left_side, delta1);
+    dpptrs_wrapper(indices.n_active, left_side, delta1);
     if (settings.acceleration_threshold > 0.0) {
         // This is a similar loop as for the residuals or the Jacobian
         // above, except only the second directional derivatives are
@@ -421,7 +421,7 @@ auto LMsolver::computeDeltas(std::vector<double>& omega_fragment) -> void
                          mpi_comm);
         dgemv_tr_wrapper(
           indices.n_datapoints, indices.n_active, Jacobian, omega, delta2);
-        dpotrs_wrapper(indices.n_active, left_side, delta2);
+        dpptrs_wrapper(indices.n_active, left_side, delta2);
         // Use acceleration only if
         // sqrt((delta2 D delta2)/(delta1 D delta1)) < alpha, where
         // alpha is the acceleration ratio threshold.

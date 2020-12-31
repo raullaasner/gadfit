@@ -50,7 +50,7 @@ auto dgemv_tr_wrapper(const int M,
     }
 }
 
-auto dpotrs_wrapper(const int dimension,
+auto dpptrs_wrapper(const int dimension,
                     std::vector<double>& A,
                     std::vector<double>& b) -> void
 {

@@ -17,7 +17,13 @@ find_package_handle_standard_args(MKL DEFAULT_MSG
   MKL_INCLUDE_DIR MKL_LIB_DIR)
 mark_as_advanced(MKL_INCLUDE_DIR)
 
-if (CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
+if (BUILD_CXX_VERSION)
+  set(_lang CXX)
+else()
+  set(_lang Fortran)
+endif()
+
+if (CMAKE_${_lang}_COMPILER_ID MATCHES "GNU")
   set(MKL_LIBS mkl_gf_lp64 mkl_sequential mkl_core pthread)
 else()
   set(MKL_LIBS mkl_intel_lp64 mkl_sequential mkl_core)

@@ -33,7 +33,7 @@ auto dgemv_tr_wrapper(const int M,
 // two steps: first by computing the Cholesky factorization of the
 // form L*L^T of A, and then solving the linear system of equations
 // L*y = b followed by L^T*x = y.
-auto dpotrs_wrapper(const int dimension,
+auto dpptrs_wrapper(const int dimension,
                     std::vector<double>& A,
                     std::vector<double>& b) -> void;
 

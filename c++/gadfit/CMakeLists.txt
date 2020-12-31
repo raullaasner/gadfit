@@ -30,7 +30,28 @@ endif()
 set(SPDLOG_PATH "" CACHE STRING "Path to spdlog installation directory")
 
 # Linear algebra library
-target_sources(gadfit PRIVATE cblas_wrapper_fallback.cpp)
+if (LINALG_FLAVOR MATCHES "mkl")
+  find_package(MKL REQUIRED)
+  target_include_directories(gadfit PRIVATE ${MKL_INCLUDE_DIR})
+  target_link_libraries(gadfit PRIVATE ${MKL_LIBRARIES})
+  target_sources(gadfit PRIVATE cblas_wrapper_mkl.cpp)
+  set(linalg_library_name "MKL")
+else()
+  try_compile(LINALG_TEST ${CMAKE_CURRENT_BINARY_DIR}
+    ${PROJECT_SOURCE_DIR}/cmake/tests/MKL.cpp
+    CMAKE_FLAGS
+    "-DINCLUDE_DIRECTORIES=${INCLUDE_PATHS}"
+    "-DLINK_DIRECTORIES=${LIBRARY_PATHS}"
+    "-DLINK_LIBRARIES=${LIBRARIES}")
+  if (LINALG_TEST)
+    target_sources(gadfit PRIVATE cblas_wrapper_mkl.cpp)
+    set(linalg_library_name "MKL")
+  else()
+    target_sources(gadfit PRIVATE cblas_wrapper_fallback.cpp)
+    set(linalg_library_name "fallback")
+  endif()
+endif()
+message("Using linear algebra library: ${linalg_library_name}")
 
 # MPI
 if (USE_MPI)
