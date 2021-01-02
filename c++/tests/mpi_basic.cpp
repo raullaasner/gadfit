@@ -16,7 +16,7 @@ static auto exponential(const std::vector<gadfit::AdVar>& parameters,
 }
 
 // Helper function for the case of three data sets
-static auto setSolverState(gadfit::LMsolver& solver) {
+static auto setSolverState(gadfit::LMsolver& solver) -> void {
     solver.addDataset(x_data_1, y_data_1);
     solver.addDataset(x_data_3, y_data_3);
     const auto reduceVector { [](const auto& in, const int N) {

@@ -11,9 +11,9 @@ TEST_CASE( "Assignments" )
     a = static_cast<int>(fix_d[0]);
     REQUIRE( a.val == static_cast<int>(fix_d[0]));
     a = fix_d[0];
-    const int i { a };
+    const int i { static_cast<int>(a.val) };
     REQUIRE( i == static_cast<int>(fix_d[0]) );
-    const double d { a };
+    const double d { a.val };
     REQUIRE( d == approx(fix_d[0]) );
 }
 

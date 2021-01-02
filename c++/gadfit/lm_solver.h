@@ -204,7 +204,7 @@ private:
                                const double lambda,
                                const double new_chi2) const -> void;
     // Test whether an IO flag is enabled
-    auto ioTest(io::flag flag) const -> bool;
+    [[nodiscard]] auto ioTest(io::flag flag) const -> bool;
 };
 
 template <typename T>

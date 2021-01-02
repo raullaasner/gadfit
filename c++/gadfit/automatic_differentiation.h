@@ -69,12 +69,6 @@ public:
         return *this;
     }
 
-    template <typename T>
-    operator T() const
-    {
-        return static_cast<T>(val);
-    }
-
     auto operator-() const -> AdVar;
     auto operator+() const -> AdVar;
 

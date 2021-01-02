@@ -326,7 +326,7 @@ auto pow(const AdVar& x1, const AdVar& x2) -> AdVar
         // clang-format on
         y.idx = forward_active_idx;
     } else if (x1.idx == forward_active_idx) {
-        y.d = x1.d * x2 * std::pow(x1.val, x2 - 1);
+        y.d = x1.d * x2.val * std::pow(x1.val, x2.val - 1);
         const double inv_x1 { 1.0 / x1.val };
         y.dd = y.d * y.d / y.val
                + y.val * x2.val * (x1.dd - x1.d * x1.d * inv_x1) * inv_x1;

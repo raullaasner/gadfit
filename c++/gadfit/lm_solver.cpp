@@ -474,6 +474,7 @@ auto LMsolver::updateParameters() -> void
             auto idx_jacobian { indices.jacobian.at(i_set).cbegin() };
             for (const auto& idx : indices.active.at(i_set)) {
                 fit_functions.at(i_set).par(idx).val -=
+                  // NOLINTNEXTLINE
                   0.5 * delta2.at(*idx_jacobian++);
             }
         }
@@ -501,12 +502,12 @@ auto LMsolver::chi2() const -> double
         // this operation in serial.
         int i_point_beg {};
         int i_point_end {};
-        if (indices.data_ranges.size() > 0) {
-            i_point_beg = indices.data_ranges.at(i_set).front();
-            i_point_end = indices.data_ranges.at(i_set).back();
-        } else {
+        if (indices.data_ranges.empty()) {
             i_point_beg = 0;
             i_point_end = static_cast<int>(x_data.at(i_set).size()) - 1;
+        } else {
+            i_point_beg = indices.data_ranges.at(i_set).front();
+            i_point_end = indices.data_ranges.at(i_set).back();
         }
         for (int i_point { i_point_beg }; i_point <= i_point_end; ++i_point) {
             const double diff {
@@ -517,7 +518,8 @@ auto LMsolver::chi2() const -> double
             sum += diff * diff;
         }
     }
-    if (mpi_comm != MPI_COMM_NULL && indices.data_ranges.size() > 0) {
+    if (mpi_comm != MPI_COMM_NULL && !indices.data_ranges.empty()) {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
         MPI_Allreduce(MPI_IN_PLACE, &sum, 1, MPI_DOUBLE, MPI_SUM, mpi_comm);
     }
     return sum;
@@ -577,7 +579,7 @@ auto LMsolver::printIterationResults(const int i_iteration,
                 line << " (" << delta1.at(indices.jacobian[i_set][i_par])
                      << ')';
             }
-            if (ioTest(io::delta2) && delta2.size() > 0) {
+            if (ioTest(io::delta2) && !delta2.empty()) {
                 line << " (" << delta2.at(indices.jacobian[i_set][i_par])
                      << ')';
             }
@@ -627,7 +629,7 @@ auto LMsolver::getParValue(const int i_par, const int i_dataset) const -> double
 
 auto LMsolver::getValue(const double arg, const int i_dataset) const -> double
 {
-    return fit_functions.at(i_dataset)(arg);
+    return fit_functions.at(i_dataset)(arg).val;
 }
 
 LMsolver::~LMsolver()
