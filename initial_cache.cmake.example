@@ -55,8 +55,9 @@ set(USE_GSL ON CACHE BOOL "")
 
 # Keyword for automatic detection of a linear algebra library. Allowed
 # values are
-#       C++: mkl
+#       C++: mkl none*
 #   Fortran: lapack atlas mkl
+# *choosing none explicitly forces to use the fallback option
 #set(LINALG_FLAVOR lapack CACHE STRING "")
 
 # Linalg library directories

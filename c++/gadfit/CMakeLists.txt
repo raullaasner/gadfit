@@ -36,6 +36,9 @@ if (LINALG_FLAVOR MATCHES "mkl")
   target_link_libraries(gadfit PRIVATE ${MKL_LIBRARIES})
   target_sources(gadfit PRIVATE cblas_wrapper_mkl.cpp)
   set(linalg_library_name "MKL")
+elseif (LINALG_FLAVOR MATCHES "none")
+  target_sources(gadfit PRIVATE cblas_wrapper_fallback.cpp)
+  set(linalg_library_name "fallback")
 else()
   try_compile(LINALG_TEST ${CMAKE_CURRENT_BINARY_DIR}
     ${PROJECT_SOURCE_DIR}/cmake/tests/MKL.cpp
