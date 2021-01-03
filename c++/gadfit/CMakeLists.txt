@@ -16,6 +16,7 @@ target_sources(gadfit PRIVATE
   lm_solver.cpp
   exceptions.cpp
   parallel.cpp
+  numerical_integration.cpp
   )
 
 # First run

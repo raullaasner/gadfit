@@ -15,6 +15,7 @@ set(tests
   ad_forward_mode
   ad_reverse_mode
   lm_solver
+  numerical_integration
   )
 
 if (USE_MPI)

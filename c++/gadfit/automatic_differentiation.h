@@ -51,6 +51,9 @@ public:
     AdVar() = default;
     // NOLINTNEXTLINE
     explicit AdVar(const double val) : val { val } {}
+    // NOLINTNEXTLINE
+    explicit AdVar(const double val, const int idx) : val { val }, idx { idx }
+    {}
     explicit constexpr AdVar(const double val,
                              const double d,
                              const double dd,
@@ -71,6 +74,11 @@ public:
 
     auto operator-() const -> AdVar;
     auto operator+() const -> AdVar;
+
+    template <typename T>
+    auto operator-=(const T& rhs) -> AdVar&;
+    template <typename T>
+    auto operator+=(const T& rhs) -> AdVar&;
 
     ~AdVar() = default;
 };
@@ -128,6 +136,9 @@ enum class Op
     acosh_a,
     atanh_a,
     erf_a,
+    int_lower_bound,
+    int_upper_bound,
+    int_both_bounds,
 };
 
 constexpr int default_sweep_size { 1000 };
@@ -217,6 +228,13 @@ auto operator+(const T x1, const AdVar& x2) -> AdVar
     return y;
 }
 
+template <typename T>
+auto AdVar::operator+=(const T& rhs) -> AdVar&
+{
+    *this = *this + rhs;
+    return *this;
+}
+
 auto operator+(const AdVar& x1, const AdVar& x2) -> AdVar;
 
 // Subtraction
@@ -266,6 +284,13 @@ auto operator-(const T x1, const AdVar& x2) -> AdVar
         y.idx = passive_idx;
     }
     return y;
+}
+
+template <typename T>
+auto AdVar::operator-=(const T& rhs) -> AdVar&
+{
+    *this = *this - rhs;
+    return *this;
 }
 
 auto operator-(const AdVar& x1, const AdVar& x2) -> AdVar;

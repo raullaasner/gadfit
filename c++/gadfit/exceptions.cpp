@@ -71,4 +71,11 @@ SetParInvalidIndex::SetParInvalidIndex(const int index)
            "JTJ matrix.";
 }
 
+[[nodiscard]] auto InsufficientIntegrationWorkspace::what() const noexcept
+  -> const char*
+{
+    return "Number of iterations was insufficient. "
+           "Increase either workspace size or the error bound(s)";
+}
+
 } // namespace gadfit
