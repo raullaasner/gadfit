@@ -48,22 +48,22 @@ end module multiple_curves_m
   call gadf_set(2, 1.0, .true.)
   call gadf_set_errors(SQRT_Y)
   call gadf_set_verbosity(output='/dev/null')
-  call gadf_fit(lambda=10.0)
+  call gadf_fit(lambda=10.0, accth=0.9, max_iter=4)
 
   if (this_image() == 1) then
      block
        real(kp), parameter :: reference_values(3,2) = reshape([ &
-            & 47.434440947488504_kp, &
-            & 20.521551299489758_kp, &
-            & 9.1936229247057728_kp, &
-            & 152.71446174360392_kp, &
-            & 20.521551299489758_kp, &
-            & 4.8709977251577286_kp], shape(reference_values))
+            & 46.980695087179093_kp, &
+            & 21.367028663570494_kp, &
+            & 8.9528433588272360_kp, &
+            & 150.03361724451275_kp, &
+            & 21.367028663570494_kp, &
+            & 4.3777353718042322_kp], shape(reference_values))
        integer :: i_dataset, i_par
        do i_dataset = 1, 2
           do i_par = 1, 3
              if (abs(fitfuncs(i_dataset)%pars(i_par)%val - &
-                  & reference_values(i_par, i_dataset)) > 5e-7_kp) then
+                  & reference_values(i_par, i_dataset)) > 1e-13_kp) then
                 write(*,*)
                 write(*,'(2(g0))') 'Computed value: ', &
                      & fitfuncs(i_dataset)%pars(i_par)%val

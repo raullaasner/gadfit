@@ -195,7 +195,7 @@ contains
     interface
        type(advar) function f(x, pars)
          import kp, advar
-         real(kp), intent(in) :: x
+         type(advar), intent(in) :: x
          type(advar), intent(in out) :: pars(:)
        end function f
     end interface
@@ -293,7 +293,7 @@ contains
     interface
        type(advar) function f(x, pars)
          import kp, advar
-         real(kp), intent(in) :: x
+         type(advar), intent(in) :: x
          type(advar), intent(in out) :: pars(:)
        end function f
     end interface
@@ -312,7 +312,7 @@ contains
     end if
   contains
     type(advar) function f_transformed(x, pars) result(y)
-      real(kp), intent(in) :: x
+      type(advar), intent(in) :: x
       type(advar), intent(in out) :: pars(:)
       y = f(lower - 1 + 1/x, pars)/x**2
     end function f_transformed
@@ -326,7 +326,7 @@ contains
     interface
        type(advar) function f(x, pars)
          import kp, advar
-         real(kp), intent(in) :: x
+         type(advar), intent(in) :: x
          type(advar), intent(in out) :: pars(:)
        end function f
     end interface
@@ -345,7 +345,7 @@ contains
     end if
   contains
     type(advar) function f_transformed(x, pars) result(y)
-      real(kp), intent(in) :: x
+      type(advar), intent(in) :: x
       type(advar), intent(in out) :: pars(:)
       y = f(upper + 1 - 1/x, pars)/x**2
     end function f_transformed
@@ -356,7 +356,7 @@ contains
     interface
        type(advar) function f(x, pars)
          import kp, advar
-         real(kp), intent(in) :: x
+         type(advar), intent(in) :: x
          type(advar), intent(in out) :: pars(:)
        end function f
     end interface
@@ -379,7 +379,7 @@ contains
     interface
        type(advar) function f(x, pars)
          import kp, advar
-         real(kp), intent(in) :: x
+         type(advar), intent(in) :: x
          type(advar), intent(in out) :: pars(:)
        end function f
     end interface
@@ -388,7 +388,10 @@ contains
     type(advar), intent(in) :: upper
     real(kp), intent(in), optional :: rel_error, abs_error
     integer :: saved_indices(size(pars))
+    type(advar) :: arg
     type(advar) :: dummy
+    ! Nabla_p f(arg,p), where arg also depends on the parameters p
+    type(advar) :: dir_deriv
     if (lower%index /= 0 .and. upper%index == 0) then
        y = integrate_advar_real(f, pars, lower, upper%val, rel_error, abs_error)
        return
@@ -407,9 +410,11 @@ contains
           end if
           if (y%index /= 0) call swap(pars%index, saved_indices)
           const_count = const_count + 1
-          ad_constants(const_count) = f(lower%val, pars)
+          arg%val = lower%val
+          ad_constants(const_count) = f(arg, pars)
           const_count = const_count + 1
-          ad_constants(const_count) = f(upper%val, pars)
+          arg%val = upper%val
+          ad_constants(const_count) = f(arg, pars)
           if (y%index /= 0) call swap(pars%index, saved_indices)
           trace(trace_count+1) = lower%index
           trace(trace_count+2) = upper%index
@@ -417,13 +422,18 @@ contains
           trace(trace_count+4) = INT_BOTH_BOUNDS
           trace_count = trace_count + 4
        else
-          y%d = y%d - lower%d*f(lower%val, pars) + upper%d*f(upper%val, pars)
-          dummy = f(lower%val, pars)
-          y%dd = y%dd - lower%dd*dummy%val - &
-               & lower%d*(dir_deriv_finite(f, lower, pars)+dummy%d)
-          dummy = f(upper%val, pars)
-          y%dd = y%dd + upper%dd*dummy%val + &
-               & upper%d*(dir_deriv_finite(f, upper, pars)+dummy%d)
+          arg%val = lower%val
+          y%d = y%d - lower%d*f(arg, pars)
+          arg%val = upper%val
+          y%d = y%d + upper%d*f(arg, pars)
+          arg%val = lower%val
+          dummy = f(arg, pars)
+          dir_deriv = f(lower, pars)
+          y%dd = y%dd - lower%dd*dummy%val - lower%d*(dir_deriv%d+dummy%d)
+          arg%val = upper%val
+          dummy = f(arg, pars)
+          dir_deriv = f(upper, pars)
+          y%dd = y%dd + upper%dd*dummy%val + upper%d*(dir_deriv%d+dummy%d)
           if (y%index == 0) y%index = 1
        end if
     end if
@@ -437,7 +447,7 @@ contains
     interface
        type(advar) function f(x, pars)
          import kp, advar
-         real(kp), intent(in) :: x
+         type(advar), intent(in) :: x
          type(advar), intent(in out) :: pars(:)
        end function f
     end interface
@@ -446,7 +456,9 @@ contains
     real(kp), intent(in) :: upper
     real(kp), intent(in), optional :: rel_error, abs_error
     integer :: saved_indices(size(pars))
+    type(advar) :: arg
     type(advar) :: dummy
+    type(advar) :: dir_deriv ! Same comment as in integrate_advar_advar
     y = integrate_real_real(f, pars, lower%val, upper, rel_error, abs_error)
     if (lower%index /= 0) then
        if (reverse_mode) then
@@ -458,17 +470,19 @@ contains
           end if
           if (y%index /= 0) call swap(pars%index, saved_indices)
           const_count = const_count + 1
-          ad_constants(const_count) = f(lower%val, pars)
+          arg%val = lower%val
+          ad_constants(const_count) = f(arg, pars)
           if (y%index /= 0) call swap(pars%index, saved_indices)
           trace(trace_count+1) = lower%index
           trace(trace_count+2) = y%index
           trace(trace_count+3) = INT_LOWER_BOUND
           trace_count = trace_count + 3
        else
-          y%d = y%d - lower%d*f(lower%val, pars)
-          dummy = f(lower%val, pars)
-          y%dd = y%dd - lower%dd*dummy%val - &
-               & lower%d*(dir_deriv_finite(f, lower, pars)+dummy%d)
+          arg%val = lower%val
+          y%d = y%d - lower%d*f(arg, pars)
+          dummy = f(arg, pars)
+          dir_deriv = f(lower, pars)
+          y%dd = y%dd - lower%dd*dummy%val - lower%d*(dir_deriv%d+dummy%d)
           if (y%index == 0) y%index = 1
        end if
     end if
@@ -480,7 +494,7 @@ contains
     interface
        type(advar) function f(x, pars)
          import kp, advar
-         real(kp), intent(in) :: x
+         type(advar), intent(in) :: x
          type(advar), intent(in out) :: pars(:)
        end function f
     end interface
@@ -489,7 +503,9 @@ contains
     type(advar), intent(in) :: upper
     real(kp), intent(in), optional :: rel_error, abs_error
     integer :: saved_indices(size(pars))
+    type(advar) :: arg
     type(advar) :: dummy
+    type(advar) :: dir_deriv ! Same comment as in integrate_advar_advar
     y = integrate_real_real(f, pars, lower, upper%val, rel_error, abs_error)
     if (upper%index /= 0) then
        if (reverse_mode) then
@@ -501,17 +517,19 @@ contains
           end if
           if (y%index /= 0) call swap(pars%index, saved_indices)
           const_count = const_count + 1
-          ad_constants(const_count) = f(upper%val, pars)
+          arg%val = upper%val
+          ad_constants(const_count) = f(arg, pars)
           if (y%index /= 0) call swap(pars%index, saved_indices)
           trace(trace_count+1) = upper%index
           trace(trace_count+2) = y%index
           trace(trace_count+3) = INT_UPPER_BOUND
           trace_count = trace_count + 3
        else
-          y%d = y%d + upper%d*f(upper%val, pars)
-          dummy = f(upper%val, pars)
-          y%dd = y%dd + upper%dd*dummy%val + &
-               & upper%d*(dir_deriv_finite(f, upper, pars)+dummy%d)
+          arg%val = upper%val
+          y%d = y%d + upper%d*f(arg, pars)
+          dummy = f(arg, pars)
+          dir_deriv = f(upper, pars)
+          y%dd = y%dd + upper%dd*dummy%val + upper%d*(dir_deriv%d+dummy%d)
           if (y%index == 0) y%index = 1
        end if
     end if
@@ -523,7 +541,7 @@ contains
     interface
        type(advar) function f(x, pars)
          import kp, advar
-         real(kp), intent(in) :: x
+         type(advar), intent(in) :: x
          type(advar), intent(in out) :: pars(:)
        end function f
     end interface
@@ -532,14 +550,17 @@ contains
     type(advar), intent(in) :: upper
     real(kp), intent(in), optional :: rel_error, abs_error
     integer :: saved_indices(size(pars))
+    type(advar) :: arg
     type(advar) :: dummy
+    type(advar) :: dir_deriv ! Same comment as in integrate_advar_advar
     y = integrate_inf_real(f, pars, lower, upper%val, rel_error, abs_error)
     if (upper%index /= 0) then
        if (reverse_mode) then
           saved_indices = 0
           if (y%index /= 0) call swap(pars%index, saved_indices)
           const_count = const_count + 1
-          ad_constants(const_count) = f(upper%val, pars)
+          arg%val = upper%val
+          ad_constants(const_count) = f(arg, pars)
           if (y%index /= 0) call swap(pars%index, saved_indices)
           if (y%index == 0) then
              index_count = index_count + 1
@@ -551,10 +572,11 @@ contains
           trace(trace_count+3) = INT_UPPER_BOUND
           trace_count = trace_count + 3
        else
-          y%d = y%d + upper%d*f(upper%val, pars)
-          dummy = f(upper%val, pars)
-          y%dd = y%dd + upper%dd*dummy%val + &
-               & upper%d*(dir_deriv_finite(f, upper, pars)+dummy%d)
+          arg%val = upper%val
+          y%d = y%d + upper%d*f(arg, pars)
+          dummy = f(arg, pars)
+          dir_deriv = f(upper, pars)
+          y%dd = y%dd + upper%dd*dummy%val + upper%d*(dir_deriv%d+dummy%d)
           if (y%index == 0) y%index = 1
        end if
     end if
@@ -566,7 +588,7 @@ contains
     interface
        type(advar) function f(x, pars)
          import kp, advar
-         real(kp), intent(in) :: x
+         type(advar), intent(in) :: x
          type(advar), intent(in out) :: pars(:)
        end function f
     end interface
@@ -575,14 +597,17 @@ contains
     integer, intent(in) :: upper
     real(kp), intent(in), optional :: rel_error, abs_error
     integer :: saved_indices(size(pars))
+    type(advar) :: arg
     type(advar) :: dummy
+    type(advar) :: dir_deriv ! Same comment as in integrate_advar_advar
     y = integrate_real_inf(f, pars, lower%val, upper, rel_error, abs_error)
     if (lower%index /= 0) then
        if (reverse_mode) then
           saved_indices = 0
           if (y%index /= 0) call swap(pars%index, saved_indices)
           const_count = const_count + 1
-          ad_constants(const_count) = f(lower%val, pars)
+          arg%val = lower%val
+          ad_constants(const_count) = f(arg, pars)
           if (y%index /= 0) call swap(pars%index, saved_indices)
           if (y%index == 0) then
              index_count = index_count + 1
@@ -594,10 +619,11 @@ contains
           trace(trace_count+3) = INT_LOWER_BOUND
           trace_count = trace_count + 3
        else
-          y%d = y%d - lower%d*f(lower%val, pars)
-          dummy = f(lower%val, pars)
-          y%dd = y%dd - lower%dd*dummy%val - &
-               & lower%d*(dir_deriv_finite(f, lower, pars)+dummy%d)
+          arg%val = lower%val
+          y%d = y%d - lower%d*f(arg, pars)
+          dummy = f(arg, pars)
+          dir_deriv = f(lower, pars)
+          y%dd = y%dd - lower%dd*dummy%val - lower%d*(dir_deriv%d+dummy%d)
           if (y%index == 0) y%index = 1
        end if
     end if
@@ -612,7 +638,7 @@ contains
     interface
        type(advar) function f(x, pars)
          import kp, advar
-         real(kp), intent(in) :: x
+         type(advar), intent(in) :: x
          type(advar), intent(in out) :: pars(:)
        end function f
     end interface
@@ -620,6 +646,7 @@ contains
     real(kp), intent(in) :: lower, upper
     real(kp), intent(out) :: abs_error
     type(advar) :: f_value
+    type(advar) :: arg
     real(kp) :: scale, shift, sum_gauss
     integer :: i
     scale = (upper-lower)/2
@@ -627,46 +654,14 @@ contains
     sum_gauss = 0.0_kp
     y = 0.0_kp
     do i = 1, size(roots)
-       f_value = f(scale*roots(i)+shift, pars)
+       arg%val = scale*roots(i)+shift
+       f_value = f(arg, pars)
        if (mod(i,2) == 0) sum_gauss = sum_gauss + weights_gauss(i/2)*f_value%val
        y = y + weights_kronrod(i)*f_value
     end do
     y = scale*y
     abs_error = abs(y%val - scale*sum_gauss)
   end function gauss_kronrod
-
-  ! The directional derivative of the integrand f(b(p),p) with respect
-  ! to the parameter vector p, where b is either the lower or upper
-  ! bound of integration. It is taken along the direction pars%d. It
-  ! is explained in the user guide why we use finite differences here.
-  !
-  ! f - integrand
-  ! b - lower or upper bound
-  ! pars - parameters of f
-  ! y - directional derivative
-  real(kp) function dir_deriv_finite(f, b, pars) result(y)
-    interface
-       type(advar) function f(x, pars)
-         import kp, advar
-         real(kp), intent(in) :: x
-         type(advar), intent(in out) :: pars(:)
-       end function f
-    end interface
-    type(advar), intent(in) :: b
-    type(advar), intent(in out) :: pars(:)
-    real(kp) :: saved_values(size(pars))
-    integer :: saved_indices(size(pars))
-    saved_indices = 0
-    call swap(saved_indices, pars%index)
-    saved_values = pars%val
-    y = f(b%val, pars)
-    associate(h => sqrt(epsilon(1.0_kp)))
-      pars%val = pars%val + h*pars%d
-      y = (f(b%val+h*b%d, pars) - y)/h
-    end associate
-    pars%val = saved_values
-    call swap(saved_indices, pars%index)
-  end function dir_deriv_finite
 
   ! Prints the size(s) of the workspace(s) according to what was
   ! requested and actual usage. The results represent maxima over all

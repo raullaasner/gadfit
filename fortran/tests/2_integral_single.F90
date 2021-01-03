@@ -38,7 +38,7 @@ contains
   type(advar) function integral_single_int(x, pars) result(y)
     ! If no extra parameters need to be passed to the integrand,
     ! 'pars' is empty.
-    real(kp), intent(in) :: x
+    type(advar), intent(in) :: x
     type(advar), intent(in out) :: pars(:)
     type(advar) :: a, b ! This is how we define new work variables
     a = pars(1); b = pars(2)
@@ -64,15 +64,15 @@ end module integral_single_m
   call gadf_set_errors(NONE)
   call gadf_set_verbosity(output='/dev/null')
 
-  call gadf_fit(10.0, rel_error=1e-6)
+  call gadf_fit(10.0, accth=0.9, max_iter=6, rel_error=1e-6)
 
   call gadf_print(output='2_integral_single_results')
 
   ! The following is for CTest and can be ignored
   if (this_image() == 1) then
      block
-       real(kp), parameter :: reference_value = 1.923267927408180_kp
-       if (abs(fitfuncs(1)%pars(1)%val - reference_value) > 5e-7_kp) then
+       real(kp), parameter :: reference_value = 7.5549166396989014_kp
+       if (abs(fitfuncs(1)%pars(1)%val - reference_value) > 1e-11_kp) then
           write(*,*)
           write(*,'(g0)') 'Error at 2_integral_single:'
           write(*,'(2(g0))') '  "a" at the end of the fitting procedure: ', &

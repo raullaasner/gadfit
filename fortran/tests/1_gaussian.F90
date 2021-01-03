@@ -48,22 +48,22 @@ end module gaussian_m
   ! the parameter number.
   call gadf_set('fmax', 1.0, .true.)
   ! We impose the constraint that the data is symmetric around zero.
-  call gadf_set('x0', 0.0, .false.)
+  call gadf_set('x0', 1e-12_kp, .false.)
   call gadf_set('a', 1.0, .true.)
   call gadf_set('bgr', 1.0, .true.)
 
   call gadf_set_errors(NONE)
   call gadf_set_verbosity(output='/dev/null')
 
-  call gadf_fit(0.1)
+  call gadf_fit(0.1, accth=0.9, max_iter=4)
 
   call gadf_print(output='1_gaussian_results')
 
   ! The following is for CTest and can be ignored
   if (this_image() == 1) then
      block
-       real(kp), parameter :: reference_value = 37.21457246216242_kp
-       if (abs(fitfuncs(1)%pars(3)%val - reference_value) > 5e-7_kp) then
+       real(kp), parameter :: reference_value = 33.416146356055293_kp
+       if (abs(fitfuncs(1)%pars(3)%val - reference_value) > 1e-14_kp) then
           write(*,*)
           write(*,'(g0)') 'Error at 1_gaussian:'
           write(*,'(2(g0))') '  "a" at the end of the fitting procedure: ', &

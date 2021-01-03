@@ -493,9 +493,7 @@ The general formula for the second derivative, required for the acceleration ter
     p} a(\bm p) + \int_{a(\bm p)}^{b(\bm p)} \nabla_{\bm p}^2 f(\bm p,s)
   \D s,
 \end{multline}
-Equation~\eqref{eq:nabla2_f} might seem formidable, but most terms are actually evaluated with little effort. The only difficulty is with the terms $\nabla_{\bm p} f(\bm p,\xi(\bm p))$, where $\xi$ is one of the bounds. The reason is that the second argument to $f$, which is the function argument, is required to be an ordinary floating point number. In order to calculate the derivative with respect to this variable using AD, it would need to be passed as an AD variable. In principle, this is not an issue, but it comes with a cost. If the interface of $f$ is changed to allow this, then most of the time this would be an unnecessary conversion from real to a passive AD variable, and only for the above mentioned two terms would the argument need to be an active AD variable. This would always incur overhead even if one is not interested in the acceleration term. As a solution, this is the only place where we use finite differences for evaluating the derivative. The error introduced is independent of the error of the numerical integration procedure and the effect on the final result should be negligible. Again, this only applies to the situation where the acceleration term is computed for numerical integration and where one of the integration bounds has a dependence on a fitting parameter.
-
-The above scheme could be generalized to any order, but it is probably not worth going deeper than double integrals since each integration level greatly reduces accuracy. Even double integrals should be avoided if possible.
+The above scheme could be generalized to any order, but it is probably not worth going deeper than double integrals since each integration level greatly reduces accuracy. Even nested double integrals should be avoided if possible.
 
 \section{Building and linking}
 

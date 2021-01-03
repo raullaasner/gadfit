@@ -37,7 +37,8 @@ contains
 
   type(advar) function outer_integrand(x, pars) result(y)
     ! The variable t, as seen in the user guide, is played by x here.
-    real(kp), intent(in) :: x
+    ! real(kp), intent(in) :: x
+    type(advar), intent(in) :: x
     type(advar), intent(in out) :: pars(:)
     ! Local variables are of type(advar). It rarely makes sense to
     ! declare them anything else; type(advar) is always safe.
@@ -51,7 +52,8 @@ contains
   end function outer_integrand
 
   type(advar) function inner_integrand(x, pars) result(y)
-    real(kp), intent(in) :: x
+    ! real(kp), intent(in) :: x
+    type(advar), intent(in) :: x
     type(advar), intent(in out) :: pars(:)
     type(advar) :: tmp
     tmp = pars(1)
@@ -84,15 +86,15 @@ end module integral_double_m
   ! argument.
   call gadf_set_verbosity(output='/dev/null')
 
-  call gadf_fit(0.1, max_iter=3)
+  call gadf_fit(0.1, accth=0.9, max_iter=3)
 
   call gadf_print(output='3_integral_double_results')
 
   ! The following is for CTest and can be ignored
   if (this_image() == 1) then
      block
-       real(kp), parameter :: reference_value = 8.257343615095179_kp
-       if (abs(fitfuncs(1)%pars(1)%val - reference_value) > 5e-7_kp) then
+       real(kp), parameter :: reference_value = 8.5799477799920343_kp
+       if (abs(fitfuncs(1)%pars(1)%val - reference_value) > 1e-9_kp) then
           write(*,*)
           write(*,'(g0)') 'Error at 3_integral_double:'
           write(*,'(2(g0))') '  "a" at the end of the fitting procedure: ', &
