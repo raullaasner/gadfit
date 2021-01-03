@@ -54,8 +54,13 @@ struct Workspace
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 std::vector<Workspace> workspaces {};
 
-auto initIntegration(const int workspace_size, const int n_workspaces) -> void
+auto initIntegration(const int workspace_size,
+                     const int n_workspaces,
+                     const int sweep_size) -> void
 {
+    // AD work arrays need to be resized to accommodate the larger
+    // cost of numerical integration.
+    initializeADReverse(sweep_size);
     gk::roots = std::vector<double> { roots_15p.cbegin(), roots_15p.cend() };
     gk::weights_gauss = std::vector<double> { weights_gauss_7p.cbegin(),
                                               weights_gauss_7p.cend() };

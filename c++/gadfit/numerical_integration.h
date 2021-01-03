@@ -33,12 +33,15 @@ constexpr double default_rel_error { 1e2
                                      * std::numeric_limits<double>::epsilon() };
 constexpr int default_workspace_size { 1000 };
 constexpr int default_n_workspaces { 1 };
+// Characteristic size of AD work arrays when numerical integration is used
+constexpr int default_sweep_size_int { 1'000'000 };
 
 // Initialize the Gauss-Kronrod rules and the work arrays for adaptive
 // integration. The work arrays store things like errors for each
 // subinterval. This is called automatically in 'integrate'.
 auto initIntegration(const int workspace_size = default_workspace_size,
-                     const int n_workspaces = default_n_workspaces) -> void;
+                     const int n_workspaces = default_n_workspaces,
+                     const int sweep_size = default_sweep_size_int) -> void;
 
 // One-dimensional Gauss-Kronrod integration
 auto gaussKronrod(const integrandSignature& function,
