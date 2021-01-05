@@ -256,7 +256,7 @@ TEST_CASE( "Double integral (nested)" )
         solver.setPar(4, 0.2, true);
         solver.setPar(5, 2.1, true);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(0.21322347907024705) );
+        REQUIRE( solver.chi2() == approx(0.21322347907024705, 1e3) );
         REQUIRE( solver.getParValue(0) == approx(15.267560288033625) );
         REQUIRE( solver.getParValue(1) == approx(1.3863816932256614) );
         REQUIRE( solver.getParValue(2) == approx(0.84864756619753778) );
@@ -297,11 +297,11 @@ TEST_CASE( "Double integral (nested)" )
         solver.setPar(5, 2.1, false);
         solver.fit(0.1);
         REQUIRE( solver.chi2() == approx(20529.862144585662) );
-        REQUIRE( solver.getParValue(0) == approx(9.5451264445366082) );
-        REQUIRE( solver.getParValue(1) == approx(1.0509494096733416) );
-        REQUIRE( solver.getParValue(2) == approx(1.4070141491563901) );
+        REQUIRE( solver.getParValue(0) == approx(9.5451264445366082, 1e3) );
+        REQUIRE( solver.getParValue(1) == approx(1.0509494096733416, 1e3) );
+        REQUIRE( solver.getParValue(2) == approx(1.4070141491563901, 1e3) );
         REQUIRE( solver.getParValue(3) == approx(2.2466015973378544) );
-        REQUIRE( solver.getParValue(4) == approx(0.095815584889715602) );
+        REQUIRE( solver.getParValue(4) == approx(0.095815584889715602, 1e4) );
         REQUIRE( solver.getParValue(5) == approx(2.1000000000000001) );
     }
     SECTION( "Active bounds: y1 y2 x2" ) {
@@ -416,7 +416,7 @@ TEST_CASE( "Double integral (nested)" )
         solver.setPar(4, 0.2, true);
         solver.setPar(5, 2.1, true);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(0.54533844279237143) );
+        REQUIRE( solver.chi2() == approx(0.54533844279237143, 1e3) );
         REQUIRE( solver.getParValue(0) == approx(14.51918879971193) );
         REQUIRE( solver.getParValue(1) == approx(1.4018015530359746) );
         REQUIRE( solver.getParValue(2) == approx(0.77040828482222012) );
