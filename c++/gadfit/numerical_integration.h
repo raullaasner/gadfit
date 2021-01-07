@@ -60,7 +60,9 @@ auto kronrod(const integrandSignature& function,
 // Both bounds are ordinary numbers. The values of 'parameters' are
 // copied to an internal work array on the first call. Subsequent
 // calls assume that 'parameters' does not change. Otherwise,
-// resetParameters must be called before the next call to 'integrate'.
+// resetParameters must be called before the next call to
+// 'integrate'. This function contains the main integration algorithm
+// for 1D integration.
 auto integrate(const integrandSignature& function,
                const std::vector<AdVar>& parameters,
                const double lower,
@@ -68,7 +70,9 @@ auto integrate(const integrandSignature& function,
                const double rel_error = default_rel_error,
                const double abs_error = 0.0) -> AdVar;
 
-// Lower bound is an AD number
+// Here lower bound is an AD number. Calls the main integration
+// function and records additional information to the AD execution
+// trace related to the derivative with respect to the lower bound.
 auto integrate(const integrandSignature& function,
                const std::vector<AdVar>& parameters,
                const AdVar& lower,

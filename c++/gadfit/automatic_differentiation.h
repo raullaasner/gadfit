@@ -138,7 +138,6 @@ enum class Op
     erf_a,
     int_lower_bound,
     int_upper_bound,
-    int_both_bounds,
 };
 
 constexpr int default_sweep_size { 1000 };

@@ -965,15 +965,6 @@ auto returnSweep() -> void
               * reverse::constants[reverse::const_count--];
             trace_count -= 3;
             break;
-        case Op::int_both_bounds:
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]]
-              * reverse::constants[reverse::const_count--];
-            adjoints[trace[trace_count - 3]] -=
-              adjoints[trace[trace_count - 1]]
-              * reverse::constants[reverse::const_count--];
-            trace_count -= 4;
-            break;
         default:
             throw UnknownOperationException { trace[trace_count] };
         }

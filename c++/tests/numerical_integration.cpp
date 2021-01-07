@@ -376,7 +376,7 @@ TEST_CASE( "Double integral (nested)" )
         solver.setPar(4, 0.2, true);
         solver.setPar(5, 2.1, true);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(0.54533843744981803) );
+        REQUIRE( solver.chi2() == approx(0.54533843744981803, 1e3) );
         REQUIRE( solver.getParValue(0) == approx(14.519188784964555) );
         REQUIRE( solver.getParValue(1) == approx(1.4018015531760157) );
         REQUIRE( solver.getParValue(2) == approx(0.77040828428310459) );
@@ -877,7 +877,7 @@ TEST_CASE( "Exceptions" )
         return fix_d[1] * integrate(integrand, pars, 0.0, x, 1e-12);
     } };
     gadfit::initIntegration(2);
-    gadfit::LMsolver solver { f, MPI_COMM_WORLD };
+    gadfit::LMsolver solver { f };
     setSolverState(solver);
     try {
         solver.fit(10.0);

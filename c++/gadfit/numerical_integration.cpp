@@ -66,14 +66,6 @@ auto initIntegration(const int workspace_size,
                                               weights_gauss_7p.cend() };
     gk::weights_kronrod = std::vector<double> { weights_kronrod_15p.cbegin(),
                                                 weights_kronrod_15p.cend() };
-    const int kronrod_size { static_cast<int>(gk::weights_kronrod.size()) };
-    gk::weights_kronrod_2D.resize(kronrod_size * kronrod_size);
-    for (int i {}; i < kronrod_size; ++i) {
-        for (int j {}; j < kronrod_size; ++j) {
-            gk::weights_kronrod_2D[i * kronrod_size + j] =
-              gk::weights_kronrod[i] * gk::weights_kronrod[j];
-        }
-    }
     workspaces.resize(n_workspaces);
     for (auto& work : workspaces) {
         work.resize(workspace_size);
@@ -117,10 +109,32 @@ auto kronrod(const integrandSignature& function,
     arg.idx = passive_idx;
     for (int i {}; i < static_cast<int>(gk::roots.size()); ++i) {
         arg.val = scale * gk::roots[i] + shift;
-        const AdVar val { function(parameters, arg) };
-        sum += gk::weights_kronrod[i] * val;
+        sum += gk::weights_kronrod[i] * function(parameters, arg);
     }
     return scale * sum;
+}
+
+// integrand_inactive_parameters is a work array with the same values
+// as 'parameters' but all the indices are inactive. It is used for
+// function evaluation when AD is not required.
+static auto setIntegrandInactiveParameters(const std::vector<AdVar>& parameters)
+  -> void
+{
+    if (workspaces.front().integrand_inactive_parameters.size()
+        < parameters.size()) {
+        workspaces.front().integrand_inactive_parameters.resize(
+          parameters.size());
+        for (auto& par : workspaces.front().integrand_inactive_parameters) {
+            par.idx = passive_idx;
+        }
+    }
+    for (int i {}; i < static_cast<int>(parameters.size()); ++i) {
+        if (workspaces.front().integrand_inactive_parameters[i].val
+            != parameters[i].val) {
+            workspaces.front().integrand_inactive_parameters[i].val =
+              parameters[i].val;
+        }
+    }
 }
 
 auto integrate(const integrandSignature& function,
@@ -187,23 +201,71 @@ auto integrate(const integrandSignature& function,
     throw InsufficientIntegrationWorkspace {};
 }
 
-// integrand_inactive_parameters is a work array with the same values
-// as 'parameters' but all the indices are inactive. It is used for
-// function evaluation when AD is not required.
-static auto setIntegrandInactiveParameters(const std::vector<AdVar>& parameters)
-  -> void
+// This function is called in conjunction with the main integration
+// function. If the lower integration bound is an active AD variable
+// in the reverse mode, it records the relevant information to the AD
+// execution trace. Alternatively, if active in forward mode, compute
+// the first and second derivative of result accordingly.
+static auto traceRecordLower(const integrandSignature& function,
+                             const std::vector<AdVar>& parameters,
+                             const AdVar& lower,
+                             AdVar& result) -> void
 {
-    if (workspaces.front().integrand_inactive_parameters.size()
-        < parameters.size()) {
-        workspaces.front().integrand_inactive_parameters.resize(
-          parameters.size());
-        for (auto& par : workspaces.front().integrand_inactive_parameters) {
-            par.idx = passive_idx;
+    if (lower.idx > passive_idx) {
+        setIntegrandInactiveParameters(parameters);
+        if (result.idx == passive_idx) {
+            result.idx = ++reverse::last_index;
+            reverse::forwards[reverse::last_index] = result.val;
+        }
+        reverse::constants[++reverse::const_count] =
+          function(workspaces.front().integrand_inactive_parameters,
+                   AdVar { lower.val, passive_idx })
+            .val;
+        reverse::trace[++reverse::trace_count] = lower.idx;
+        reverse::trace[++reverse::trace_count] = result.idx;
+        reverse::trace[++reverse::trace_count] =
+          static_cast<int>(Op::int_lower_bound);
+    } else if (lower.idx == forward_active_idx) {
+        const AdVar tmp { function(parameters,
+                                   AdVar { lower.val, passive_idx }) };
+        result.d -= lower.d * tmp.val;
+        result.dd -= lower.dd * tmp.val
+                     + lower.d * (function(parameters, lower).d + tmp.d);
+        if (result.idx == passive_idx) {
+            result.idx = forward_active_idx;
         }
     }
-    for (int i {}; i < static_cast<int>(parameters.size()); ++i) {
-        workspaces.front().integrand_inactive_parameters[i].val =
-          parameters[i].val;
+}
+
+// Same as traceRecordLower but in regards to the upper bound.
+static auto traceRecordUpper(const integrandSignature& function,
+                             const std::vector<AdVar>& parameters,
+                             const AdVar& upper,
+                             AdVar& result) -> void
+{
+    if (upper.idx > passive_idx) {
+        setIntegrandInactiveParameters(parameters);
+        if (result.idx == passive_idx) {
+            result.idx = ++reverse::last_index;
+            reverse::forwards[reverse::last_index] = result.val;
+        }
+        reverse::constants[++reverse::const_count] =
+          function(workspaces.front().integrand_inactive_parameters,
+                   AdVar { upper.val, passive_idx })
+            .val;
+        reverse::trace[++reverse::trace_count] = upper.idx;
+        reverse::trace[++reverse::trace_count] = result.idx;
+        reverse::trace[++reverse::trace_count] =
+          static_cast<int>(Op::int_upper_bound);
+    } else if (upper.idx == forward_active_idx) {
+        const AdVar tmp { function(parameters,
+                                   AdVar { upper.val, passive_idx }) };
+        result.d += upper.d * tmp.val;
+        result.dd += upper.dd * tmp.val
+                     + upper.d * (function(parameters, upper).d + tmp.d);
+        if (result.idx == passive_idx) {
+            result.idx = forward_active_idx;
+        }
     }
 }
 
@@ -216,30 +278,7 @@ auto integrate(const integrandSignature& function,
 {
     AdVar result { integrate(
       function, parameters, lower.val, upper, rel_error, abs_error) };
-    if (lower.idx > passive_idx) {
-        if (result.idx == passive_idx) {
-            result.idx = ++reverse::last_index;
-            reverse::forwards[reverse::last_index] = result.val;
-        }
-        setIntegrandInactiveParameters(parameters);
-        reverse::constants[++reverse::const_count] =
-          function(workspaces.front().integrand_inactive_parameters,
-                   AdVar { lower.val, passive_idx })
-            .val;
-        reverse::trace[++reverse::trace_count] = lower.idx;
-        reverse::trace[++reverse::trace_count] = result.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::int_lower_bound);
-    } else if (lower.idx == forward_active_idx) {
-        const AdVar tmp =
-          function(parameters, AdVar { lower.val, passive_idx });
-        result.d -= lower.d * tmp.val;
-        result.dd -= lower.dd * tmp.val
-                     + lower.d * (function(parameters, lower).d + tmp.d);
-        if (result.idx == passive_idx) {
-            result.idx = forward_active_idx;
-        }
-    }
+    traceRecordLower(function, parameters, lower, result);
     return result;
 }
 
@@ -252,30 +291,7 @@ auto integrate(const integrandSignature& function,
 {
     AdVar result { integrate(
       function, parameters, lower, upper.val, rel_error, abs_error) };
-    if (upper.idx > passive_idx) {
-        if (result.idx == passive_idx) {
-            result.idx = ++reverse::last_index;
-            reverse::forwards[reverse::last_index] = result.val;
-        }
-        setIntegrandInactiveParameters(parameters);
-        reverse::constants[++reverse::const_count] =
-          function(workspaces.front().integrand_inactive_parameters,
-                   AdVar { upper.val, passive_idx })
-            .val;
-        reverse::trace[++reverse::trace_count] = upper.idx;
-        reverse::trace[++reverse::trace_count] = result.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::int_upper_bound);
-    } else if (upper.idx == forward_active_idx) {
-        const AdVar tmp =
-          function(parameters, AdVar { upper.val, passive_idx });
-        result.d += upper.d * tmp.val;
-        result.dd += upper.dd * tmp.val
-                     + upper.d * (function(parameters, upper).d + tmp.d);
-        if (result.idx == passive_idx) {
-            result.idx = forward_active_idx;
-        }
-    }
+    traceRecordUpper(function, parameters, upper, result);
     return result;
 }
 
@@ -286,49 +302,10 @@ auto integrate(const integrandSignature& function,
                const double rel_error,
                const double abs_error) -> AdVar
 {
-    if (lower.idx != passive_idx && upper.idx == passive_idx) {
-        return integrate(
-          function, parameters, lower, upper.val, rel_error, abs_error);
-    } else if (lower.idx == passive_idx && upper.idx != passive_idx) {
-        return integrate(
-          function, parameters, lower.val, upper, rel_error, abs_error);
-    }
     AdVar result { integrate(
       function, parameters, lower.val, upper.val, rel_error, abs_error) };
-    // At this point either both or neither bound is active. Thus,
-    // only need to test one of them.
-    if (lower.idx > passive_idx) {
-        if (result.idx == passive_idx) {
-            result.idx = ++reverse::last_index;
-            reverse::forwards[reverse::last_index] = result.val;
-        }
-        setIntegrandInactiveParameters(parameters);
-        reverse::constants[++reverse::const_count] =
-          function(workspaces.front().integrand_inactive_parameters,
-                   AdVar { lower.val, passive_idx })
-            .val;
-        reverse::constants[++reverse::const_count] =
-          function(workspaces.front().integrand_inactive_parameters,
-                   AdVar { upper.val, passive_idx })
-            .val;
-        reverse::trace[++reverse::trace_count] = lower.idx;
-        reverse::trace[++reverse::trace_count] = upper.idx;
-        reverse::trace[++reverse::trace_count] = result.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::int_both_bounds);
-    } else if (lower.idx == forward_active_idx) {
-        const AdVar tmp_upper { function(parameters,
-                                         AdVar { upper.val, passive_idx }) };
-        const AdVar tmp_lower { function(parameters,
-                                         AdVar { lower.val, passive_idx }) };
-        result.d += upper.d * tmp_upper.val - lower.d * tmp_lower.val;
-        result.dd += upper.dd * tmp_upper.val - lower.dd * tmp_lower.val
-                     + upper.d * (function(parameters, upper).d + tmp_upper.d)
-                     - lower.d * (function(parameters, lower).d + tmp_lower.d);
-        if (result.idx == passive_idx) {
-            result.idx = forward_active_idx;
-        }
-    }
+    traceRecordLower(function, parameters, lower, result);
+    traceRecordUpper(function, parameters, upper, result);
     return result;
 }
 
