@@ -569,19 +569,22 @@ auto LMsolver::printIterationResults(const int i_iteration,
     // Constructs the line that shows the parameter value and other
     // quantities if requested
     const auto parameterLine { [&](const int i_set, const int i_par) {
-        const bool is_active { indices.active.at(i_set).find(i_par)
-                               != indices.active.at(i_set).end() };
+        const auto active_pos { indices.active.at(i_set).find(i_par) };
+        const bool is_active { active_pos != indices.active.at(i_set).cend() };
         std::ostringstream line {};
         line << std::setprecision(std::numeric_limits<double>::digits10)
              << "    Parameter " << i_par << ": "
              << fit_functions.at(i_set).getParValue(i_par);
         if (is_active) {
+            // Parameter index if all inactive parameters were skipped
+            const auto idx { std::distance(indices.active.at(i_set).cbegin(),
+                                           active_pos) };
             if (ioTest(io::delta1)) {
-                line << " (" << delta1.at(indices.jacobian[i_set][i_par])
+                line << " (" << delta1.at(indices.jacobian.at(i_set).at(idx))
                      << ')';
             }
             if (ioTest(io::delta2) && !delta2.empty()) {
-                line << " (" << delta2.at(indices.jacobian[i_set][i_par])
+                line << " (" << delta2.at(indices.jacobian.at(i_set).at(idx))
                      << ')';
             }
         } else {

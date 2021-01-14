@@ -256,7 +256,7 @@ TEST_CASE( "Double integral (nested)" )
         solver.setPar(4, 0.2, true);
         solver.setPar(5, 2.1, true);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(0.2132234848898489) );
+        REQUIRE( solver.chi2() == approx(0.2132234848898489, 1e3) );
         REQUIRE( solver.getParValue(0) == approx(15.26756028671046) );
         REQUIRE( solver.getParValue(1) == approx(1.386381693033272) );
         REQUIRE( solver.getParValue(2) == approx(0.8486475665132621) );
@@ -299,7 +299,7 @@ TEST_CASE( "Double integral (nested)" )
         REQUIRE( solver.chi2() == approx(20529.86214447366) );
         REQUIRE( solver.getParValue(0) == approx(9.54512644882254, 1e3) );
         REQUIRE( solver.getParValue(1) == approx(1.050949410185254, 1e4) );
-        REQUIRE( solver.getParValue(2) == approx(1.407014149357748) );
+        REQUIRE( solver.getParValue(2) == approx(1.407014149357748, 1e3) );
         REQUIRE( solver.getParValue(3) == approx(2.246601597751148, 1e3) );
         REQUIRE( solver.getParValue(4) == approx(0.09581558493185093, 1e4) );
         REQUIRE( solver.getParValue(5) == approx(2.1000000000000001) );
@@ -376,7 +376,7 @@ TEST_CASE( "Double integral (nested)" )
         solver.setPar(4, 0.2, true);
         solver.setPar(5, 2.1, true);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(0.5453384421466564) );
+        REQUIRE( solver.chi2() == approx(0.5453384421466564, 1e3) );
         REQUIRE( solver.getParValue(0) == approx(14.51918880106175) );
         REQUIRE( solver.getParValue(1) == approx(1.40180155304181) );
         REQUIRE( solver.getParValue(2) == approx(0.7704082848128452) );
@@ -416,7 +416,7 @@ TEST_CASE( "Double integral (nested)" )
         solver.setPar(4, 0.2, true);
         solver.setPar(5, 2.1, true);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(0.5453384421466757) );
+        REQUIRE( solver.chi2() == approx(0.5453384421466757, 1e3) );
         REQUIRE( solver.getParValue(0) == approx(14.51918880106178) );
         REQUIRE( solver.getParValue(1) == approx(1.401801553041809) );
         REQUIRE( solver.getParValue(2) == approx(0.7704082848128471) );
@@ -908,7 +908,7 @@ TEST_CASE( "Double integral (direct)" )
         solver.setPar(5, 2.1, true);
         solver.setPar(6, 1.0, true);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(1.654408836391586e-06, 1e7) );
+        REQUIRE( solver.chi2() == approx(1.654408836391586e-06, 1e8) );
         REQUIRE( solver.getParValue(0) == approx(7) );
         REQUIRE( solver.getParValue(1) == approx(1.3) );
         REQUIRE( solver.getParValue(2) == approx(2.066882758206843, 1e4) );
@@ -937,7 +937,7 @@ TEST_CASE( "Double integral (direct)" )
         solver.setPar(5, 2.1, false);
         solver.setPar(6, 1.0, false);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(4.789557944916188e-09) );
+        REQUIRE( solver.chi2() == approx(4.789557944916188e-09, 1e6) );
         REQUIRE( solver.getParValue(0) == approx(9.175204378219606) );
         REQUIRE( solver.getParValue(1) == approx(1.3) );
         REQUIRE( solver.getParValue(2) == approx(1.2) );
@@ -1053,7 +1053,7 @@ TEST_CASE( "Double integral (direct)" )
         solver.setPar(5, 2.1, false);
         solver.setPar(6, 1.0, false);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(6.665229530210581e-09) );
+        REQUIRE( solver.chi2() == approx(6.665229530210581e-09, 1e6) );
         REQUIRE( solver.getParValue(0) == approx(7.66643074044873) );
         REQUIRE( solver.getParValue(1) == approx(1.520366958728734) );
         REQUIRE( solver.getParValue(2) == approx(1.2) );
@@ -1169,7 +1169,7 @@ TEST_CASE( "Double integral (direct)" )
         solver.setPar(5, 2.1, false);
         solver.setPar(6, 1.0, false);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(4.539054719419867e-09) );
+        REQUIRE( solver.chi2() == approx(4.539054719419867e-09, 1e6) );
         REQUIRE( solver.getParValue(0) == approx(9.972875362221904) );
         REQUIRE( solver.getParValue(1) == approx(1.3) );
         REQUIRE( solver.getParValue(2) == approx(1.2) );
@@ -1198,7 +1198,7 @@ TEST_CASE( "Double integral (direct)" )
         solver.setPar(5, 2.1, true);
         solver.setPar(6, 1.0, false);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(5.378351994319598e-08, 1e5) );
+        REQUIRE( solver.chi2() == approx(5.378351994319598e-08, 1e8) );
         REQUIRE( solver.getParValue(0) == approx(9.40548500418182) );
         REQUIRE( solver.getParValue(1) == approx(1.3) );
         REQUIRE( solver.getParValue(2) == approx(1.2) );
