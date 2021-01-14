@@ -256,13 +256,13 @@ TEST_CASE( "Double integral (nested)" )
         solver.setPar(4, 0.2, true);
         solver.setPar(5, 2.1, true);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(0.21322347907024705, 1e3) );
-        REQUIRE( solver.getParValue(0) == approx(15.267560288033625) );
-        REQUIRE( solver.getParValue(1) == approx(1.3863816932256614) );
-        REQUIRE( solver.getParValue(2) == approx(0.84864756619753778) );
-        REQUIRE( solver.getParValue(3) == approx(1.6742467335884419) );
-        REQUIRE( solver.getParValue(4) == approx(0.18857413777419035) );
-        REQUIRE( solver.getParValue(5) == approx(1.9418026197099345) );
+        REQUIRE( solver.chi2() == approx(0.2132234848898489) );
+        REQUIRE( solver.getParValue(0) == approx(15.26756028671046) );
+        REQUIRE( solver.getParValue(1) == approx(1.386381693033272) );
+        REQUIRE( solver.getParValue(2) == approx(0.8486475665132621) );
+        REQUIRE( solver.getParValue(3) == approx(1.674246733588323) );
+        REQUIRE( solver.getParValue(4) == approx(0.1885741381233513) );
+        REQUIRE( solver.getParValue(5) == approx(1.941802620042361) );
     }
     SECTION( "Active bounds: y1 y2 x1" ) {
         const auto integrand_outer { [&](const std::vector<gadfit::AdVar>& pars,
@@ -296,12 +296,12 @@ TEST_CASE( "Double integral (nested)" )
         solver.setPar(4, 0.2, true);
         solver.setPar(5, 2.1, false);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(20529.862144585662) );
-        REQUIRE( solver.getParValue(0) == approx(9.5451264445366082, 1e3) );
-        REQUIRE( solver.getParValue(1) == approx(1.0509494096733416, 1e3) );
-        REQUIRE( solver.getParValue(2) == approx(1.4070141491563901, 1e3) );
-        REQUIRE( solver.getParValue(3) == approx(2.2466015973378544) );
-        REQUIRE( solver.getParValue(4) == approx(0.095815584889715602, 1e4) );
+        REQUIRE( solver.chi2() == approx(20529.86214447366) );
+        REQUIRE( solver.getParValue(0) == approx(9.54512644882254, 1e3) );
+        REQUIRE( solver.getParValue(1) == approx(1.050949410185254, 1e4) );
+        REQUIRE( solver.getParValue(2) == approx(1.407014149357748) );
+        REQUIRE( solver.getParValue(3) == approx(2.246601597751148, 1e3) );
+        REQUIRE( solver.getParValue(4) == approx(0.09581558493185093, 1e4) );
         REQUIRE( solver.getParValue(5) == approx(2.1000000000000001) );
     }
     SECTION( "Active bounds: y1 y2 x2" ) {
@@ -336,13 +336,13 @@ TEST_CASE( "Double integral (nested)" )
         solver.setPar(4, 0.2, true);
         solver.setPar(5, 2.1, true);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(8.5111904781092687) );
-        REQUIRE( solver.getParValue(0) == approx(31.354025346686672) );
-        REQUIRE( solver.getParValue(1) == approx(1.3432353695501853) );
-        REQUIRE( solver.getParValue(2) == approx(0.98808053073566204) );
-        REQUIRE( solver.getParValue(3) == approx(1.9151538799470511) );
-        REQUIRE( solver.getParValue(4) == approx(0.63014716047505859) );
-        REQUIRE( solver.getParValue(5) == approx(2.0414729418746558) );
+        REQUIRE( solver.chi2() == approx(8.511190478331665) );
+        REQUIRE( solver.getParValue(0) == approx(31.35402534977554) );
+        REQUIRE( solver.getParValue(1) == approx(1.343235369539531) );
+        REQUIRE( solver.getParValue(2) == approx(0.9880805307694033) );
+        REQUIRE( solver.getParValue(3) == approx(1.915153879647961) );
+        REQUIRE( solver.getParValue(4) == approx(0.6301471603862133, 1e3) );
+        REQUIRE( solver.getParValue(5) == approx(2.041472941899317) );
     }
     SECTION( "Active bounds: y1 x1 x2" ) {
         const auto integrand_outer { [&](const std::vector<gadfit::AdVar>& pars,
@@ -376,13 +376,13 @@ TEST_CASE( "Double integral (nested)" )
         solver.setPar(4, 0.2, true);
         solver.setPar(5, 2.1, true);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(0.54533843744981803, 1e3) );
-        REQUIRE( solver.getParValue(0) == approx(14.519188784964555) );
-        REQUIRE( solver.getParValue(1) == approx(1.4018015531760157) );
-        REQUIRE( solver.getParValue(2) == approx(0.77040828428310459) );
+        REQUIRE( solver.chi2() == approx(0.5453384421466564) );
+        REQUIRE( solver.getParValue(0) == approx(14.51918880106175) );
+        REQUIRE( solver.getParValue(1) == approx(1.40180155304181) );
+        REQUIRE( solver.getParValue(2) == approx(0.7704082848128452) );
         REQUIRE( solver.getParValue(3) == approx(2) );
-        REQUIRE( solver.getParValue(4) == approx(0.22435256517682181) );
-        REQUIRE( solver.getParValue(5) == approx(1.9119631628520173) );
+        REQUIRE( solver.getParValue(4) == approx(0.2243525656468343) );
+        REQUIRE( solver.getParValue(5) == approx(1.911963163069007) );
     }
     SECTION( "Active bounds: y2 x1 x2" ) {
         const auto integrand_outer { [&](const std::vector<gadfit::AdVar>& pars,
@@ -416,13 +416,13 @@ TEST_CASE( "Double integral (nested)" )
         solver.setPar(4, 0.2, true);
         solver.setPar(5, 2.1, true);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(0.54533844279237143, 1e3) );
-        REQUIRE( solver.getParValue(0) == approx(14.51918879971193) );
-        REQUIRE( solver.getParValue(1) == approx(1.4018015530359746) );
-        REQUIRE( solver.getParValue(2) == approx(0.77040828482222012) );
+        REQUIRE( solver.chi2() == approx(0.5453384421466757) );
+        REQUIRE( solver.getParValue(0) == approx(14.51918880106178) );
+        REQUIRE( solver.getParValue(1) == approx(1.401801553041809) );
+        REQUIRE( solver.getParValue(2) == approx(0.7704082848128471) );
         REQUIRE( solver.getParValue(3) == approx(2) );
-        REQUIRE( solver.getParValue(4) == approx(0.22435256564298342) );
-        REQUIRE( solver.getParValue(5) == approx(1.9119631630806118) );
+        REQUIRE( solver.getParValue(4) == approx(0.2243525656468352) );
+        REQUIRE( solver.getParValue(5) == approx(1.911963163069006) );
     }
     SECTION( "Active bounds: y1 y2" ) {
         const auto integrand_outer { [&](const std::vector<gadfit::AdVar>& pars,
@@ -496,13 +496,13 @@ TEST_CASE( "Double integral (nested)" )
         solver.setPar(4, 0.2, false);
         solver.setPar(5, 2.1, true);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(0.063818114751678021) );
-        REQUIRE( solver.getParValue(0) == approx(15.543190497406581) );
-        REQUIRE( solver.getParValue(1) == approx(1.3376522801060835) );
+        REQUIRE( solver.chi2() == approx(0.06381811471197225, 1e3) );
+        REQUIRE( solver.getParValue(0) == approx(15.54319049642039) );
+        REQUIRE( solver.getParValue(1) == approx(1.337652280082468) );
         REQUIRE( solver.getParValue(2) == approx(1.2) );
         REQUIRE( solver.getParValue(3) == approx(2) );
         REQUIRE( solver.getParValue(4) == approx(0.20000000000000001) );
-        REQUIRE( solver.getParValue(5) == approx(2.0604239148555297) );
+        REQUIRE( solver.getParValue(5) == approx(2.060423914878352) );
     }
     SECTION( "Active bounds: y1 x2" ) {
         const auto integrand_outer { [&](const std::vector<gadfit::AdVar>& pars,
@@ -536,13 +536,13 @@ TEST_CASE( "Double integral (nested)" )
         solver.setPar(4, 0.2, true);
         solver.setPar(5, 2.1, true);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(8.3103844256867898) );
-        REQUIRE( solver.getParValue(0) == approx(31.057028905358738) );
-        REQUIRE( solver.getParValue(1) == approx(1.3374474619525787) );
-        REQUIRE( solver.getParValue(2) == approx(0.9731477156400089) );
+        REQUIRE( solver.chi2() == approx(8.310384425769623) );
+        REQUIRE( solver.getParValue(0) == approx(31.05702890747916) );
+        REQUIRE( solver.getParValue(1) == approx(1.337447461962609) );
+        REQUIRE( solver.getParValue(2) == approx(0.9731477156477512) );
         REQUIRE( solver.getParValue(3) == approx(2) );
-        REQUIRE( solver.getParValue(4) == approx(0.66766007253694248) );
-        REQUIRE( solver.getParValue(5) == approx(2.0424787013200016) );
+        REQUIRE( solver.getParValue(4) == approx(0.6676600724901515) );
+        REQUIRE( solver.getParValue(5) == approx(2.042478701325957) );
     }
     SECTION( "Active bounds: y2 x1" ) {
         const auto integrand_outer { [&](const std::vector<gadfit::AdVar>& pars,
@@ -657,13 +657,13 @@ TEST_CASE( "Double integral (nested)" )
         solver.setPar(4, 0.2, false);
         solver.setPar(5, 2.1, true);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(0.36456834401215527) );
-        REQUIRE( solver.getParValue(0) == approx(13.455498136730942) );
-        REQUIRE( solver.getParValue(1) == approx(1.4080606493533714) );
-        REQUIRE( solver.getParValue(2) == approx(0.75703615932599089) );
+        REQUIRE( solver.chi2() == approx(0.364568344007835) );
+        REQUIRE( solver.getParValue(0) == approx(13.45549813738398) );
+        REQUIRE( solver.getParValue(1) == approx(1.408060649359838) );
+        REQUIRE( solver.getParValue(2) == approx(0.7570361593190074) );
         REQUIRE( solver.getParValue(3) == approx(2) );
         REQUIRE( solver.getParValue(4) == approx(0.20000000000000001) );
-        REQUIRE( solver.getParValue(5) == approx(1.8959804133198128) );
+        REQUIRE( solver.getParValue(5) == approx(1.895980413306825) );
     }
     SECTION( "Active bounds: y1" ) {
         const auto integrand_outer { [&](const std::vector<gadfit::AdVar>& pars,
@@ -697,9 +697,9 @@ TEST_CASE( "Double integral (nested)" )
         solver.setPar(4, 0.2, false);
         solver.setPar(5, 2.1, false);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(33404.970478265212) );
-        REQUIRE( solver.getParValue(0) == approx(18.746116684579437) );
-        REQUIRE( solver.getParValue(1) == approx(3.1273507059264882) );
+        REQUIRE( solver.chi2() == approx(33404.97047827223) );
+        REQUIRE( solver.getParValue(0) == approx(18.74611668464275) );
+        REQUIRE( solver.getParValue(1) == approx(3.12735070583082) );
         REQUIRE( solver.getParValue(2) == approx(1.2) );
         REQUIRE( solver.getParValue(3) == approx(2) );
         REQUIRE( solver.getParValue(4) == approx(0.20000000000000001) );
@@ -737,9 +737,9 @@ TEST_CASE( "Double integral (nested)" )
         solver.setPar(4, 0.2, false);
         solver.setPar(5, 2.1, false);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(33404.970478274736) );
-        REQUIRE( solver.getParValue(0) == approx(18.746116684739075) );
-        REQUIRE( solver.getParValue(1) == approx(3.1273507058426082) );
+        REQUIRE( solver.chi2() == approx(33404.97047827223) );
+        REQUIRE( solver.getParValue(0) == approx(18.74611668464276) );
+        REQUIRE( solver.getParValue(1) == approx(3.127350705830819) );
         REQUIRE( solver.getParValue(2) == approx(1.2) );
         REQUIRE( solver.getParValue(3) == approx(2) );
         REQUIRE( solver.getParValue(4) == approx(0.20000000000000001) );
@@ -817,13 +817,13 @@ TEST_CASE( "Double integral (nested)" )
         solver.setPar(4, 0.2, false);
         solver.setPar(5, 2.1, true);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(20529.868955027843) );
-        REQUIRE( solver.getParValue(0) == approx(80.959894823689893) );
+        REQUIRE( solver.chi2() == approx(20529.86895502715) );
+        REQUIRE( solver.getParValue(0) == approx(80.95989482456348) );
         REQUIRE( solver.getParValue(1) == approx(1.3) );
         REQUIRE( solver.getParValue(2) == approx(1.2) );
         REQUIRE( solver.getParValue(3) == approx(2) );
         REQUIRE( solver.getParValue(4) == approx(0.20000000000000001) );
-        REQUIRE( solver.getParValue(5) == approx(15.632339735341827) );
+        REQUIRE( solver.getParValue(5) == approx(15.63233973598849) );
     }
     SECTION( "No active bounds" ) {
         const auto integrand_outer { [&](const std::vector<gadfit::AdVar>& pars,
@@ -846,7 +846,7 @@ TEST_CASE( "Double integral (nested)" )
             return integrate(integrand_outer,
                              pars2,
                              pars[4] * (pars[1] - pars[2]),
-                             pars[3],
+                             pars[3] / pars[5],
                              1e-5) / x;
         } };
         gadfit::LMsolver solver { f_double, MPI_COMM_WORLD };
@@ -856,9 +856,10 @@ TEST_CASE( "Double integral (nested)" )
         solver.setPar(3, 2.0, false);
         solver.setPar(4, 0.2, false);
         solver.setPar(5, 2.1, false);
+        solver.settings.iteration_limit = 1;
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(1035.6708902846135) );
-        REQUIRE( solver.getParValue(0) == approx(-0.75577153013394582) );
+        REQUIRE( solver.chi2() == approx(158.6361952236741) );
+        REQUIRE( solver.getParValue(0) == approx(24.355838792806) );
         REQUIRE( solver.getParValue(1) == approx(1.3) );
         REQUIRE( solver.getParValue(2) == approx(1.2) );
         REQUIRE( solver.getParValue(3) == approx(2) );
@@ -867,23 +868,549 @@ TEST_CASE( "Double integral (nested)" )
     }
 }
 
+static auto setSolverStateDirect(gadfit::LMsolver& solver) -> void {
+    solver.addDataset(x_data_double, y_data_double_direct);
+    solver.setPar(0, 7.0, true);
+    solver.settings.iteration_limit = 2;
+    solver.settings.acceleration_threshold = 0.9;
+}
+
+// Convergence criterion for the 2D (direct) integrals
+constexpr double integration_tolerance { 1e-7 };
+
+TEST_CASE( "Double integral (direct)" )
+{
+    spdlog::set_level(spdlog::level::off);
+    const auto integrand { [](const std::vector<gadfit::AdVar>& pars,
+                              const gadfit::AdVar& x,
+                              const gadfit::AdVar& y) {
+        const gadfit::AdVar tmp { 1 + pars[0] * pars[1] * erf(y) };
+        return exp(-y) * log((exp(x) - 0.9) * tmp + 1.0) / x;
+    } };
+    const auto f { [&](const std::vector<gadfit::AdVar>& pars,
+                       const double x) {
+        return integrate(integrand,
+                         pars,
+                         pars[4] * (pars[1] - pars[2]),
+                         pars[3] * pars[6],
+                         pars[4] * pars[6],
+                         pars[5] / pars[1],
+                         integration_tolerance) / x;
+    } };
+    SECTION( "Active bounds: y1 y2 x1 x2" ) {
+        gadfit::LMsolver solver { f, MPI_COMM_WORLD };
+        setSolverStateDirect(solver);
+        solver.setPar(0, 7.0, false);
+        solver.setPar(1, 1.3, false);
+        solver.setPar(2, 1.2, true);
+        solver.setPar(3, 2.0, true);
+        solver.setPar(4, 0.2, true);
+        solver.setPar(5, 2.1, true);
+        solver.setPar(6, 1.0, true);
+        solver.fit(0.1);
+        REQUIRE( solver.chi2() == approx(1.654408836391586e-06, 1e7) );
+        REQUIRE( solver.getParValue(0) == approx(7) );
+        REQUIRE( solver.getParValue(1) == approx(1.3) );
+        REQUIRE( solver.getParValue(2) == approx(2.066882758206843, 1e4) );
+        REQUIRE( solver.getParValue(3) == approx(2.462337187903755, 1e4) );
+        REQUIRE( solver.getParValue(4) == approx(0.1286061342451516, 1e4) );
+        REQUIRE( solver.getParValue(5) == approx(2.370219137187704, 1e4) );
+        REQUIRE( solver.getParValue(6) == approx(1.537929298611836, 1e5) );
+    }
+    SECTION( "Active bounds: y1 y2 x1" ) {
+        const auto f { [&](const std::vector<gadfit::AdVar>& pars,
+                           const double x) {
+            return integrate(integrand,
+                             pars,
+                             pars[4] * (pars[1] - pars[2]),
+                             pars[3] * pars[6],
+                             pars[4] * pars[6],
+                             (pars[5] / pars[1]).val,
+                             integration_tolerance) / x;
+        } };
+        gadfit::LMsolver solver { f, MPI_COMM_WORLD };
+        setSolverStateDirect(solver);
+        solver.setPar(1, 1.3, false);
+        solver.setPar(2, 1.2, false);
+        solver.setPar(3, 2.0, true);
+        solver.setPar(4, 0.2, true);
+        solver.setPar(5, 2.1, false);
+        solver.setPar(6, 1.0, false);
+        solver.fit(0.1);
+        REQUIRE( solver.chi2() == approx(4.789557944916188e-09) );
+        REQUIRE( solver.getParValue(0) == approx(9.175204378219606) );
+        REQUIRE( solver.getParValue(1) == approx(1.3) );
+        REQUIRE( solver.getParValue(2) == approx(1.2) );
+        REQUIRE( solver.getParValue(3) == approx(2.516290078703742) );
+        REQUIRE( solver.getParValue(4) == approx(0.1241748579573703) );
+        REQUIRE( solver.getParValue(5) == approx(2.1) );
+        REQUIRE( solver.getParValue(6) == approx(1) );
+    }
+    SECTION( "Active bounds: y1 y2 x2" ) {
+        const auto f { [&](const std::vector<gadfit::AdVar>& pars,
+                           const double x) {
+            return integrate(integrand,
+                             pars,
+                             pars[4] * (pars[1] - pars[2]),
+                             pars[3] * pars[6],
+                             (pars[4] * pars[6]).val,
+                             pars[5] / pars[1],
+                             integration_tolerance) / x;
+        } };
+        gadfit::LMsolver solver { f, MPI_COMM_WORLD };
+        setSolverStateDirect(solver);
+        solver.setPar(1, 1.3, true);
+        solver.setPar(2, 1.2, false);
+        solver.setPar(3, 2.0, true);
+        solver.setPar(4, 0.2, false);
+        solver.setPar(5, 2.1, true);
+        solver.setPar(6, 1.0, false);
+        solver.fit(0.1);
+        REQUIRE( solver.chi2() == approx(8.089281781673563e-09, 1e9) );
+        REQUIRE( solver.getParValue(0) == approx(8.65075381982302, 1e4) );
+        REQUIRE( solver.getParValue(1) == approx(1.12784211406605, 1e3) );
+        REQUIRE( solver.getParValue(2) == approx(1.2) );
+        REQUIRE( solver.getParValue(3) == approx(2.391312133726172, 1e4) );
+        REQUIRE( solver.getParValue(4) == approx(0.2) );
+        REQUIRE( solver.getParValue(5) == approx(2.307754231404975, 1e3) );
+        REQUIRE( solver.getParValue(6) == approx(1) );
+    }
+    SECTION( "Active bounds: y1 x1 x2" ) {
+        const auto f { [&](const std::vector<gadfit::AdVar>& pars,
+                           const double x) {
+            return integrate(integrand,
+                             pars,
+                             pars[4] * (pars[1] - pars[2]),
+                             (pars[3] * pars[6]).val,
+                             pars[4] * pars[6],
+                             pars[5] / pars[1],
+                             integration_tolerance) / x;
+        } };
+        gadfit::LMsolver solver { f, MPI_COMM_WORLD };
+        setSolverStateDirect(solver);
+        solver.setPar(1, 1.3, true);
+        solver.setPar(2, 1.2, false);
+        solver.setPar(3, 2.0, false);
+        solver.setPar(4, 0.2, true);
+        solver.setPar(5, 2.1, true);
+        solver.setPar(6, 1.0, false);
+        solver.fit(0.1);
+        REQUIRE( solver.chi2() == approx(7.948949141467101e-09, 1e8) );
+        REQUIRE( solver.getParValue(0) == approx(8.6232172479134, 1e4) );
+        REQUIRE( solver.getParValue(1) == approx(1.129991818462001, 1e3) );
+        REQUIRE( solver.getParValue(2) == approx(1.2) );
+        REQUIRE( solver.getParValue(3) == approx(2) );
+        REQUIRE( solver.getParValue(4) == approx(0.1432926201689035, 1e4) );
+        REQUIRE( solver.getParValue(5) == approx(2.304776756562628, 1e3) );
+        REQUIRE( solver.getParValue(6) == approx(1) );
+    }
+    SECTION( "Active bounds: y2 x1 x2" ) {
+        const auto f { [&](const std::vector<gadfit::AdVar>& pars,
+                           const double x) {
+            return integrate(integrand,
+                             pars,
+                             (pars[4] * (pars[1] - pars[2])).val,
+                             pars[3] * pars[6],
+                             pars[4] * pars[6],
+                             pars[5] / pars[1],
+                             integration_tolerance) / x;
+        } };
+        gadfit::LMsolver solver { f, MPI_COMM_WORLD };
+        setSolverStateDirect(solver);
+        solver.setPar(1, 1.3, false);
+        solver.setPar(2, 1.2, false);
+        solver.setPar(3, 2.0, true);
+        solver.setPar(4, 0.2, false);
+        solver.setPar(5, 2.1, true);
+        solver.setPar(6, 1.0, true);
+        solver.fit(0.1);
+        REQUIRE( solver.chi2() == approx(0.0002133518972430697, 1e4) );
+        REQUIRE( solver.getParValue(0) == approx(9.671381025316821) );
+        REQUIRE( solver.getParValue(1) == approx(1.3) );
+        REQUIRE( solver.getParValue(2) == approx(1.2) );
+        REQUIRE( solver.getParValue(3) == approx(2.471195528937655) );
+        REQUIRE( solver.getParValue(4) == approx(0.2) );
+        REQUIRE( solver.getParValue(5) == approx(2.436352525792008) );
+        REQUIRE( solver.getParValue(6) == approx(1.282878780376695) );
+    }
+    SECTION( "Active bounds: y1 y2" ) {
+        const auto f { [&](const std::vector<gadfit::AdVar>& pars,
+                           const double x) {
+            return integrate(integrand,
+                             pars,
+                             pars[4] * (pars[1] - pars[2]),
+                             pars[3] * pars[6],
+                             (pars[4] * pars[6]).val,
+                             pars[5].val,
+                             integration_tolerance) / x;
+        } };
+        gadfit::LMsolver solver { f, MPI_COMM_WORLD };
+        setSolverStateDirect(solver);
+        solver.setPar(1, 1.3, true);
+        solver.setPar(2, 1.2, false);
+        solver.setPar(3, 2.0, true);
+        solver.setPar(4, 0.2, false);
+        solver.setPar(5, 2.1, false);
+        solver.setPar(6, 1.0, false);
+        solver.fit(0.1);
+        REQUIRE( solver.chi2() == approx(6.665229530210581e-09) );
+        REQUIRE( solver.getParValue(0) == approx(7.66643074044873) );
+        REQUIRE( solver.getParValue(1) == approx(1.520366958728734) );
+        REQUIRE( solver.getParValue(2) == approx(1.2) );
+        REQUIRE( solver.getParValue(3) == approx(2.149840331428628) );
+        REQUIRE( solver.getParValue(4) == approx(0.2) );
+        REQUIRE( solver.getParValue(5) == approx(2.1) );
+        REQUIRE( solver.getParValue(6) == approx(1) );
+    }
+    SECTION( "Active bounds: x1 x2" ) {
+        const auto f { [&](const std::vector<gadfit::AdVar>& pars,
+                           const double x) {
+            return integrate(integrand,
+                             pars,
+                             (pars[1] - pars[2]).val,
+                             (pars[3] * pars[6]).val,
+                             pars[4] * pars[6],
+                             pars[5] / pars[1],
+                             integration_tolerance) / x;
+        } };
+        gadfit::LMsolver solver { f, MPI_COMM_WORLD };
+        setSolverStateDirect(solver);
+        solver.setPar(1, 1.3, false);
+        solver.setPar(2, 1.2, false);
+        solver.setPar(3, 2.0, false);
+        solver.setPar(4, 0.2, true);
+        solver.setPar(5, 2.1, true);
+        solver.setPar(6, 1.0, false);
+        solver.fit(0.1);
+        REQUIRE( solver.chi2() == approx(1.055552450975446e-08) );
+        REQUIRE( solver.getParValue(0) == approx(9.45619615764357) );
+        REQUIRE( solver.getParValue(1) == approx(1.3) );
+        REQUIRE( solver.getParValue(2) == approx(1.2) );
+        REQUIRE( solver.getParValue(3) == approx(2) );
+        REQUIRE( solver.getParValue(4) == approx(0.1108266932800704) );
+        REQUIRE( solver.getParValue(5) == approx(2.419211644009542) );
+        REQUIRE( solver.getParValue(6) == approx(1) );
+    }
+    SECTION( "Active bounds: y1 x2" ) {
+        const auto f { [&](const std::vector<gadfit::AdVar>& pars,
+                           const double x) {
+            return integrate(integrand,
+                             pars,
+                             pars[4] * (pars[1] - pars[2]),
+                             (pars[3] * pars[6]).val,
+                             (pars[4] * pars[6]).val,
+                             pars[5] / pars[1],
+                             integration_tolerance) / x;
+        } };
+        gadfit::LMsolver solver { f, MPI_COMM_WORLD };
+        setSolverStateDirect(solver);
+        solver.setPar(1, 1.3, true);
+        solver.setPar(2, 1.2, false);
+        solver.setPar(3, 2.0, false);
+        solver.setPar(4, 0.2, false);
+        solver.setPar(5, 2.1, true);
+        solver.setPar(6, 1.0, false);
+        solver.fit(0.1);
+        REQUIRE( solver.chi2() == approx(1.837955799624567e-08, 1e9) );
+        REQUIRE( solver.getParValue(0) == approx(9.133671488841946) );
+        REQUIRE( solver.getParValue(1) == approx(1.07743469753068) );
+        REQUIRE( solver.getParValue(2) == approx(1.2) );
+        REQUIRE( solver.getParValue(3) == approx(2) );
+        REQUIRE( solver.getParValue(4) == approx(0.2) );
+        REQUIRE( solver.getParValue(5) == approx(2.369246895709936) );
+        REQUIRE( solver.getParValue(6) == approx(1) );
+    }
+    SECTION( "Active bounds: y2 x1" ) {
+        const auto f { [&](const std::vector<gadfit::AdVar>& pars,
+                           const double x) {
+            return integrate(integrand,
+                             pars,
+                             (pars[4] * (pars[1] - pars[2])).val,
+                             pars[3],
+                             pars[4] * pars[6],
+                             (pars[5] / pars[1]).val,
+                             integration_tolerance) / x;
+        } };
+        gadfit::LMsolver solver { f, MPI_COMM_WORLD };
+        setSolverStateDirect(solver);
+        solver.setPar(1, 1.3, false);
+        solver.setPar(2, 1.2, false);
+        solver.setPar(3, 2.0, true);
+        solver.setPar(4, 0.2, false);
+        solver.setPar(5, 2.1, false);
+        solver.setPar(6, 1.0, true);
+        solver.fit(0.1);
+        REQUIRE( solver.chi2() == approx(3.85525275809486e-09) );
+        REQUIRE( solver.getParValue(0) == approx(9.161295650686158) );
+        REQUIRE( solver.getParValue(1) == approx(1.3) );
+        REQUIRE( solver.getParValue(2) == approx(1.2) );
+        REQUIRE( solver.getParValue(3) == approx(2.513226840732331) );
+        REQUIRE( solver.getParValue(4) == approx(0.2) );
+        REQUIRE( solver.getParValue(5) == approx(2.1) );
+        REQUIRE( solver.getParValue(6) == approx(0.6086752417881788) );
+    }
+    SECTION( "Active bounds: y1 x1" ) {
+        const auto f { [&](const std::vector<gadfit::AdVar>& pars,
+                           const double x) {
+            return integrate(integrand,
+                             pars,
+                             pars[4] * (pars[1] - pars[2]),
+                             (pars[3] * pars[6]).val,
+                             pars[4] * pars[6],
+                             (pars[5] / pars[1]).val,
+                             integration_tolerance) / x;
+        } };
+        gadfit::LMsolver solver { f, MPI_COMM_WORLD };
+        setSolverStateDirect(solver);
+        solver.setPar(1, 1.3, false);
+        solver.setPar(2, 1.2, false);
+        solver.setPar(3, 2.0, false);
+        solver.setPar(4, 0.2, true);
+        solver.setPar(5, 2.1, false);
+        solver.setPar(6, 1.0, false);
+        solver.fit(0.1);
+        REQUIRE( solver.chi2() == approx(4.539054719419867e-09) );
+        REQUIRE( solver.getParValue(0) == approx(9.972875362221904) );
+        REQUIRE( solver.getParValue(1) == approx(1.3) );
+        REQUIRE( solver.getParValue(2) == approx(1.2) );
+        REQUIRE( solver.getParValue(3) == approx(2) );
+        REQUIRE( solver.getParValue(4) == approx(0.09633003574503578) );
+        REQUIRE( solver.getParValue(5) == approx(2.1) );
+        REQUIRE( solver.getParValue(6) == approx(1) );
+    }
+    SECTION( "Active bounds: y2 x2" ) {
+        const auto f { [&](const std::vector<gadfit::AdVar>& pars,
+                           const double x) {
+            return integrate(integrand,
+                             pars,
+                             (pars[4] * (pars[1] - pars[2])).val,
+                             pars[3] * pars[6],
+                             (pars[4] * pars[6]).val,
+                             pars[5] / pars[1],
+                             integration_tolerance) / x;
+        } };
+        gadfit::LMsolver solver { f, MPI_COMM_WORLD };
+        setSolverStateDirect(solver);
+        solver.setPar(1, 1.3, false);
+        solver.setPar(2, 1.2, false);
+        solver.setPar(3, 2.0, true);
+        solver.setPar(4, 0.2, false);
+        solver.setPar(5, 2.1, true);
+        solver.setPar(6, 1.0, false);
+        solver.fit(0.1);
+        REQUIRE( solver.chi2() == approx(5.378351994319598e-08, 1e5) );
+        REQUIRE( solver.getParValue(0) == approx(9.40548500418182) );
+        REQUIRE( solver.getParValue(1) == approx(1.3) );
+        REQUIRE( solver.getParValue(2) == approx(1.2) );
+        REQUIRE( solver.getParValue(3) == approx(2.566159777315758) );
+        REQUIRE( solver.getParValue(4) == approx(0.2) );
+        REQUIRE( solver.getParValue(5) == approx(2.403368494537303) );
+        REQUIRE( solver.getParValue(6) == approx(1) );
+    }
+    SECTION( "Active bounds: y1" ) {
+        const auto f { [&](const std::vector<gadfit::AdVar>& pars,
+                           const double x) {
+            return integrate(integrand,
+                             pars,
+                             pars[4] * (pars[1] - pars[2]),
+                             (pars[3] * pars[6]).val,
+                             (pars[4] * pars[6]).val,
+                             pars[5].val,
+                             integration_tolerance) / x;
+        } };
+        gadfit::LMsolver solver { f, MPI_COMM_WORLD };
+        setSolverStateDirect(solver);
+        solver.setPar(1, 1.3, true);
+        solver.setPar(2, 1.2, false);
+        solver.setPar(3, 2.0, false);
+        solver.setPar(4, 0.2, false);
+        solver.setPar(5, 2.1, false);
+        solver.setPar(6, 1.0, false);
+        solver.fit(0.1);
+        REQUIRE( solver.chi2() == approx(1.44377272556494e-07) );
+        REQUIRE( solver.getParValue(0) == approx(8.13832629325684) );
+        REQUIRE( solver.getParValue(1) == approx(1.657624243151093) );
+        REQUIRE( solver.getParValue(2) == approx(1.2) );
+        REQUIRE( solver.getParValue(3) == approx(2) );
+        REQUIRE( solver.getParValue(4) == approx(0.2) );
+        REQUIRE( solver.getParValue(5) == approx(2.1) );
+        REQUIRE( solver.getParValue(6) == approx(1) );
+    }
+    SECTION( "Active bounds: y2" ) {
+        const auto f { [&](const std::vector<gadfit::AdVar>& pars,
+                           const double x) {
+            return integrate(integrand,
+                             pars,
+                             (pars[4] * (pars[1] - pars[2])).val,
+                             pars[3] * pars[6],
+                             (pars[4] * pars[6]).val,
+                             (pars[5] / pars[1]).val,
+                             integration_tolerance) / x;
+        } };
+        gadfit::LMsolver solver { f, MPI_COMM_WORLD };
+        setSolverStateDirect(solver);
+        solver.setPar(0, 7.0, false);
+        solver.setPar(1, 1.3, false);
+        solver.setPar(2, 1.2, false);
+        solver.setPar(3, 2.0, true);
+        solver.setPar(4, 0.2, false);
+        solver.setPar(5, 2.1, false);
+        solver.setPar(6, 1.0, false);
+        solver.fit(0.1);
+        REQUIRE( solver.chi2() == approx(0.3053679099467725) );
+        REQUIRE( solver.getParValue(0) == approx(7) );
+        REQUIRE( solver.getParValue(1) == approx(1.3) );
+        REQUIRE( solver.getParValue(2) == approx(1.2) );
+        REQUIRE( solver.getParValue(3) == approx(6.663707133578559) );
+        REQUIRE( solver.getParValue(4) == approx(0.2) );
+        REQUIRE( solver.getParValue(5) == approx(2.1) );
+        REQUIRE( solver.getParValue(6) == approx(1) );
+    }
+    SECTION( "Active bounds: x1" ) {
+        const auto f { [&](const std::vector<gadfit::AdVar>& pars,
+                           const double x) {
+            return integrate(integrand,
+                             pars,
+                             (pars[1] - pars[2]).val,
+                             (pars[3] * pars[6]).val,
+                             pars[4] * pars[6],
+                             (pars[5] / pars[1]).val,
+                             integration_tolerance) / x;
+        } };
+        gadfit::LMsolver solver { f, MPI_COMM_WORLD };
+        setSolverStateDirect(solver);
+        solver.setPar(0, 7.0, false);
+        solver.setPar(1, 1.3, false);
+        solver.setPar(2, 1.2, false);
+        solver.setPar(3, 2.0, false);
+        solver.setPar(4, 0.2, true);
+        solver.setPar(5, 2.1, false);
+        solver.setPar(6, 1.0, false);
+        solver.fit(0.1);
+        REQUIRE( solver.chi2() == approx(7.119223309181207e-07) );
+        REQUIRE( solver.getParValue(0) == approx(7) );
+        REQUIRE( solver.getParValue(1) == approx(1.3) );
+        REQUIRE( solver.getParValue(2) == approx(1.2) );
+        REQUIRE( solver.getParValue(3) == approx(2) );
+        REQUIRE( solver.getParValue(4) == approx(0.02430156104375773) );
+        REQUIRE( solver.getParValue(5) == approx(2.1) );
+        REQUIRE( solver.getParValue(6) == approx(1) );
+    }
+    SECTION( "Active bounds: x2" ) {
+        const auto f { [&](const std::vector<gadfit::AdVar>& pars,
+                           const double x) {
+            return integrate(integrand,
+                             pars,
+                             (pars[4] * (pars[1] - pars[2])).val,
+                             (pars[3] * pars[6]).val,
+                             (pars[4] * pars[6]).val,
+                             pars[5] / pars[1],
+                             integration_tolerance) / x;
+        } };
+        gadfit::LMsolver solver { f, MPI_COMM_WORLD };
+        setSolverStateDirect(solver);
+        solver.setPar(0, 7.0, false);
+        solver.setPar(1, 1.3, false);
+        solver.setPar(2, 1.2, false);
+        solver.setPar(3, 2.0, false);
+        solver.setPar(4, 0.2, false);
+        solver.setPar(5, 2.1, true);
+        solver.setPar(6, 1.0, false);
+        solver.fit(0.1);
+        REQUIRE( solver.chi2() == approx(2.851421257605273e-06) );
+        REQUIRE( solver.getParValue(0) == approx(7) );
+        REQUIRE( solver.getParValue(1) == approx(1.3) );
+        REQUIRE( solver.getParValue(2) == approx(1.2) );
+        REQUIRE( solver.getParValue(3) == approx(2) );
+        REQUIRE( solver.getParValue(4) == approx(0.2) );
+        REQUIRE( solver.getParValue(5) == approx(3.034543663944978) );
+        REQUIRE( solver.getParValue(6) == approx(1) );
+    }
+    SECTION( "No active bounds" ) {
+        const auto f { [&](const std::vector<gadfit::AdVar>& pars,
+                           const double x) {
+            return integrate(integrand,
+                             pars,
+                             pars[4] * (pars[1] - pars[2]),
+                             pars[3] * pars[6],
+                             pars[4] * pars[6],
+                             pars[5] / pars[1],
+                             integration_tolerance) / x;
+        } };
+        gadfit::LMsolver solver { f, MPI_COMM_WORLD };
+        setSolverStateDirect(solver);
+        solver.setPar(1, 1.3, false);
+        solver.setPar(2, 1.2, false);
+        solver.setPar(3, 2.0, false);
+        solver.setPar(4, 0.2, false);
+        solver.setPar(5, 2.1, false);
+        solver.setPar(6, 1.0, false);
+        solver.fit(0.1);
+        REQUIRE( solver.chi2() == approx(4.090863439323005e-05) );
+        REQUIRE( solver.getParValue(0) == approx(16.70423678510393) );
+        REQUIRE( solver.getParValue(1) == approx(1.3) );
+        REQUIRE( solver.getParValue(2) == approx(1.2) );
+        REQUIRE( solver.getParValue(3) == approx(2) );
+        REQUIRE( solver.getParValue(4) == approx(0.2) );
+        REQUIRE( solver.getParValue(5) == approx(2.1) );
+        REQUIRE( solver.getParValue(6) == approx(1) );
+    }
+}
+
 TEST_CASE( "Exceptions" )
 {
-    const auto integrand { [](const std::vector<gadfit::AdVar>& pars,
-                              const gadfit::AdVar& x) {
-        return pow(x, pars[0]) * exp(-pars[1] * x * x);
-    } };
-    const auto f { [&](const std::vector<gadfit::AdVar>& pars, const double x) {
-        return fix_d[1] * integrate(integrand, pars, 0.0, x, 1e-12);
-    } };
-    gadfit::initIntegration(2);
-    gadfit::LMsolver solver { f };
-    setSolverState(solver);
-    try {
-        solver.fit(10.0);
-        REQUIRE( 1 == 0 );
-    } catch (const gadfit::InsufficientIntegrationWorkspace& e) {
-        e.what();
-        REQUIRE( 0 == 0 );
+    SECTION( "Single integral" ) {
+        const auto integrand { [](const std::vector<gadfit::AdVar>& pars,
+                                  const gadfit::AdVar& x) {
+            return pow(x, pars[0]) * exp(-pars[1] * x * x);
+        } };
+        const auto f { [&](const std::vector<gadfit::AdVar>& pars,
+                           const double x) {
+            return fix_d[1] * integrate(integrand, pars, 0.0, x, 1e-12);
+        } };
+        gadfit::initIntegration(2);
+        gadfit::LMsolver solver { f };
+        setSolverState(solver);
+        try {
+            solver.fit(10.0);
+            REQUIRE( 1 == 0 );
+        } catch (const gadfit::InsufficientIntegrationWorkspace& e) {
+            e.what();
+            REQUIRE( 0 == 0 );
+        }
+    }
+    SECTION( "Double integral (direct)" ) {
+        const auto integrand { [](const std::vector<gadfit::AdVar>& pars,
+                                  const gadfit::AdVar& x,
+                                  const gadfit::AdVar& y) {
+            const gadfit::AdVar tmp { 1 + pars[0] * pars[1] * erf(y) };
+            return exp(-y) * log((exp(x) - 0.9) * tmp + 1.0) / x;
+        } };
+        const auto f { [&](const std::vector<gadfit::AdVar>& pars,
+                           const double x) {
+            return integrate(integrand,
+                             pars,
+                             pars[4] * (pars[1] - pars[2]),
+                             pars[3] * pars[6],
+                             pars[4] * pars[6],
+                             pars[5] / pars[1],
+                             integration_tolerance) / x;
+        } };
+        gadfit::initIntegration(2);
+        gadfit::LMsolver solver { f, MPI_COMM_WORLD };
+        setSolverStateDirect(solver);
+        solver.setPar(1, 1.3, true);
+        solver.setPar(2, 1.2, true);
+        solver.setPar(3, 2.0, true);
+        solver.setPar(4, 0.2, true);
+        solver.setPar(5, 2.1, true);
+        solver.setPar(6, 1.0, true);
+        try {
+            solver.fit(0.1);
+            REQUIRE( 1 == 0 );
+        } catch (const gadfit::InsufficientIntegrationWorkspace& e) {
+            e.what();
+            REQUIRE( 0 == 0 );
+        }
     }
 }

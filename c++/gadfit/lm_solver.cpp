@@ -328,8 +328,6 @@ auto LMsolver::computeLeftHandSide(const double lambda,
             fit_functions.at(i_set).activateParReverse(idx, ++cur_idx);
             addADSeed(fit_functions.at(i_set).par(idx));
         }
-        // This does nothing if numerical integration is not used
-        resetIntegrandParameters();
         for (int i_point { indices.data_ranges.at(i_set).front() };
              i_point <= indices.data_ranges.at(i_set).back();
              ++i_point) {

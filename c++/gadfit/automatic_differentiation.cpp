@@ -953,13 +953,7 @@ auto returnSweep() -> void
             // clang-format on
             trace_count -= 3;
             break;
-        case Op::int_lower_bound:
-            adjoints[trace[trace_count - 2]] -=
-              adjoints[trace[trace_count - 1]]
-              * reverse::constants[reverse::const_count--];
-            trace_count -= 3;
-            break;
-        case Op::int_upper_bound:
+        case Op::integration_bound:
             adjoints[trace[trace_count - 2]] +=
               adjoints[trace[trace_count - 1]]
               * reverse::constants[reverse::const_count--];

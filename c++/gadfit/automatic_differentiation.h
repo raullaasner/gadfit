@@ -136,8 +136,7 @@ enum class Op
     acosh_a,
     atanh_a,
     erf_a,
-    int_lower_bound,
-    int_upper_bound,
+    integration_bound,
 };
 
 constexpr int default_sweep_size { 1000 };
