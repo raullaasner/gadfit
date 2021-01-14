@@ -11,7 +11,7 @@
 % limitations under the License.
 
 \documentclass{article}
-\def\version{1.3}
+\def\version{1.4}
 
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -463,26 +463,24 @@ where $x_i$ is either an AD variable, a real number of single/double/quadruple p
 GADfit supports fitting functions containing bounded, semi-infinite, and infinite integrals. Numerical integration is performed using the adaptive Gauss-Kronrod algorithm. Default is the 15-point rule; also available are 21, 31, 41, 51, and 61 point rules. The integration interval is divided into subintervals, and on each iteration the subinterval with the largest error is processed. This is similar to what \texttt{QUADPACK} does except without the epsilon algorithm. During this procedure, AD is temporarily switched off by making all variables passive. When the integration procedure has converged with the desired accuracy, AD is switched on and the integral is computed once more with an optimal set of subintervals. Note that the optimal set of subintervals satisfies the error tolerances of the original integral, not necessarily the integral over the derivative of the integrand. One might suppose then that the procedure needs to be performed separately for each parameter, presumably using the forward mode of AD, yielding a unique set of subintervals for each parameter. Strictly speaking though, the derivative is required for the approximation
 \begin{equation}
   \label{eq:quadrature}
-  F(x) = \int_A^B f(x,t) \D t \approx \sum_j \frac{b_j-a_j}{2}\sum_i
-  w_{i,j} f \left( x, \frac{b_j-a_j}{2}\xi_{i,j} + \frac{a_j+b_j}{2}
+  F(\bm p) = \int_A^B f(\bm p,x) \D x \approx \sum_j \frac{b_j-a_j}{2}\sum_i
+  w_{i,j} f \left( \bm p, \frac{b_j-a_j}{2}\xi_{i,j} + \frac{a_j+b_j}{2}
   \right),
 \end{equation}
-where $a_j$ and $b_j$ are the bounds of each subinterval, $w_{i,j}$ are the Gauss-Kronrod weights, and $\xi_{i,j}$ are the roots of the Legendre polynomials. Since it is Eq.~\eqref{eq:quadrature} that is the fitting function (or part of it) and not the exact integral, differentiation should be performed using the same approximate form instead of finding a more accurate approximation for the integral over the derivative of $f$ by using a different set of subintervals.
+where $a_j$ and $b_j$ are the bounds of each subinterval, $w_{i,j}$ are the Gauss-Kronrod weights, and $\xi_{i,j}$ are the roots of the Legendre polynomials. Here, for brevity, $\bm p$ includes both the fitting parameters and optionally the independent variables [$x_i$ in Eq.~\eqref{eq:chi2}]. Since it is Eq.~\eqref{eq:quadrature} that is the fitting function (or part of it) and not the exact integral, differentiation should be performed using the same approximate form instead of finding a more accurate approximation for the integral over the derivative of $f$ by using a different set of subintervals.
 
 The dependence on one or more fitting parameters can be in the integrand and/or one or both bounds. The general formula for the gradient is
 \begin{multline}
-  \label{eq:grad_f}
-  \nabla_{\bm p} \int_{a(\bm p)}^{b(\bm p)} f(\bm p, s) \D s \\
+  \nabla_{\bm p} \int_{a(\bm p)}^{b(\bm p)} f(\bm p, x) \D x \\
   = f(\bm p, b(\bm p)) \nabla_{\bm p} b(\bm p) - f(\bm p, a(\bm p))
   \nabla_{\bm p} a(\bm p) + \int_{a(\bm p)}^{b(\bm p)} \nabla_{\bm p}
-  f(\bm p, s) \D s,
+  f(\bm p, x) \D x,
 \end{multline}
 where $\bm p$ is the fitting parameter vector.
 
 The general formula for the second derivative, required for the acceleration term, is
 \begin{multline}
-  \label{eq:nabla2_f}
-  \nabla_{\bm p}^2 \int_{a(\bm p)}^{b(\bm p)} f(\bm p,s) \D s = f(\bm
+  \nabla_{\bm p}^2 \int_{a(\bm p)}^{b(\bm p)} f(\bm p,x) \D x = f(\bm
   p,b(\bm p)) \nabla_{\bm p}^2 b(\bm p) - f(\bm p,a(\bm p))
   \nabla_{\bm p}^2 a(\bm p) \\
   + \left[ \nabla_{\bm p} f(\bm p,b(\bm p)) + \left. \nabla_{\bm\chi}
@@ -490,10 +488,52 @@ The general formula for the second derivative, required for the acceleration ter
     p} b(\bm p) \\
   - \left[ \nabla_{\bm p} f(\bm p,a(\bm p)) + \left. \nabla_{\bm\chi}
       f(\bm\chi,a(\bm p)) \right|_{\bm\chi=\bm p} \right] \nabla_{\bm
-    p} a(\bm p) + \int_{a(\bm p)}^{b(\bm p)} \nabla_{\bm p}^2 f(\bm p,s)
-  \D s,
+    p} a(\bm p) + \int_{a(\bm p)}^{b(\bm p)} \nabla_{\bm p}^2 f(\bm p,x)
+  \D x,
 \end{multline}
 The above scheme could be generalized to any order, but it is probably not worth going deeper than double integrals since each integration level greatly reduces accuracy. Even nested double integrals should be avoided if possible.
+
+We also support direct double integrals with the 2D quadrature given as
+\begin{multline}
+  F(\bm p) = \int_{y_1(\bm p)}^{y_2(\bm p)}\int_{x_1(\bm p)}^{x_2(\bm p)} f(\bm p, x, y) \D x \D y \\
+  \approx \sum_j \frac{x_{2j}-x_{1j}}{2}\frac{y_{2j}-y_{1j}}{2} \sum_i w_{i,j}^{2D} \\
+  \times f \left( \bm p, \frac{x_{2j}-x_{1j}}{2}\xi_{i,j} + \frac{x_{2j}+x_{1j}}{2}, \frac{y_{2j}-y_{1j}}{2}\xi_{i,j} + \frac{y_{2j}+y_{1j}}{2} \right),
+\end{multline}
+where $w_{i,j}^{2D}$ are products of the 1D weights. The general formula for the gradient is
+\begin{equation}
+  \begin{split}
+    & \bm\nabla_{\bm p} \int_{y_1(\bm p)}^{y_2(\bm p)}\int_{x_1(\bm p)}^{x_2(\bm p)} f(\bm p, x, y) \,\mathrm{d}x\,\mathrm{d}y \\
+    =& \left[ \bm\nabla_{\bm p} y_2(\bm p) \right] \int_{x_1(\bm p)}^{x_2(\bm p)} f(\bm p, x, y_2(\bm p)) \,\mathrm{d}x -
+    \left[ \bm\nabla_{\bm p} y_1(\bm p) \right] \int_{x_1(\bm p)}^{x_2(\bm p)} f(\bm p, x, y_1(\bm p)) \,\mathrm{d}x \\
+    &+ \left[ \bm\nabla_{\bm p} x_2(\bm p) \right] \int_{y_1(\bm p)}^{y_2(\bm p)} f(\bm p, x_2(\bm p), y) \,\mathrm{d}y -
+    \left[ \bm\nabla_{\bm p} x_1(\bm p) \right] \int_{y_1(\bm p)}^{y_2(\bm p)} f(\bm p, x_1(\bm p), y) \,\mathrm{d}y \\
+    &+ \int_{y_1(\bm p)}^{y_2(\bm p)} \int_{x_1(\bm p)}^{x_2(\bm p)} \bm\nabla_{\bm p} f(\bm p, x, y) \,\mathrm{d}x\,\mathrm{d}y.
+  \end{split}
+\end{equation}
+The general formula for the second derivative is
+\begin{equation}
+  \begin{split}
+    \bm\nabla_{\bm p}^2 \int_{y_1(\bm p)}^{y_2(\bm p)}\int_{x_1(\bm p)}^{x_2(\bm p)} f(\bm p, x, y) \,\mathrm{d}x\,\mathrm{d}y =& \xi_{Y2} - \xi_{Y1} + \xi_{X2} - \xi_{X1} \\
+    & + \int_{y_1(\bm p)}^{y_2(\bm p)} \int_{x_1(\bm p)}^{x_2(\bm p)} \bm\nabla_{\bm p}^2 f(\bm p, x, y) \,\mathrm{d}x\,\mathrm{d}y,
+  \end{split}
+\end{equation}
+where
+\begin{equation}
+  \begin{split}
+    \xi_{Y1} =& \left[ \bm\nabla_{\bm p}^2 y_1(\bm p) \right] \int_{x_1(\bm p)}^{x_2(\bm p)} f(\bm p, x, y_1(\bm p)) \,\mathrm{d}x + \left[ \bm\nabla_{\bm p} y_1(\bm p) \right] \\
+    & \times \bigg[ \left[ \bm\nabla_{\bm p} x_2(\bm p) \right] f(\bm p, x_2(\bm p), y_1(\bm p)) - \left[ \bm\nabla_{\bm p} x_1(\bm p) \right] f(\bm p, x_1(\bm p), y_1(\bm p)) \\
+  &+ \int_{x_1(\bm p)}^{x_2(\bm p)} \bm\nabla_{\bm\chi} f(\bm\chi, x, y_1(\bm p))|_{\bm\chi = \bm p} \,\mathrm{d}x + \int_{x_1(\bm p)}^{x_2(\bm p)} \bm\nabla_{\bm p} f(\bm p, x, y_1(\bm p)) \,\mathrm{d}x \bigg], \\
+    \xi_{Y2} =& \left[ \bm\nabla_{\bm p}^2 y_2(\bm p) \right] \int_{x_1(\bm p)}^{x_2(\bm p)} f(\bm p, x, y_2(\bm p)) \,\mathrm{d}x + \left[ \bm\nabla_{\bm p} y_2(\bm p) \right] \\
+    & \times \bigg[ \left[ \bm\nabla_{\bm p} x_2(\bm p) \right] f(\bm p, x_2(\bm p), y_2(\bm p)) - \left[ \bm\nabla_{\bm p} x_1(\bm p) \right] f(\bm p, x_1(\bm p), y_2(\bm p)) \\
+    &+ \int_{x_1(\bm p)}^{x_2(\bm p)} \bm\nabla_{\bm\chi} f(\bm\chi, x, y_2(\bm p))|_{\bm\chi = \bm p} \,\mathrm{d}x + \int_{x_1(\bm p)}^{x_2(\bm p)} \bm\nabla_{\bm p} f(\bm p, x, y_2(\bm p)) \,\mathrm{d}x \bigg], \\
+    \xi_{X1} =& \left[ \bm\nabla_{\bm p}^2 x_1(\bm p) \right] \int_{y_1(\bm p)}^{y_2(\bm p)} f(\bm p, x_1(\bm p), y) \,\mathrm{d}y + \left[ \bm\nabla_{\bm p} x_1(\bm p) \right] \\
+    & \times \bigg[ \left[ \bm\nabla_{\bm p} y_2(\bm p) \right] f(\bm p, x_1(\bm p), y_2(\bm p)) - \left[ \bm\nabla_{\bm p} y_1(\bm p) \right] f(\bm p, x_1(\bm p), y_1(\bm p)) \\
+    &+ \int_{y_1(\bm p)}^{y_2(\bm p)} \bm\nabla_{\bm\chi} f(\bm\chi, x_1(\bm p), y)|_{\bm\chi = \bm p} \,\mathrm{d}y + \int_{y_1(\bm p)}^{y_2(\bm p)} \bm\nabla_{\bm p} f(\bm p, x_1(\bm p), y) \,\mathrm{d}y \bigg], \\
+    \xi_{X2} =& \left[ \bm\nabla_{\bm p}^2 x_2(\bm p) \right] \int_{y_1(\bm p)}^{y_2(\bm p)} f(\bm p, x_2(\bm p), y) \,\mathrm{d}y + \left[ \bm\nabla_{\bm p} x_2(\bm p) \right] \\
+    & \times \bigg[ \left[ \bm\nabla_{\bm p} y_2(\bm p) \right] f(\bm p, x_2(\bm p), y_2(\bm p)) - \left[ \bm\nabla_{\bm p} y_1(\bm p) \right] f(\bm p, x_2(\bm p), y_1(\bm p)) \\
+    &+ \int_{y_1(\bm p)}^{y_2(\bm p)} \bm\nabla_{\bm\chi} f(\bm\chi, x_2(\bm p), y)|_{\bm\chi = \bm p} \,\mathrm{d}y + \int_{y_1(\bm p)}^{y_2(\bm p)} \bm\nabla_{\bm p} f(\bm p, x_2(\bm p), y) \,\mathrm{d}y \bigg].
+  \end{split}
+\end{equation}
 
 \section{Building and linking}
 
