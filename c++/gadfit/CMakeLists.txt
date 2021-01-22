@@ -101,7 +101,7 @@ target_include_directories(gadfit INTERFACE
   $<INSTALL_INTERFACE:include>)
 set(_headers
   lm_solver.h automatic_differentiation.h exceptions.h fit_function.h
-  parallel.h numerical_integration.h)
+  parallel.h numerical_integration.h timer.h)
 set_target_properties(gadfit PROPERTIES PUBLIC_HEADER "${_headers}")
 install(TARGETS gadfit
   EXPORT gadfitConfig
