@@ -28,10 +28,11 @@ namespace gadfit {
 
 namespace io {
 
-using flag = std::bitset<3>;
+using flag = std::bitset<4>;
 static constexpr flag all { 0b0000'0001 };
 static constexpr flag delta1 { 0b0000'0010 };
 static constexpr flag delta2 { 0b0000'0100 };
+static constexpr flag timings { 0b0000'1000 };
 
 } // namespace io
 
@@ -126,6 +127,13 @@ private:
     std::vector<double> omega {};
     std::vector<double> delta2 {};
 
+    // Performance
+    Timer Jacobian_timer {};
+    Timer chi2_timer {};
+    Timer linalg_timer {};
+    Timer omega_timer {};
+    Timer main_timer {};
+
 public:
     LMsolver() = delete;
     // With an MPI communicator, runs in parallel. Default is to run
@@ -160,7 +168,7 @@ public:
     [[nodiscard]] auto getLeftSide() const -> const std::vector<double>&;
     [[nodiscard]] auto getRightSide() const -> const std::vector<double>&;
     [[nodiscard]] auto getResiduals() const -> const std::vector<double>&;
-    [[nodiscard]] auto chi2() const -> double;
+    [[nodiscard]] auto chi2() -> double;
     ~LMsolver();
 
     struct
@@ -187,6 +195,7 @@ private:
     // case the user activates or deactivates some parameters between
     // multiple calls to fit.
     auto prepareIndexing() -> void;
+    auto resetTimers() -> void;
     auto computeLeftHandSide(const double lambda,
                              std::vector<double>& Jacobian_fragment,
                              std::vector<double>& residuals_fragment) -> void;
@@ -203,6 +212,7 @@ private:
     auto printIterationResults(const int i_iteration,
                                const double lambda,
                                const double new_chi2) const -> void;
+    auto printTimings() const -> void;
     // Test whether an IO flag is enabled
     [[nodiscard]] auto ioTest(io::flag flag) const -> bool;
 };

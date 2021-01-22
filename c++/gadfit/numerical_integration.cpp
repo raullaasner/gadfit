@@ -479,12 +479,12 @@ auto integrate(const integrandSignature2D& function,
                            bounds_cur.x2,
                            work.abs_errors[max_error_idx]);
             work.sums[next_iter] = gaussKronrod(function,
-                                               work.inactive_parameters,
-                                               middle,
-                                               bounds_cur.y2,
-                                               bounds_cur.x1,
-                                               bounds_cur.x2,
-                                               work.abs_errors[next_iter]);
+                                                work.inactive_parameters,
+                                                middle,
+                                                bounds_cur.y2,
+                                                bounds_cur.x1,
+                                                bounds_cur.x2,
+                                                work.abs_errors[next_iter]);
             work.bounds_2D[max_error_idx].y2 = middle;
             work.bounds_2D[next_iter].y1 = middle;
             work.bounds_2D[next_iter].y2 = bounds_cur.y2;
@@ -501,12 +501,12 @@ auto integrate(const integrandSignature2D& function,
                            middle,
                            work.abs_errors[max_error_idx]);
             work.sums[next_iter] = gaussKronrod(function,
-                                               work.inactive_parameters,
-                                               bounds_cur.y1,
-                                               bounds_cur.y2,
-                                               middle,
-                                               bounds_cur.x2,
-                                               work.abs_errors[next_iter]);
+                                                work.inactive_parameters,
+                                                bounds_cur.y1,
+                                                bounds_cur.y2,
+                                                middle,
+                                                bounds_cur.x2,
+                                                work.abs_errors[next_iter]);
             work.bounds_2D[max_error_idx].x2 = middle;
             work.bounds_2D[next_iter].y1 = bounds_cur.y1;
             work.bounds_2D[next_iter].y2 = bounds_cur.y2;

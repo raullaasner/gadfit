@@ -87,6 +87,7 @@ auto LMsolver::setPar(const int i_par,
 auto LMsolver::fit(double lambda) -> void
 {
     prepareIndexing();
+    resetTimers();
     if (indices.n_active == 0 && my_rank == 0) {
         spdlog::warn("No active fitting parameters.");
     }
@@ -126,6 +127,7 @@ auto LMsolver::fit(double lambda) -> void
     for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
         deactivateParameters(i_set);
     }
+    main_timer.start();
     double old_chi2 { chi2() };
     int i_iteration {};
     bool finished { settings.iteration_limit == 0 || indices.n_active == 0 };
@@ -176,8 +178,12 @@ auto LMsolver::fit(double lambda) -> void
             finished = true;
         }
     }
+    main_timer.stop();
     if (settings.iteration_limit == 0) {
         printIterationResults(0, lambda, old_chi2);
+    }
+    if (ioTest(io::timings)) {
+        printTimings();
     }
 }
 
@@ -314,6 +320,15 @@ auto LMsolver::prepareIndexing() -> void
     }
 }
 
+auto LMsolver::resetTimers() -> void
+{
+    Jacobian_timer.reset();
+    chi2_timer.reset();
+    linalg_timer.reset();
+    omega_timer.reset();
+    main_timer.reset();
+}
+
 auto LMsolver::computeLeftHandSide(const double lambda,
                                    std::vector<double>& Jacobian_fragment,
                                    std::vector<double>& residuals_fragment)
@@ -321,6 +336,7 @@ auto LMsolver::computeLeftHandSide(const double lambda,
 {
     auto cur_residual { residuals_fragment.begin() };
     auto cur_Jacobian { Jacobian_fragment.begin() };
+    Jacobian_timer.start();
     for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
         adResetSweep();
         int cur_idx { -1 };
@@ -346,6 +362,7 @@ auto LMsolver::computeLeftHandSide(const double lambda,
         }
         deactivateParameters(i_set);
     }
+    Jacobian_timer.stop();
     std::vector<int> sendcounts(num_procs, indices.workloads.at(my_rank));
     std::vector<int> sdispls(num_procs, 0);
     fragmentToGlobal(residuals_fragment.data(),
@@ -370,6 +387,7 @@ auto LMsolver::computeLeftHandSide(const double lambda,
                      recvcounts.data(),
                      rdispls.data(),
                      mpi_comm);
+    linalg_timer.start();
     dsyrk_wrapper(indices.n_active, indices.n_datapoints, Jacobian, JTJ);
     for (int i_par {}; i_par < indices.n_active; ++i_par) {
         DTD[i_par * indices.n_active + i_par] =
@@ -380,22 +398,28 @@ auto LMsolver::computeLeftHandSide(const double lambda,
     for (int i {}; i < static_cast<int>(left_side.size()); ++i) {
         left_side[i] = JTJ[i] + lambda * DTD[i];
     }
+    linalg_timer.stop();
 }
 
 auto LMsolver::computeRightHandSide() -> void
 {
+    linalg_timer.start();
     dgemv_tr_wrapper(
       indices.n_datapoints, indices.n_active, Jacobian, residuals, right_side);
+    linalg_timer.stop();
 }
 
 auto LMsolver::computeDeltas(std::vector<double>& omega_fragment) -> void
 {
     delta1 = right_side;
+    linalg_timer.start();
     dpptrs_wrapper(indices.n_active, left_side, delta1);
+    linalg_timer.stop();
     if (settings.acceleration_threshold > 0.0) {
         // This is a similar loop as for the residuals or the Jacobian
         // above, except only the second directional derivatives are
         // computed.
+        omega_timer.start();
         auto cur_omega { omega_fragment.begin() };
         for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
             auto idx_jacobian { indices.jacobian.at(i_set).cbegin() };
@@ -411,6 +435,7 @@ auto LMsolver::computeDeltas(std::vector<double>& omega_fragment) -> void
             }
             deactivateParameters(i_set);
         }
+        omega_timer.stop();
         std::vector<int> sendcounts(num_procs, indices.workloads.at(my_rank));
         std::vector<int> sdispls(num_procs, 0);
         fragmentToGlobal(omega_fragment.data(),
@@ -420,6 +445,7 @@ auto LMsolver::computeDeltas(std::vector<double>& omega_fragment) -> void
                          indices.workloads.data(),
                          indices.global_starts.data(),
                          mpi_comm);
+        linalg_timer.start();
         dgemv_tr_wrapper(
           indices.n_datapoints, indices.n_active, Jacobian, omega, delta2);
         dpptrs_wrapper(indices.n_active, left_side, delta2);
@@ -438,6 +464,7 @@ auto LMsolver::computeDeltas(std::vector<double>& omega_fragment) -> void
         acc_ratio /= std::inner_product(
           delta1.cbegin(), delta1.cend(), work_tmp.cbegin(), 0.0);
         acc_ratio = std::sqrt(acc_ratio);
+        linalg_timer.stop();
         if (acc_ratio > settings.acceleration_threshold) {
             std::fill(delta2.begin(), delta2.end(), 0.0);
         }
@@ -493,8 +520,9 @@ auto LMsolver::revertParameters(
     }
 }
 
-auto LMsolver::chi2() const -> double
+auto LMsolver::chi2() -> double
 {
+    chi2_timer.start();
     double sum {};
     for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
         // Normally we would loop over indices.data_ranges if MPI has
@@ -519,6 +547,7 @@ auto LMsolver::chi2() const -> double
             sum += diff * diff;
         }
     }
+    chi2_timer.stop();
     if (mpi_comm != MPI_COMM_NULL && !indices.data_ranges.empty()) {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
         MPI_Allreduce(MPI_IN_PLACE, &sum, 1, MPI_DOUBLE, MPI_SUM, mpi_comm);
@@ -618,6 +647,76 @@ auto LMsolver::printIterationResults(const int i_iteration,
         }
     }
     spdlog::info("");
+}
+
+auto LMsolver::printTimings() const -> void
+{
+    std::vector<Times> Jacobian_times(num_procs);
+    std::vector<Times> chi2_times(num_procs);
+    std::vector<Times> linalg_times(num_procs);
+    std::vector<Times> omega_times(num_procs);
+    std::vector<Times> main_times(num_procs);
+    gatherTimes(mpi_comm, my_rank, num_procs, Jacobian_timer, Jacobian_times);
+    gatherTimes(mpi_comm, my_rank, num_procs, chi2_timer, chi2_times);
+    gatherTimes(mpi_comm, my_rank, num_procs, linalg_timer, linalg_times);
+    gatherTimes(mpi_comm, my_rank, num_procs, omega_timer, omega_times);
+    gatherTimes(mpi_comm, my_rank, num_procs, main_timer, main_times);
+    if (my_rank == 0) {
+        spdlog::info("");
+        spdlog::info("Relative cost compared to the main loop on process 0");
+        spdlog::info("====================================================");
+        const auto relTime { [this](const double time) {
+            return 100 * time / main_timer.totalCPUTime();
+        } };
+        spdlog::info(" Jacobian:{:6.2f}%",
+                     relTime(Jacobian_timer.totalCPUTime()));
+        spdlog::info("     chi2:{:6.2f}%", relTime(chi2_timer.totalCPUTime()));
+        spdlog::info("   linalg:{:6.2f}%",
+                     relTime(linalg_timer.totalCPUTime()));
+        spdlog::info("    omega:{:6.2f}%", relTime(omega_timer.totalCPUTime()));
+        spdlog::info(
+          "    Total:{:6.2f}%",
+          relTime(Jacobian_timer.totalCPUTime() + chi2_timer.totalCPUTime()
+                  + linalg_timer.totalCPUTime() + omega_timer.totalCPUTime()));
+        spdlog::info("");
+        spdlog::info(
+          "Timings          CPU, s    Wall, s    CPU*, s   Wall*, s Calls");
+        spdlog::info(
+          "==============================================================");
+        const auto timings { [this](const std::vector<Times>& times,
+                                    const Timer& timer) {
+            for (int i_proc {}; i_proc < num_procs; ++i_proc) {
+                spdlog::info(
+                  "  Proc {:5} {:10.2f} {:10.2f} {:10.2f} {:10.2f} {:5}",
+                  i_proc,
+                  times.at(i_proc).cpu,
+                  times.at(i_proc).wall,
+                  times.at(i_proc).cpu_ave,
+                  times.at(i_proc).wall_ave,
+                  timer.totalNumberOfCalls());
+            }
+        } };
+        spdlog::info(" Jacobian");
+        timings(Jacobian_times, Jacobian_timer);
+        spdlog::info(" Chi2");
+        timings(chi2_times, chi2_timer);
+        if (settings.acceleration_threshold > 0.0) {
+            spdlog::info(" Omega");
+            timings(omega_times, omega_timer);
+        }
+        spdlog::info(
+          "--------------------------------------------------------------");
+        spdlog::info(" Main loop");
+        for (int i_proc {}; i_proc < num_procs; ++i_proc) {
+            spdlog::info("  Proc {:5} {:10.2f} {:10.2f}",
+                         i_proc,
+                         main_times.at(i_proc).cpu,
+                         main_times.at(i_proc).wall);
+        }
+        spdlog::info(
+          "==============================================================");
+        spdlog::info("* - per call");
+    }
 }
 
 auto LMsolver::ioTest(io::flag flag) const -> bool

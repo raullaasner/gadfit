@@ -15,10 +15,13 @@
 
 #pragma once
 
+#include "timer.h"
+
+#include <vector>
+
 #ifdef USE_MPI
 
 #include <mpi.h>
-#include <vector>
 
 #else
 
@@ -29,6 +32,7 @@ constexpr MPI_Comm MPI_COMM_WORLD { MPI_COMM_NULL };
 constexpr int MPI_DOUBLE {};
 constexpr int MPI_IN_PLACE {};
 constexpr int MPI_SUM {};
+constexpr int MPI_STATUS_IGNORE {};
 
 auto MPI_Comm_rank(MPI_Comm, int*) -> void;
 auto MPI_Comm_size(MPI_Comm, int*) -> void;
@@ -36,6 +40,8 @@ auto MPI_Initialized(int*) -> void;
 auto MPI_Finalized(int*) -> void;
 auto MPI_Allreduce(int, double*, int, int, int, MPI_Comm) -> void;
 auto MPI_Comm_split(MPI_Comm, int, int, MPI_Comm*) -> void;
+auto MPI_Recv(double*, int, int, int, int, MPI_Comm, int) -> void;
+auto MPI_Send(const double*, int, int, int, int, MPI_Comm) -> void;
 
 #endif // USE_MPI
 
@@ -49,3 +55,11 @@ auto fragmentToGlobal(const double* const fragment,
                       const int* const recvcounts,
                       const int* const rdispls,
                       MPI_Comm mpi_comm) -> void;
+
+// A utility function for LMsolver::printTimings. The first process
+// collects timing data from all other processes.
+auto gatherTimes(const MPI_Comm mpi_comm,
+                 const int my_rank,
+                 const int num_procs,
+                 const gadfit::Timer& timer,
+                 std::vector<gadfit::Times>& times) -> void;
