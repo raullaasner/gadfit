@@ -11,7 +11,7 @@
 # permissions and limitations under the License.
 
 # CMake
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.13.5)
 
 # Project
 project(GADfit VERSION 1.4 LANGUAGES C)

@@ -60,6 +60,11 @@ endif()
 # OpenCoarrays
 if (NOT OPEN_COARRAYS AND CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
   include(ExternalProject)
+  if (NOT CMAKE_VERSION VERSION_LESS 3.16.9)
+    set(_caf_lib_dir lib)
+  else()
+    set(_caf_lib_dir lib64)
+  endif()
   ExternalProject_Add(
     OpenCoarrays-fallback
     EXCLUDE_FROM_ALL 1
@@ -72,7 +77,7 @@ if (NOT OPEN_COARRAYS AND CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
     CMAKE_GENERATOR "Unix Makefiles"
     BUILD_COMMAND ${CMAKE_COMMAND} --build . --target caf_mpi_static
     INSTALL_COMMAND ${CMAKE_COMMAND} -E
-    copy lib/libcaf_mpi.a ${CMAKE_CURRENT_BINARY_DIR}
+    copy ${_caf_lib_dir}/libcaf_mpi.a ${CMAKE_CURRENT_BINARY_DIR}
     BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/libcaf_mpi.a
     )
   list(APPEND LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libcaf_mpi.a)
@@ -100,6 +105,9 @@ add_custom_target(example
 
 # Tests
 add_library(fortran_testing EXCLUDE_FROM_ALL testing.F90)
+if (TARGET OpenCoarrays-fallback)
+  add_dependencies(fortran_testing OpenCoarrays-fallback)
+endif()
 target_link_libraries(fortran_testing PUBLIC ${LIBRARIES})
 foreach(f ${tests})
   add_executable(${f} EXCLUDE_FROM_ALL ${f}.F90)
@@ -109,9 +117,6 @@ foreach(f ${tests})
   endif()
   if (TARGET lapack-fallback)
     add_dependencies(${f} lapack-fallback)
-  endif()
-  if (TARGET OpenCoarrays-fallback)
-    add_dependencies(${f} OpenCoarrays-fallback)
   endif()
   add_test(NAME ${f} COMMAND ${TESTS_RUN_PREFIX}
     ${CMAKE_CURRENT_BINARY_DIR}/${f})

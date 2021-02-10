@@ -52,19 +52,20 @@ target_include_directories(gadfit INTERFACE
   $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-install(TARGETS gadfit EXPORT gadfitConfig)
-install(DIRECTORY ${PROJECT_BINARY_DIR}/include/ DESTINATION include)
-install(EXPORT gadfitConfig NAMESPACE gadfit:: DESTINATION lib/cmake/gadfit)
-include(CMakePackageConfigHelpers)
-write_basic_package_version_file(
-  ${PROJECT_BINARY_DIR}/gadfitConfigVersion.cmake
-  VERSION ${PROJECT_VERSION}
-  COMPATIBILITY SameMajorVersion)
-install(FILES ${PROJECT_BINARY_DIR}/gadfitConfigVersion.cmake
-  DESTINATION lib/cmake/gadfit)
-
-export(EXPORT gadfitConfig NAMESPACE gadfit::
-  FILE ${PROJECT_BINARY_DIR}/gadfitConfig.cmake)
+if (NOT CMAKE_VERSION VERSION_LESS 3.14.7)
+  install(TARGETS gadfit EXPORT gadfitConfig)
+  install(DIRECTORY ${PROJECT_BINARY_DIR}/include/ DESTINATION include)
+  install(EXPORT gadfitConfig NAMESPACE gadfit:: DESTINATION lib/cmake/gadfit)
+  include(CMakePackageConfigHelpers)
+  write_basic_package_version_file(
+    ${PROJECT_BINARY_DIR}/gadfitConfigVersion.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion)
+  install(FILES ${PROJECT_BINARY_DIR}/gadfitConfigVersion.cmake
+    DESTINATION lib/cmake/gadfit)
+  export(EXPORT gadfitConfig NAMESPACE gadfit::
+    FILE ${PROJECT_BINARY_DIR}/gadfitConfig.cmake)
+endif()
 
 # Print info
 if (QUAD_PRECISION)

@@ -103,16 +103,18 @@ set(_headers
   lm_solver.h automatic_differentiation.h exceptions.h fit_function.h
   parallel.h numerical_integration.h timer.h)
 set_target_properties(gadfit PROPERTIES PUBLIC_HEADER "${_headers}")
-install(TARGETS gadfit
-  EXPORT gadfitConfig
-  PUBLIC_HEADER DESTINATION include/gadfit)
-install(EXPORT gadfitConfig NAMESPACE gadfit:: DESTINATION lib/cmake/gadfit)
-include(CMakePackageConfigHelpers)
-write_basic_package_version_file(
-  ${PROJECT_BINARY_DIR}/gadfitConfigVersion.cmake
-  VERSION ${PROJECT_VERSION}
-  COMPATIBILITY SameMajorVersion)
-install(FILES ${PROJECT_BINARY_DIR}/gadfitConfigVersion.cmake
-  DESTINATION lib/cmake/gadfit)
-export(EXPORT gadfitConfig NAMESPACE gadfit::
-  FILE ${PROJECT_BINARY_DIR}/gadfitConfig.cmake)
+if (NOT CMAKE_VERSION VERSION_LESS 3.14.7)
+  install(TARGETS gadfit
+    EXPORT gadfitConfig
+    PUBLIC_HEADER DESTINATION include/gadfit)
+  install(EXPORT gadfitConfig NAMESPACE gadfit:: DESTINATION lib/cmake/gadfit)
+  include(CMakePackageConfigHelpers)
+  write_basic_package_version_file(
+    ${PROJECT_BINARY_DIR}/gadfitConfigVersion.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion)
+  install(FILES ${PROJECT_BINARY_DIR}/gadfitConfigVersion.cmake
+    DESTINATION lib/cmake/gadfit)
+  export(EXPORT gadfitConfig NAMESPACE gadfit::
+    FILE ${PROJECT_BINARY_DIR}/gadfitConfig.cmake)
+endif()

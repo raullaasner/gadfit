@@ -48,8 +48,8 @@ auto LMsolver::setPar(const int i_par,
                       const int i_dataset) -> void
 {
     // Make sure addDataset was called enough times.
-    if (i_dataset >= static_cast<int>(size(x_data))
-        || static_cast<int>(size(x_data)) == 0) {
+    if (i_dataset >= static_cast<int>(x_data.size())
+        || static_cast<int>(x_data.size()) == 0) {
         throw SetParInvalidIndex { i_dataset };
     }
     set_par_called = true;

@@ -60,12 +60,14 @@ set(USE_GSL ON CACHE BOOL "")
 # *choosing none explicitly forces to use the fallback option
 #set(LINALG_FLAVOR lapack CACHE STRING "")
 
-# Linalg library directories
-#set(LIBRARY_PATHS /usr/local/atlas/lib CACHE STRING "")
+# Additional directories containing header files
+#set(INCLUDE_PATHS /usr/local/include CACHE STRING "")
 
-# Linalg libraries. Must be shared libraries. Cannot use full path
-# here (split the full path between LIBRARY_PATHS and LIBRARIES).
-#set(LIBRARIES tatlas CACHE STRING "")
+# Linear algebra library directories
+#set(LIBRARY_PATHS /opt/intel/mkl/lib/intel64 CACHE STRING "")
+
+# Linear algebra libraries
+#set(LIBRARIES mkl_gf_lp64 mkl_sequential mkl_core CACHE STRING "")
 
 # Location of libcaf_mpi.a
 #set(OPEN_COARRAYS /usr/local/opencoarrays/lib/libcaf_mpi.a CACHE STRING "")

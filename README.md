@@ -56,4 +56,4 @@ A good place to bring up any issues is https://github.com/raullaasner/gadfit/iss
 License
 -------
 
-This project is distributed under the terms of Apache License 2.0. See LICENSE in the root directory of the project http://www.apache.org/licenses/LICENSE-2.0.
+This project is distributed under the terms of Apache License 2.0. See LICENSE in the root directory of the project or go to http://www.apache.org/licenses/LICENSE-2.0.
