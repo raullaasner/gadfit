@@ -1024,7 +1024,7 @@ TEST_CASE( "Double integral (direct)" )
         solver.setPar(5, 2.1, true);
         solver.setPar(6, 1.0, true);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(0.0002133518972430697, 1e4) );
+        REQUIRE( solver.chi2() == approx(0.0002133518972430697, 1e7) );
         REQUIRE( solver.getParValue(0) == approx(9.671381025316821) );
         REQUIRE( solver.getParValue(1) == approx(1.3) );
         REQUIRE( solver.getParValue(2) == approx(1.2) );

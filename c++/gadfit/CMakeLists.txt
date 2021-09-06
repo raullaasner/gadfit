@@ -20,6 +20,9 @@ target_sources(gadfit PRIVATE
   timer.cpp
   )
 
+# C++20 features
+target_compile_features(gadfit PUBLIC cxx_std_20)
+
 # First run
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
   # Automatically detect USE_MPI
@@ -27,36 +30,6 @@ if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
     ${PROJECT_SOURCE_DIR}/cmake/tests/MPI.cpp)
   option(USE_MPI "Whether to compile with MPI support" ${MPI_OK})
 endif()
-
-# Options and variables (C++ only)
-set(SPDLOG_PATH "" CACHE STRING "Path to spdlog installation directory")
-
-# Linear algebra library
-if (LINALG_FLAVOR MATCHES "mkl")
-  find_package(MKL REQUIRED)
-  target_include_directories(gadfit PRIVATE ${MKL_INCLUDE_DIR})
-  target_link_libraries(gadfit PRIVATE ${MKL_LIBRARIES})
-  target_sources(gadfit PRIVATE cblas_wrapper_mkl.cpp)
-  set(linalg_library_name "MKL")
-elseif (LINALG_FLAVOR MATCHES "none")
-  target_sources(gadfit PRIVATE cblas_wrapper_fallback.cpp)
-  set(linalg_library_name "fallback")
-else()
-  try_compile(LINALG_TEST ${CMAKE_CURRENT_BINARY_DIR}
-    ${PROJECT_SOURCE_DIR}/cmake/tests/MKL.cpp
-    CMAKE_FLAGS
-    "-DINCLUDE_DIRECTORIES=${INCLUDE_PATHS}"
-    "-DLINK_DIRECTORIES=${LIBRARY_PATHS}"
-    "-DLINK_LIBRARIES=${LIBRARIES}")
-  if (LINALG_TEST)
-    target_sources(gadfit PRIVATE cblas_wrapper_mkl.cpp)
-    set(linalg_library_name "MKL")
-  else()
-    target_sources(gadfit PRIVATE cblas_wrapper_fallback.cpp)
-    set(linalg_library_name "fallback")
-  endif()
-endif()
-message("Using linear algebra library: ${linalg_library_name}")
 
 # MPI
 if (USE_MPI)
@@ -66,34 +39,52 @@ else()
   message("Not using MPI")
 endif()
 
-# Logging
-find_package(spdlog HINTS ${SPDLOG_PATH})
-if (TARGET spdlog::spdlog)
-  target_link_libraries(gadfit PUBLIC spdlog::spdlog)
-else()
-  message(WARNING "spdlog not found. Consider installing spdlog using your "
-    "system's package manager. Using a fallback version for now.")
-  include(ExternalProject)
-  ExternalProject_Add(
-    spdlog
-    GIT_REPOSITORY https://github.com/gabime/spdlog.git
-    GIT_TAG v1.8.2
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND "")
-  add_dependencies(gadfit spdlog)
-  install(DIRECTORY
-    ${CMAKE_CURRENT_BINARY_DIR}/spdlog-prefix/src/spdlog/include/spdlog
-    DESTINATION
-    include/gadfit)
-  set(_inc_dir ${CMAKE_CURRENT_BINARY_DIR}/spdlog-prefix/src/spdlog/include)
-  target_include_directories(gadfit
-    PRIVATE $<BUILD_INTERFACE:${_inc_dir}>
-    PUBLIC $<INSTALL_INTERFACE:include/gadfit>)
-endif()
+# Options and variables (C++ only)
+set(SPDLOG_PATH "" CACHE STRING "Path to spdlog installation directory")
 
-# C++20 features
-target_compile_features(gadfit PUBLIC cxx_std_20)
+# Determine linear algebra library
+set(linalg_library_name "fallback") # Start with the fallback
+# Next test for anything that passes the linear algebra test
+try_compile(LINALG_TEST ${CMAKE_CURRENT_BINARY_DIR}
+  ${PROJECT_SOURCE_DIR}/cmake/tests/Linalg.cpp
+  CMAKE_FLAGS
+  "-DINCLUDE_DIRECTORIES=${INCLUDE_PATHS}"
+  "-DLINK_DIRECTORIES=${LIBRARY_PATHS}"
+  "-DLINK_LIBRARIES=${LIBRARIES}")
+if (LINALG_TEST)
+  set(linalg_library_name "lapack")
+endif()
+# Next test for MKL
+try_compile(LINALG_TEST ${CMAKE_CURRENT_BINARY_DIR}
+  ${PROJECT_SOURCE_DIR}/cmake/tests/MKL.cpp
+  CMAKE_FLAGS
+  "-DINCLUDE_DIRECTORIES=${INCLUDE_PATHS}"
+  "-DLINK_DIRECTORIES=${LIBRARY_PATHS}"
+  "-DLINK_LIBRARIES=${LIBRARIES}")
+if (LINALG_TEST)
+  set(linalg_library_name "MKL")
+endif()
+if (linalg_library_name STREQUAL "MKL")
+  target_sources(gadfit PRIVATE cblas_wrapper_mkl.cpp)
+elseif (linalg_library_name STREQUAL "lapack")
+  target_sources(gadfit PRIVATE cblas_wrapper_lapack.cpp)
+else()
+  target_sources(gadfit PRIVATE cblas_wrapper_fallback.cpp)
+endif()
+message("Using linear algebra library: ${linalg_library_name}")
+
+# Logging
+include(FetchContent)
+find_package(spdlog HINTS ${SPDLOG_PATH})
+if (NOT TARGET spdlog::spdlog)
+  FetchContent_Declare(spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog
+    GIT_TAG bae78f7b6c32fbfb97dd5751591734c12103fc1a)
+  FetchContent_MakeAvailable(spdlog)
+  install(DIRECTORY ${spdlog_SOURCE_DIR}/include/spdlog DESTINATION include)
+  install(TARGETS spdlog EXPORT gadfitConfig)
+endif()
+target_link_libraries(gadfit PUBLIC spdlog::spdlog)
 
 # Exporting
 target_include_directories(gadfit INTERFACE

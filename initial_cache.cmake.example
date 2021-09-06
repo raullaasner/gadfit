@@ -53,13 +53,6 @@ set(USE_GSL ON CACHE BOOL "")
 # If GSL was not automatically found by CMake try setting this variable.
 #set(GSL_ROOT_DIR /usr/local/gsl CACHE STRING "")
 
-# Keyword for automatic detection of a linear algebra library. Allowed
-# values are
-#       C++: mkl none*
-#   Fortran: lapack atlas mkl
-# *choosing none explicitly forces to use the fallback option
-#set(LINALG_FLAVOR lapack CACHE STRING "")
-
 # Additional directories containing header files
 #set(INCLUDE_PATHS /usr/local/include CACHE STRING "")
 

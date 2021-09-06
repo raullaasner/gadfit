@@ -72,7 +72,7 @@ if (USE_GSL)
   endif()
 endif()
 set(OPEN_COARRAYS "" CACHE STRING "Full path to libcaf_mpi.a")
-if (OPEN_COARRAYS)
+if (OPEN_COARRAYS AND NOT BUILD_CXX_VERSION)
   target_link_libraries(gadfit PRIVATE ${OPEN_COARRAYS})
 endif()
 
