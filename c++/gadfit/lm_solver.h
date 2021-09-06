@@ -109,9 +109,22 @@ private:
     // variable keeps track of that.
     bool set_par_called { false };
 
+    // The measured data used in the fitting procedure are stored in
+    // x_data and y_data. x_data stores the independent values
+    // (in a plot these are typically values on the x-axis).
     std::vector<std::vector<double>> x_data {};
+    // y_data stores the dependent values.
     std::vector<std::vector<double>> y_data {};
+    // If specified by the user, these are the errors associated with
+    // the data points. These determine the weights when constructing
+    // the Jacobian. Default is to use the same weight for each data
+    // point.
     std::vector<std::vector<double>> errors {};
+    // Model functions used for fitting. The user only specifies a
+    // single fitting function but it is duplicated over all the data
+    // sets (curves). This is because the fitting parameters
+    // associated with the model function can differ between data
+    // sets.
     std::vector<FitFunction> fit_functions {};
     // Main work arrays. These are all publicly available via getters.
     std::vector<double> Jacobian {};
