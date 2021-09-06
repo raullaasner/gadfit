@@ -225,8 +225,8 @@ auto LMsolver::addDataset(const T& x_data,
     if (set_par_called) {
         throw LateAddDatasetCall {};
     }
-    this->x_data.push_back(std::vector<double>(x_data.size()));
-    this->y_data.push_back(std::vector<double>(y_data.size()));
+    this->x_data.emplace_back(std::vector<double>(x_data.size()));
+    this->y_data.emplace_back(std::vector<double>(y_data.size()));
     for (int i {}; i < static_cast<int>(x_data.size()); ++i) {
         this->x_data.back()[i] = x_data[i];
         this->y_data.back()[i] = y_data[i];
