@@ -63,7 +63,7 @@ end module gaussian_m
   if (this_image() == 1) then
      block
        real(kp), parameter :: reference_value = 33.416146356055293_kp
-       if (abs(fitfuncs(1)%pars(3)%val - reference_value) > 1e-14_kp) then
+       if (abs(fitfuncs(1)%pars(3)%val - reference_value) > 1e-13_kp) then
           write(*,*)
           write(*,'(g0)') 'Error at 1_gaussian:'
           write(*,'(2(g0))') '  "a" at the end of the fitting procedure: ', &

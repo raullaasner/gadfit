@@ -22,37 +22,15 @@ set(tests
 enable_testing()
 
 # Linear algebra libraries
-if (LINALG_FLAVOR MATCHES "lapack")
-  find_package(LAPACK REQUIRED)
-  list(APPEND LIBRARIES ${LAPACK_LIBRARIES})
-elseif (LINALG_FLAVOR MATCHES "atlas")
-  find_package(Atlas REQUIRED)
-  list(APPEND LIBRARIES ${Atlas_LIBRARIES})
-elseif (LINALG_FLAVOR MATCHES "mkl")
-  find_package(MKL REQUIRED)
-  list(APPEND LIBRARIES ${MKL_LIBRARIES})
-endif()
-set(_test_linalg FALSE)
-foreach(_var LINALG_FLAVOR LIBRARY_PATHS LIBRARIES)
-  if (DEFINED ${_var} AND NOT ${_var}_prev STREQUAL ${_var})
-    set(${_var}_prev "${${_var}}" CACHE INTERNAL "")
-    set(_test_linalg TRUE)
-  endif()
-endforeach()
-if (_test_linalg)
-  try_compile(LINALG_TEST ${CMAKE_CURRENT_BINARY_DIR}
-    ${PROJECT_SOURCE_DIR}/cmake/tests/Linalg.f90
-    CMAKE_FLAGS
-    "-DLINK_LIBRARIES=${LIBRARIES}"
-    "-DLINK_DIRECTORIES=${LIBRARY_PATHS}")
-  set(linalg_ok ${LINALG_TEST} CACHE INTERNAL "")
-  if (LINALG_TEST)
-    message(STATUS "Linear algebra library is OK")
-  else()
-    message(STATUS "Fallback linear algebra library is used for tests.")
-  endif()
-endif()
-if (NOT linalg_ok)
+try_compile(LINALG_TEST ${CMAKE_CURRENT_BINARY_DIR}
+  ${PROJECT_SOURCE_DIR}/cmake/tests/Linalg.f90
+  CMAKE_FLAGS
+  "-DLINK_LIBRARIES=${LIBRARIES}"
+  "-DLINK_DIRECTORIES=${LIBRARY_PATHS}")
+if (LINALG_TEST)
+  message(STATUS "Linear algebra library is OK")
+else()
+  message(STATUS "Fallback linear algebra library is used for tests.")
   add_library(lapack-fallback SHARED EXCLUDE_FROM_ALL lapack-fallback.f)
   list(APPEND LIBRARIES lapack-fallback)
 endif()

@@ -103,7 +103,9 @@ jobs:
           cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
           -D CMAKE_CXX_COMPILER=mpicxx \
           -D CMAKE_BUILD_TYPE=Debug \
-          -D LINALG_FLAVOR=mkl \
+          -D LIBRARY_PATHS=/opt/intel/oneapi/mkl/latest/lib/intel64 \
+          -D LIBRARIES="mkl_gf_lp64;mkl_sequential;mkl_core" \
+          -D INCLUDE_PATHS=/opt/intel/oneapi/mkl/latest/include \
           ..
       - name: build
         run: cmake --build build
@@ -135,7 +137,41 @@ jobs:
           cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
           -D CMAKE_CXX_COMPILER=mpicxx \
           -D CMAKE_BUILD_TYPE=Release \
-          -D LINALG_FLAVOR=mkl \
+          -D LIBRARY_PATHS=/opt/intel/oneapi/mkl/latest/lib/intel64 \
+          -D LIBRARIES="mkl_gf_lp64;mkl_sequential;mkl_core" \
+          -D INCLUDE_PATHS=/opt/intel/oneapi/mkl/latest/include \
+          ..
+      - name: build
+        run: cmake --build build
+      - name: test
+        run: |
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;1" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;2" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;3" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;4" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;5" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;6" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;7" build
+          cmake --build build --target test
+          cmake -D TESTS_RUN_PREFIX="mpirun;-np;8" build
+          cmake --build build --target test
+  CXX_Release_MPI_Lapack:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: configure
+        run: |
+          mkdir build && cd build
+          cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
+          -D CMAKE_CXX_COMPILER=mpicxx \
+          -D CMAKE_BUILD_TYPE=Release \
+          -D LIBRARIES="cblas;lapack" \
           ..
       - name: build
         run: cmake --build build
@@ -204,9 +240,8 @@ jobs:
           -D CMAKE_BUILD_TYPE=Debug \
           -D BUILD_CXX_VERSION=OFF \
           -D OPEN_COARRAYS=/usr/local/opencoarrays/lib/libcaf_mpi.a \
-          -D LIBRARY_PATHS=/usr/lib/openmpi \
-          -D LIBRARIES=mpi \
-          -D LINALG_FLAVOR=mkl \
+          -D LIBRARY_PATHS="/usr/lib/openmpi;/opt/intel/oneapi/mkl/latest/lib/intel64" \
+          -D LIBRARIES="mpi;mkl_gf_lp64;mkl_sequential;mkl_core" \
           ..
       - name: build
         run: cmake --build build
@@ -223,9 +258,26 @@ jobs:
           -D CMAKE_BUILD_TYPE=Release \
           -D BUILD_CXX_VERSION=OFF \
           -D OPEN_COARRAYS=/usr/local/opencoarrays/lib/libcaf_mpi.a \
+          -D LIBRARY_PATHS="/usr/lib/openmpi;/opt/intel/oneapi/mkl/latest/lib/intel64" \
+          -D LIBRARIES="mpi;mkl_gf_lp64;mkl_sequential;mkl_core" \
+          ..
+      - name: build
+        run: cmake --build build
+      - name: test
+        run: cmake --build build --target test
+  Fortran_Release_Lapack:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: configure
+        run: |
+          mkdir build && cd build
+          cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
+          -D CMAKE_BUILD_TYPE=Release \
+          -D BUILD_CXX_VERSION=OFF \
+          -D OPEN_COARRAYS=/usr/local/opencoarrays/lib/libcaf_mpi.a \
           -D LIBRARY_PATHS=/usr/lib/openmpi \
-          -D LIBRARIES=mpi \
-          -D LINALG_FLAVOR=mkl \
+          -D LIBRARIES="mpi;blas;lapack" \
           ..
       - name: build
         run: cmake --build build
