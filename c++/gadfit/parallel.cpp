@@ -28,9 +28,9 @@ auto MPI_Allreduce(int, double*, int, int, int, MPI_Comm) -> void {}
 
 auto MPI_Comm_split(MPI_Comm, int, int, MPI_Comm*) -> void {}
 
-auto MPI_Recv(double*, int, int, int, int, MPI_Comm, int) -> void {}
+auto MPI_Recv(void*, int, int, int, int, MPI_Comm, int) -> void {}
 
-auto MPI_Send(const double*, int, int, int, int, MPI_Comm) -> void {}
+auto MPI_Send(const void*, int, int, int, int, MPI_Comm) -> void {}
 
 // This should never be called
 static auto MPI_Alltoallv(const double* const,
@@ -110,8 +110,8 @@ auto gatherTimes(const MPI_Comm mpi_comm,
         }
     } else {
         const double wall_time { timer.totalWallTime() };
-        MPI_Send(&wall_time, 1, MPI_DOUBLE, 0, my_rank, MPI_COMM_WORLD);
+        MPI_Send(&wall_time, 1, MPI_DOUBLE, 0, my_rank, mpi_comm);
         const double cpu_time { timer.totalCPUTime() };
-        MPI_Send(&cpu_time, 1, MPI_DOUBLE, 0, my_rank, MPI_COMM_WORLD);
+        MPI_Send(&cpu_time, 1, MPI_DOUBLE, 0, my_rank, mpi_comm);
     }
 }

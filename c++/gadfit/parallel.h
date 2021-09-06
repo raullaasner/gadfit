@@ -40,8 +40,8 @@ auto MPI_Initialized(int*) -> void;
 auto MPI_Finalized(int*) -> void;
 auto MPI_Allreduce(int, double*, int, int, int, MPI_Comm) -> void;
 auto MPI_Comm_split(MPI_Comm, int, int, MPI_Comm*) -> void;
-auto MPI_Recv(double*, int, int, int, int, MPI_Comm, int) -> void;
-auto MPI_Send(const double*, int, int, int, int, MPI_Comm) -> void;
+auto MPI_Recv(void*, int, int, int, int, MPI_Comm, int) -> void;
+auto MPI_Send(const void*, int, int, int, int, MPI_Comm) -> void;
 
 #endif // USE_MPI
 
