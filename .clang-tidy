@@ -1,17 +1,20 @@
 ---
 Checks: "-*,\
 bugprone-*,\
+-bugprone-easily-swappable-parameters,\
 clang-analyzer-*,\
 cppcoreguidelines-*,\
 -cppcoreguidelines-pro-bounds-array-to-pointer-decay,\
 -cppcoreguidelines-pro-bounds-constant-array-index,\
 misc-*,\
+-misc-misplaced-const,\
 modernize-*,\
 mpi-*,\
 performance-*,\
 portability-*,\
 readability-*,\
--readability-avoid-const-params-in-decls
+-readability-avoid-const-params-in-decls,\
+-readability-function-cognitive-complexity
 "
 HeaderFilterRegex: 'c\+\+/gadfit/.*\.h$'
 CheckOptions:

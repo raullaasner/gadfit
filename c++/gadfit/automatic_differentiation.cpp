@@ -51,7 +51,7 @@ auto initializeADReverse(const int sweep_size) -> void
     reverse::adjoints.resize(sweep_size);
     // We assume 4 entries per operation in the execution trace, i.e.
     // most operations are expected to be binary.
-    reverse::trace.resize(4 * sweep_size);
+    reverse::trace.resize(static_cast<int>(4 * sweep_size));
     reverse::trace_count = -1;
     // We assume that 1/2 of all elemental operations produce a
     // constant to be saved for the return sweep.

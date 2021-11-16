@@ -14,7 +14,8 @@
 
 #include <cblas.h>
 
-extern "C" {
+extern "C"
+{
     auto dpptrf_(const char*, const int*, double*, int*) -> void;
     auto dpptrs_(const char*,
                  const int*,

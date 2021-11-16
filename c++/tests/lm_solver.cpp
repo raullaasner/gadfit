@@ -412,7 +412,8 @@ TEST_CASE( "Geodesic acceleration" )
     solver.setPar(1, fix_d[3], true);
     solver.settings.iteration_limit = 5;
     solver.settings.acceleration_threshold = 0.9;
-    solver.settings.verbosity = gadfit::io::all;
+    solver.settings.verbosity =
+      gadfit::io::delta1 | gadfit::io::delta2 | gadfit::io::timings;
     solver.fit(1.0);
     REQUIRE( solver.chi2() == approx(5641.660305504621) );
     REQUIRE( solver.getParValue(1) == approx(20.70654799943915) );

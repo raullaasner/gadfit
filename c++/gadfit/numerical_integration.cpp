@@ -90,7 +90,7 @@ auto initIntegration(const int workspace_size,
 auto initIntegration2D() -> void
 {
     const int gauss_size { static_cast<int>(gk::weights_gauss.size()) };
-    gk::weights_gauss_2D.resize(gauss_size * gauss_size);
+    gk::weights_gauss_2D.resize(static_cast<int>(gauss_size * gauss_size));
     for (int i {}; i < gauss_size; ++i) {
         for (int j {}; j < gauss_size; ++j) {
             gk::weights_gauss_2D[i * gauss_size + j] =
@@ -98,7 +98,8 @@ auto initIntegration2D() -> void
         }
     }
     const int kronrod_size { static_cast<int>(gk::weights_kronrod.size()) };
-    gk::weights_kronrod_2D.resize(kronrod_size * kronrod_size);
+    gk::weights_kronrod_2D.resize(
+      static_cast<int>(kronrod_size * kronrod_size));
     for (int i {}; i < kronrod_size; ++i) {
         for (int j {}; j < kronrod_size; ++j) {
             gk::weights_kronrod_2D[i * kronrod_size + j] =

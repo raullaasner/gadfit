@@ -92,8 +92,8 @@ auto LMsolver::fit(double lambda) -> void
         spdlog::warn("No active fitting parameters.");
     }
     // Prepare the main work arrays
-    Jacobian =
-      std::vector<double>(indices.n_datapoints * indices.n_active, 0.0);
+    Jacobian = std::vector<double>(
+      static_cast<size_t>(indices.n_datapoints) * indices.n_active, 0.0);
     residuals.resize(indices.n_datapoints);
     if (settings.acceleration_threshold > 0.0) {
         omega.resize(indices.n_datapoints);
@@ -101,13 +101,14 @@ auto LMsolver::fit(double lambda) -> void
     // Each MPI process is assigned a segment of some of work arrays
     // such as the Jacobian.
     std::vector<double> Jacobian_fragment(
-      indices.workloads.at(my_rank) * indices.n_active, 0.0);
+      static_cast<size_t>(indices.workloads.at(my_rank)) * indices.n_active,
+      0.0);
     std::vector<double> residuals_fragment(indices.workloads.at(my_rank));
     std::vector<double> omega_fragment;
     if (settings.acceleration_threshold > 0.0) {
         omega_fragment.resize(indices.workloads.at(my_rank));
     }
-    JTJ.resize(indices.n_active * indices.n_active);
+    JTJ.resize(static_cast<int>(indices.n_active * indices.n_active));
     DTD = std::vector<double>(JTJ.size(), 0.0);
     if (static_cast<int>(settings.DTD_min.size()) > 1) {
         for (int i {}; i < indices.n_active; ++i) {
@@ -625,7 +626,7 @@ auto LMsolver::printIterationResults(const int i_iteration,
     // active fitting parameters separately. Otherwise, there is no
     // distinction.
     const bool single_dataset { x_data.size() == 1 };
-    if (!single_dataset) {
+    if (!single_dataset && !ioTest(io::hide_global)) {
         spdlog::info("  Global parameters");
         for (int i_par {}; i_par < fit_functions.front().getNumPars();
              ++i_par) {
@@ -634,15 +635,17 @@ auto LMsolver::printIterationResults(const int i_iteration,
             }
         }
     }
-    for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
-        if (static_cast<int>(x_data.size()) > 1) {
-            spdlog::info("  Data set: {}", i_set);
-        }
-        for (int i_par {}; i_par < fit_functions.front().getNumPars();
-             ++i_par) {
-            if (single_dataset
-                || indices.global.find(i_par) == indices.global.cend()) {
-                parameterLine(i_set, i_par);
+    if (!ioTest(io::hide_local)) {
+        for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
+            if (static_cast<int>(x_data.size()) > 1) {
+                spdlog::info("  Data set: {}", i_set);
+            }
+            for (int i_par {}; i_par < fit_functions.front().getNumPars();
+                 ++i_par) {
+                if (single_dataset
+                    || indices.global.find(i_par) == indices.global.cend()) {
+                    parameterLine(i_set, i_par);
+                }
             }
         }
     }
@@ -666,7 +669,8 @@ auto LMsolver::printTimings() const -> void
         spdlog::info("Relative cost compared to the main loop on process 0");
         spdlog::info("====================================================");
         const auto relTime { [this](const double time) {
-            return 100 * time / main_timer.totalCPUTime();
+            constexpr int total_percent { 100 };
+            return total_percent * time / main_timer.totalCPUTime();
         } };
         spdlog::info(" Jacobian:{:6.2f}%",
                      relTime(Jacobian_timer.totalCPUTime()));

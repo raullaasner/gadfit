@@ -1053,6 +1053,8 @@ The following flags are supported.
 \item \verb+delta1+: Show the change in parameter value after each iteration.
 \item \verb+delta2+: Show the acceleration term of each parameter after each iteration. Note that the actual contribution to the update vector is $-\frac{1}{2}\bm\delta_2$. Only shown if \verb+acceleration_threshold+ is also set.
 \item \verb+timings+: Show detailed timing information for all processes.
+\item \verb+hide_local+: Do not show local parameters during the fitting procedure.
+\item \verb+hide_global+: Do not show global parameters during the fitting procedure.
 \item \verb+all+: Turn on all flags.
 \end{itemize}
 
@@ -1077,7 +1079,12 @@ spdlog::set_level(spdlog::level)
 \end{verbatim}
 Set global log level
 \begin{itemize}
-\item \verb+spdlog::level+: logging level. For instance, use \verb+spdlog::level::debug+ for a more verbose output or \verb+spdlog::level::off+ to turn off all output. Default is \verb+spdlog::level::info+.
+\item \verb+spdlog::level+: logging levels.
+  \begin{itemize}
+  \item \verb+spdlog::level::info+: normal output.
+  \item \verb+spdlog::level::debug+: more verbose output.
+  \item \verb+spdlog::level::off+: turn off all output.
+  \end{itemize}
 \end{itemize}
 
 \subsubsection{\label{sec:input_fortran}Fortran}
