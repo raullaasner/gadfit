@@ -54,7 +54,7 @@ target_compile_definitions(gadfit PRIVATE
   CMAKE_PLATFORM="${CMAKE_HOST_SYSTEM}")
 
 # Process user defined include paths and libraries
-include(Tools)
+include(GADfitTools)
 target_include_directories(gadfit PRIVATE ${INCLUDE_PATHS})
 # Convert variables to list first
 foreach(_var LIBRARIES LIBRARY_PATHS INCLUDE_PATHS)
