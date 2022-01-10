@@ -1,8 +1,7 @@
 #include <array>
 
-#include "lm_solver_data.h"
-
 #include "lm_solver.h"
+#include "lm_solver_data.h"
 
 // If you don't have spdlog installed, remove all references to spdlog
 // from this file. It should still run.

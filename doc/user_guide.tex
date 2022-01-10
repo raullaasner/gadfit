@@ -46,7 +46,7 @@
 
 \section{Introduction}
 
-GADfit is an implementation of \textbf{g}lobal nonlinear curve fitting based on \textbf{a}utomatic \textbf{d}ifferentiation (AD). Global fitting refers to fitting many data sets simultaneously with some parameters shared among the data sets, but not necessarily finding the global minimum in parameter space. The optimization procedure is based on a modified Levenberg-Marquardt algorithm, which is well-suited for difficult large scale problems with a strong interdependence of parameters. The Jacobian and other quantities requiring differentiation are evaluated using AD instead of finite differences, which ensures that the derivatives are always calculated with the same precision as function evaluation. The cost of computing the derivatives is \textit{independent} of the number of fitting parameters and is a small constant of function evaluation, resulting in very efficient code. The method can be used for fitting functions of high complexity which, in the present implementation, include nonlinear combinations of elementary and special functions, single or double integrals, and any control flow statements allowed by the programming language.
+GADfit is an implementation of \textbf{g}lobal nonlinear curve fitting based on \textbf{a}utomatic \textbf{d}ifferentiation (AD). Global fitting refers to fitting many data sets simultaneously with some parameters shared among the data sets but not necessarily finding the global minimum in parameter space. The optimization procedure is based on a modified Levenberg-Marquardt algorithm which is well-suited for difficult large scale problems with a strong interdependence of parameters. The Jacobian and other quantities requiring differentiation are evaluated using AD instead of finite differences which ensures that the derivatives are always calculated with the same precision as function evaluation. The cost of computing the derivatives is \textit{independent} of the number of fitting parameters and is a small constant of function evaluation resulting in very efficient code. The method can be used for fitting functions of high complexity which, in the present implementation, include nonlinear combinations of elementary and special functions, single or double integrals, and any control flow statements allowed by the programming language.
 
 GADfit is currently hosted by GitHub.
 
@@ -68,13 +68,13 @@ Given a set of $n$ data points $(x_i,y_i)$, where $x_i$ are the independent vari
   \chi^2 = \sum_{i=1}^n \left[ \frac{y_i - f(x_i, \bm\beta)}{\sigma_i}
   \right]^2,
 \end{equation}
-where $\sigma_i$ are the data point uncertainties. As with all nonlinear optimization algorithms, Levenberg-Marquardt is an iterative procedure. One starts with an initial guess for the parameter vector $\bm\beta$ and finds an increment $\bm\delta$ such that $\bm\beta \rightarrow \bm\beta + \bm\delta$ leads to the lowering of $\chi^2$. This is repeated until some convergence criterion is satisfied. Following the original LM method, the increment vector (the step) is explicitly given by
+where $\sigma_i$ are the data point uncertainties (standard deviations). As with all nonlinear optimization algorithms, Levenberg-Marquardt is an iterative procedure. One starts with an initial guess for the parameter vector $\bm\beta$ and finds an increment $\bm\delta$ such that $\bm\beta \rightarrow \bm\beta + \bm\delta$ leads to the lowering of $\chi^2$. This is repeated until some convergence criterion is satisfied. Following the original LM method, the increment vector (the step) is given by
 \begin{equation}
   \label{eq:LM}
   \left[\bm J^T \bm J + \lambda\diag \left(\bm J^T \bm J\right)
   \right] \bm\delta = \bm J^T \left[ \bm y - \bm f(\bm \beta) \right],
 \end{equation}
-where\footnote{Usually the error factors $\sigma_i$ are not included in the
+where\footnote{Usually the uncertainties $\sigma_i$ are not included in the
   definition.}
 \begin{equation}
   \label{eq:Jacobian}
@@ -85,7 +85,7 @@ defines the Jacobian and where the damping parameter $\lambda$ allows the nature
 
 \subsection{\label{sec:mod_lm}Modified Levenberg-Marquardt}
 
-What was described above is the classical LM algorithm, which is close to the default regime of GADfit unless the user modifies any of the default input parameters. In this section, we discuss several interesting modifications to the algorithm (see \cite{transtrum10, transtrum11, transtrum12} and references therein), which aim to improve the convergence speed and the sensitivity to the initial guess.
+What was described above is the classical LM algorithm, which is close to the default regime of GADfit. In this section, we discuss several interesting modifications to the algorithm (see \cite{transtrum10, transtrum11, transtrum12} and references therein), which aim to improve the convergence speed and the sensitivity to the initial guess.
 
 \paragraph{The damping matrix.} Originally, the rationale for choosing the damping matrix as $\bm D^T\bm D \equiv \diag(\bm J^T\bm J)$ in Eq.~\eqref{eq:LM} was to make the algorithm invariant to the rescaling of parameters. This is important when the parameters have very different magnitudes and the algorithm has to follow a narrow canyon in the parameter space in search of the minimum of $\chi^2$. However, this poses a problem when the algorithm is in a region of space where the model is insensitive to the parameters. When this happens, the diagonal entries of both $\bm J^T\bm J$ and the damping matrix $\bm D^T\bm D$ become small for some parameters, which leads to uncontrollably large steps. There is a chance that some parameters are incorrectly pushed to infinite values, a phenomenon known as parameter evaporation. A compromise for both retaining the invariance to rescaling and guarding against parameter evaporation is to set the diagonal entries of $\bm D^T\bm D$ to the largest diagonal entries of $\bm J^T\bm J$ yet encountered. This approach is efficient provided that the initial guess does not lie on a plateau of the $\chi^2$ surface in the parameter space. If this condition is not satisfied then, as a simple and robust solution, the user can specify the minimum values for the diagonal of $\bm D^T\bm D$.
 
@@ -198,7 +198,7 @@ In addition to \eqref{eq:cos_phi}, most of the standard convergence criteria are
 
 When fitting many curves simultaneously with shared parameters, the data sets are stacked to form a single data set, which is then fitted with a piecewise function. The fitting function is constructed such that some parameters only have an effect on a subset of data points (local parameters) whereas others are active over the whole data range (global parameters).
 
-As an example, take two data sets with sizes $n$ and $m$ and a fitting function $f(x,\alpha,\beta)$, which depends on two parameters $\alpha$ and $\beta$. $\alpha$ is different for the two curves whereas $\beta$ is shared. For instance, for an exponential decay process, these could be different initial amplitudes but the same decay constant. The global Jacobian is then
+As an example, take two data sets with sizes $n$ and $m$ and a fitting function $f(x,\alpha,\beta)$, which depends on two parameters $\alpha$ and $\beta$. $\alpha$ is different for the two curves whereas $\beta$ is shared. For instance, for an exponential decay process these could be different initial amplitudes but the same decay constant. The global Jacobian is then
 \begin{equation}
   \label{eq:global_Jacobian}
   \bm J =
@@ -896,7 +896,7 @@ where \texttt{f} is any function with the correct signature, e.g. \texttt{expone
 solver.addDataset(x_data_1, y_data_1);
 solver.addDataset(x_data_2, y_data_2);
 \end{verbatim}
-where all arguments are of type \texttt{std::vector<double>}. Then set the initial values of all fitting parameters. In this example, all starting values are set to 1.0.
+If you look into \verb+lm_solver_data.h+ you'll see that \verb+x_data_1+ and \verb+y_data_1+ are of type \texttt{std::array<double>} and \verb+x_data_2+ and \verb+y_data_2+ are of type \verb+std::shared_ptr<std::vector<double>>+. This is just to demonstrate two different approaches. The latter is better because it avoids an unnecessary copy of data. But for convenience the container solution is also supported. Then set the initial values of all fitting parameters. In this example, all starting values are set to 1.0.
 \begin{verbatim}
 solver.setPar(0, 1.0, true, 0);  // I0 of curve 1
 solver.setPar(2, 1.0, true, 0);  // bgr of curve 1
@@ -1001,11 +1001,24 @@ gadfit::LMsolver::LMsolver(const fitSignature& function_body,
 \end{itemize}
 
 \begin{verbatim}
+gadfit::LMsolver::addDataset(
+  const std::shared_ptr<std::vector<double>>& x_data,
+  const std::shared_ptr<std::vector<double>>& y_data,
+  const std::shared_ptr<std::vector<double>>& errors
+\end{verbatim}
+Add a data set.
+\begin{itemize}
+\item \verb+x_data+: shared pointer of an array of independent variables of a data set.
+\item \verb+y_data+: shared pointer of an array of dependent variables of a data set.
+\item \verb+errors+: if present, defines a shared pointer of data point errors. Default is to set all errors equal to 1, i.e. all data points have the same weight.
+\end{itemize}
+
+\begin{verbatim}
 gadfit::LMsolver::addDataset(const T& x_data,
                              const T& y_data,
                              const std::vector<double>& errors
 \end{verbatim}
-Function template for adding a data set.
+Convenience function for adding a data set. This is an easy way to support containers of any kind but at the expense of a copy of all data.
 \begin{itemize}
 \item \verb+x_data+: array of independent variables of a data set of type \texttt{T} (e.g., \texttt{double}).
 \item \verb+y_data+: array of dependent variables of a data set of type \texttt{T}.

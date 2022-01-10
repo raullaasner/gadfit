@@ -706,9 +706,8 @@ auto erf(const AdVar& x) -> AdVar
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::erf_a);
     } else if (x.idx == forward_active_idx) {
-        const double tmp {
-            2 * std::numbers::inv_sqrtpi_v<double> * std::exp(-x.val * x.val)
-        };
+        const double tmp { 2 * std::numbers::inv_sqrtpi
+                           * std::exp(-x.val * x.val) };
         y.d = x.d * tmp;
         y.dd = (x.dd - 2 * x.d * x.d * x.val) * tmp;
         y.idx = forward_active_idx;
@@ -947,7 +946,7 @@ auto returnSweep() -> void
             // clang-format off
             adjoints[trace[trace_count - 2]] +=
               adjoints[trace[trace_count - 1]] * 2
-              * std::numbers::inv_sqrtpi_v<double>
+              * std::numbers::inv_sqrtpi
               * std::exp(-forwards[trace[trace_count - 2]]
                          * forwards[trace[trace_count - 2]]);
             // clang-format on

@@ -115,14 +115,14 @@ private:
     // The measured data used in the fitting procedure are stored in
     // x_data and y_data. x_data stores the independent values
     // (in a plot these are typically values on the x-axis).
-    std::vector<std::vector<double>> x_data {};
+    std::vector<std::shared_ptr<std::vector<double>>> x_data {};
     // y_data stores the dependent values.
-    std::vector<std::vector<double>> y_data {};
+    std::vector<std::shared_ptr<std::vector<double>>> y_data {};
     // If specified by the user, these are the errors associated with
     // the data points. These determine the weights when constructing
     // the Jacobian. Default is to use the same weight for each data
     // point.
-    std::vector<std::vector<double>> errors {};
+    std::vector<std::shared_ptr<std::vector<double>>> errors {};
     // Model functions used for fitting. The user only specifies a
     // single fitting function but it is duplicated over all the data
     // sets (curves). This is because the fitting parameters
@@ -161,6 +161,14 @@ public:
     auto operator=(const LMsolver&) -> LMsolver& = default;
     auto operator=(LMsolver&&) -> LMsolver& = default;
 
+    // Data (x- and y-values and the corresponding errors if present)
+    // are added as shared pointers in order to avoid copies.
+    auto addDataset(const std::shared_ptr<std::vector<double>>& x_data,
+                    const std::shared_ptr<std::vector<double>>& y_data,
+                    const std::shared_ptr<std::vector<double>>& errors = {})
+      -> void;
+    // For convenience, data can also be added as containers but then
+    // copies are made.
     template <typename T>
     auto addDataset(const T& x_data,
                     const T& y_data,
@@ -233,32 +241,32 @@ private:
     [[nodiscard]] auto ioTest(io::flag flag) const -> bool;
 };
 
+// Because errors are optional (they come with a default value) they
+// have to be of type vector<double> and not T.
 template <typename T>
 auto LMsolver::addDataset(const T& x_data,
                           const T& y_data,
                           const std::vector<double>& errors) -> void
 {
-    if (set_par_called) {
-        throw LateAddDatasetCall {};
-    }
-    this->x_data.emplace_back(std::vector<double>(x_data.size()));
-    this->y_data.emplace_back(std::vector<double>(y_data.size()));
+    // As was mentioned above, this is just a convenience
+    // function. Convert the input data of type T into a
+    // vector<double> as pass it as a shared pointer to the main
+    // addDataset function.
+    const auto x_data_dbl { std::make_shared<std::vector<double>>(
+      std::vector<double>(x_data.size())) };
+    const auto y_data_dbl { std::make_shared<std::vector<double>>(
+      std::vector<double>(y_data.size())) };
     for (int i {}; i < static_cast<int>(x_data.size()); ++i) {
-        this->x_data.back()[i] = x_data[i];
-        this->y_data.back()[i] = y_data[i];
+        x_data_dbl->operator[](i) = x_data[i];
+        y_data_dbl->operator[](i) = y_data[i];
     }
     if (!errors.empty()) {
-        this->errors.emplace_back(std::vector<double>(errors.size()));
-        for (int i {}; i < static_cast<int>(errors.size()); ++i) {
-            this->errors.back()[i] = errors[i];
-        }
+        addDataset(x_data_dbl,
+                   y_data_dbl,
+                   std::make_shared<std::vector<double>>(errors));
     } else {
-        this->errors.emplace_back(std::vector<double>(x_data.size(), 1.0));
+        addDataset(x_data_dbl, y_data_dbl, {});
     }
-    if (fit_functions.size() < this->x_data.size()) {
-        fit_functions.push_back(fit_functions.back());
-    }
-    indices.active.emplace_back(std::set<int> {});
 }
 
 } // namespace gadfit

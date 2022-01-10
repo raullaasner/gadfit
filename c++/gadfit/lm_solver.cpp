@@ -42,6 +42,33 @@ LMsolver::LMsolver(const fitSignature& function_body, MPI_Comm mpi_comm)
     fit_functions.emplace_back(FitFunction { function_body });
 }
 
+auto LMsolver::addDataset(const std::shared_ptr<std::vector<double>>& x_data,
+                          const std::shared_ptr<std::vector<double>>& y_data,
+                          const std::shared_ptr<std::vector<double>>& errors)
+  -> void
+{
+    assert(x_data);
+    assert(y_data);
+    assert(x_data->size() == y_data->size());
+    if (set_par_called) {
+        throw LateAddDatasetCall {};
+    }
+    this->x_data.push_back(x_data);
+    this->y_data.push_back(y_data);
+    if (errors) {
+        assert(x_data->size() == errors->size());
+        this->errors.push_back(errors);
+    } else {
+        // Default is for all datapoints to have equal weights
+        this->errors.emplace_back(std::make_shared<std::vector<double>>(
+          std::vector<double>(x_data->size(), 1.0)));
+    }
+    if (fit_functions.size() < this->x_data.size()) {
+        fit_functions.push_back(fit_functions.back());
+    }
+    indices.active.emplace_back(std::set<int> {});
+}
+
 auto LMsolver::setPar(const int i_par,
                       const double val,
                       const bool active,
@@ -201,7 +228,7 @@ auto LMsolver::prepareIndexing() -> void
     }
     indices.n_datapoints = 0;
     for (const auto& dataset : x_data) {
-        indices.n_datapoints += static_cast<int>(dataset.size());
+        indices.n_datapoints += static_cast<int>(dataset->size());
     }
     indices.degrees_of_freedom = indices.n_datapoints - indices.n_active;
     if (indices.degrees_of_freedom < 0) {
@@ -297,7 +324,7 @@ auto LMsolver::prepareIndexing() -> void
     // 93, cur_range is initialized to { 0, 78 } and updated to { 79, 171 }
     // in the loop below.
     std::array<int, 2> cur_range {
-        0, static_cast<int>(x_data.front().size()) - 1
+        0, static_cast<int>(x_data.front()->size()) - 1
     };
     for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
         if (my_global_range.front() >= cur_range.front()
@@ -311,12 +338,12 @@ auto LMsolver::prepareIndexing() -> void
                   my_global_range.back() - cur_range.front();
             } else if (my_global_range.front() <= cur_range.back()) {
                 indices.data_ranges.at(i_set).back() =
-                  static_cast<int>(x_data.at(i_set).size()) - 1;
+                  static_cast<int>(x_data.at(i_set)->size()) - 1;
             }
         }
         if (i_set < static_cast<int>(x_data.size()) - 1) {
-            cur_range.front() += static_cast<int>(x_data.at(i_set).size());
-            cur_range.back() += static_cast<int>(x_data.at(i_set + 1).size());
+            cur_range.front() += static_cast<int>(x_data.at(i_set)->size());
+            cur_range.back() += static_cast<int>(x_data.at(i_set + 1)->size());
         }
     }
 }
@@ -349,15 +376,16 @@ auto LMsolver::computeLeftHandSide(const double lambda,
              i_point <= indices.data_ranges.at(i_set).back();
              ++i_point) {
             *cur_residual++ =
-              (y_data[i_set][i_point]
-               - fit_functions[i_set](x_data[i_set][i_point]).val)
-              / errors[i_set][i_point];
+              (y_data[i_set]->operator[](i_point)
+               - fit_functions[i_set](x_data[i_set]->operator[](i_point)).val)
+              / errors[i_set]->operator[](i_point);
             gadfit::returnSweep();
             for (int i_par {};
                  i_par < static_cast<int>(indices.jacobian[i_set].size());
                  ++i_par) {
                 *(cur_Jacobian + indices.jacobian[i_set][i_par]) =
-                  gadfit::reverse::adjoints[i_par] / errors[i_set][i_point];
+                  gadfit::reverse::adjoints[i_par]
+                  / errors[i_set]->operator[](i_point);
             }
             cur_Jacobian += indices.n_active;
         }
@@ -431,8 +459,9 @@ auto LMsolver::computeDeltas(std::vector<double>& omega_fragment) -> void
             for (int i_point { indices.data_ranges.at(i_set).front() };
                  i_point <= indices.data_ranges.at(i_set).back();
                  ++i_point) {
-                *cur_omega++ = fit_functions[i_set](x_data[i_set][i_point]).dd
-                               / errors[i_set][i_point];
+                *cur_omega++ =
+                  fit_functions[i_set](x_data[i_set]->operator[](i_point)).dd
+                  / errors[i_set]->operator[](i_point);
             }
             deactivateParameters(i_set);
         }
@@ -534,16 +563,16 @@ auto LMsolver::chi2() -> double
         int i_point_end {};
         if (indices.data_ranges.empty()) {
             i_point_beg = 0;
-            i_point_end = static_cast<int>(x_data.at(i_set).size()) - 1;
+            i_point_end = static_cast<int>(x_data.at(i_set)->size()) - 1;
         } else {
             i_point_beg = indices.data_ranges.at(i_set).front();
             i_point_end = indices.data_ranges.at(i_set).back();
         }
         for (int i_point { i_point_beg }; i_point <= i_point_end; ++i_point) {
             const double diff {
-                (y_data[i_set][i_point]
-                 - fit_functions[i_set](x_data[i_set][i_point]).val)
-                / errors[i_set][i_point]
+                (y_data[i_set]->operator[](i_point)
+                 - fit_functions[i_set](x_data[i_set]->operator[](i_point)).val)
+                / errors[i_set]->operator[](i_point)
             };
             sum += diff * diff;
         }

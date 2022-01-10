@@ -20,7 +20,7 @@ static auto setSolverState(gadfit::LMsolver& solver) -> void {
     solver.addDataset(x_data_1, y_data_1);
     solver.addDataset(x_data_3, y_data_3);
     const auto reduceVector { [](const auto& in, const int N) {
-        return std::vector<double>(in.cbegin(), in.cbegin() + N);
+        return std::vector<double>(in->cbegin(), in->cbegin() + N);
     } };
     solver.addDataset(reduceVector(x_data_2, 97), reduceVector(y_data_2, 97));
     solver.setPar(0, fix_d[0], true, 0);
