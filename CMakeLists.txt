@@ -29,7 +29,6 @@ endif()
 option(BUILD_SHARED_LIBS
   "If enabled, builds a shared library, else static" ON)
 set(TESTS_RUN_PREFIX mpirun -np 8 CACHE STRING "Prefix used for running tests")
-set(LINALG_FLAVOR "" CACHE STRING "Choose the linear algebra library")
 set(INCLUDE_PATHS "" CACHE STRING
   "Directories containing necessary header files")
 set(LIBRARY_PATHS "" CACHE STRING
@@ -99,7 +98,9 @@ message("Install location: ${CMAKE_INSTALL_PREFIX}")
 # Sources
 if (BUILD_CXX_VERSION)
   add_subdirectory(c++/gadfit)
-  add_subdirectory(c++/tests)
+  if (NOT TARGET test)
+    add_subdirectory(c++/tests)
+  endif()
 else()
   add_subdirectory(fortran/gadfit)
   add_subdirectory(fortran/tests)
