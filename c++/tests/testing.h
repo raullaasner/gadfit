@@ -1,4 +1,4 @@
-// Fixtures and other helper functions for the tests
+// Fixtures and helper functions for the tests
 
 #pragma once
 

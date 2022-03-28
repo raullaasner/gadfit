@@ -15,7 +15,7 @@
 // library. These are intentionally unoptimized for debugging
 // purposes.
 
-#include "cblas_wrapper.h"
+#include "lapack_wrapper.h"
 
 #include <cmath>
 

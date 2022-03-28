@@ -12,8 +12,8 @@
 
 #include "lm_solver.h"
 
-#include "cblas_wrapper.h"
 #include "fit_function.h"
+#include "lapack_wrapper.h"
 #include "numerical_integration.h"
 
 #include <iomanip>

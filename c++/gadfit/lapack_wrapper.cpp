@@ -10,12 +10,31 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-#include "cblas_wrapper.h"
-
-#include <cblas.h>
+#include "lapack_wrapper.h"
 
 extern "C"
 {
+    auto dsyrk_(const char*,
+                const char*,
+                const int*,
+                const int*,
+                const double*,
+                const double*,
+                const int*,
+                const double*,
+                double*,
+                const int*) -> void;
+    auto dgemv_(const char*,
+                const int*,
+                const int*,
+                const double*,
+                const double*,
+                const int*,
+                const double*,
+                const int*,
+                const double*,
+                double*,
+                const int*) -> void;
     auto dpptrf_(const char*, const int*, double*, int*) -> void;
     auto dpptrs_(const char*,
                  const int*,
@@ -33,17 +52,12 @@ auto dsyrk_wrapper(const int N,
                    const std::vector<double>& A,
                    std::vector<double>& C) -> void
 {
-    cblas_dsyrk(CblasRowMajor,
-                CblasUpper,
-                CblasTrans,
-                N,
-                K,
-                1.0,
-                A.data(),
-                N,
-                0.0,
-                C.data(),
-                N);
+    // 'l' because this is Fortran ordering
+    constexpr char uplo { 'l' };
+    constexpr char trans { 'n' };
+    constexpr double alpha { 1.0 };
+    constexpr double beta { 0.0 };
+    dsyrk_(&uplo, &trans, &N, &K, &alpha, A.data(), &N, &beta, C.data(), &N);
 }
 
 auto dgemv_tr_wrapper(const int M,
@@ -52,18 +66,21 @@ auto dgemv_tr_wrapper(const int M,
                       const std::vector<double>& x,
                       std::vector<double>& y) -> void
 {
-    cblas_dgemv(CblasRowMajor,
-                CblasTrans,
-                M,
-                N,
-                1.0,
-                A.data(),
-                N,
-                x.data(),
-                1,
-                0.0,
-                y.data(),
-                1);
+    constexpr char trans { 'n' };
+    constexpr double alpha { 1.0 };
+    constexpr double beta { 0.0 };
+    constexpr int inc { 1 };
+    dgemv_(&trans,
+           &N,
+           &M,
+           &alpha,
+           A.data(),
+           &N,
+           x.data(),
+           &inc,
+           &beta,
+           y.data(),
+           &inc);
 }
 
 auto dpptrs_wrapper(const int dimension,
