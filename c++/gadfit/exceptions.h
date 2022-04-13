@@ -17,8 +17,10 @@
 
 namespace gadfit {
 
+// LCOV_EXCL_START
 class GADfitException : public std::exception
 {};
+// LCOV_EXCL_STOP
 
 class UnknownOperationException : public GADfitException
 {

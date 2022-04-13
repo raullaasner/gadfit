@@ -1,5 +1,3 @@
-#include <array>
-
 #include "lm_solver.h"
 #include "lm_solver_data.h"
 

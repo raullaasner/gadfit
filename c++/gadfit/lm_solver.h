@@ -20,8 +20,10 @@
 #include "parallel.h"
 
 #include <bitset>
+#include <cassert>
 #include <memory>
 #include <set>
+#include <span>
 #include <vector>
 
 namespace gadfit {
@@ -112,17 +114,15 @@ private:
     // variable keeps track of that.
     bool set_par_called { false };
 
-    // The measured data used in the fitting procedure are stored in
-    // x_data and y_data. x_data stores the independent values
-    // (in a plot these are typically values on the x-axis).
-    std::vector<std::shared_ptr<std::vector<double>>> x_data {};
-    // y_data stores the dependent values.
-    std::vector<std::shared_ptr<std::vector<double>>> y_data {};
-    // If specified by the user, these are the errors associated with
-    // the data points. These determine the weights when constructing
-    // the Jacobian. Default is to use the same weight for each data
-    // point.
-    std::vector<std::shared_ptr<std::vector<double>>> errors {};
+    // Input data are stored in x_data and y_data. x_data stores the
+    // independent values (typically the x-values on a plot).
+    std::vector<std::span<const double>> x_data {};
+    // y_data stores the dependent values
+    std::vector<std::span<const double>> y_data {};
+    // If given, these are the data point errors which determine the
+    // weights when constructing the Jacobian. Default is to use the
+    // same weight for all data points.
+    std::vector<std::span<const double>> errors {};
     // Model functions used for fitting. The user only specifies a
     // single fitting function but it is duplicated over all the data
     // sets (curves). This is because the fitting parameters
@@ -162,17 +162,26 @@ public:
     auto operator=(LMsolver&&) -> LMsolver& = default;
 
     // Data (x- and y-values and the corresponding errors if present)
-    // are added as shared pointers in order to avoid copies.
-    auto addDataset(const std::shared_ptr<std::vector<double>>& x_data,
-                    const std::shared_ptr<std::vector<double>>& y_data,
-                    const std::shared_ptr<std::vector<double>>& errors = {})
-      -> void;
-    // For convenience, data can also be added as containers but then
-    // copies are made.
+    // are captured as std::span in order to avoid copies. The data
+    // array type T needs to be compatible with std::span,
+    // e.g. std::vector or std::array.
     template <typename T>
     auto addDataset(const T& x_data,
                     const T& y_data,
                     const std::vector<double>& errors = {}) -> void;
+    // If the data go out of scope before LMsolver::fit is called, it
+    // is better to call addDataset with shared pointers.
+    auto addDataset(const std::shared_ptr<std::vector<double>>& x_data,
+                    const std::shared_ptr<std::vector<double>>& y_data,
+                    const std::shared_ptr<std::vector<double>>& errors = {})
+      -> void;
+    // Low level version of addDataset that deals directly with
+    // pointers. Use this if pointing to a segment of an array or when
+    // the template type T above is incompatible with std::span.
+    auto addDataset(const int n_datapoints,
+                    const double* x_data,
+                    const double* y_data,
+                    const double* errors = nullptr) -> void;
     // Set a fitting parameter as active/passive and local/global and
     // initialize it as a passive AD variable. The AD variables are
     // only activated when calculating the Jacobian.
@@ -209,10 +218,16 @@ public:
                 // for the user
 
 private:
+    // If addDataset was called with shared pointers as arguments,
+    // store those in these variables. This ensures the data do not go
+    // out of scope until the fitting procedure has finished and
+    // LMsolver has gone out of scope.
+    std::vector<std::shared_ptr<std::vector<double>>> x_data_shared {};
+    std::vector<std::shared_ptr<std::vector<double>>> y_data_shared {};
+    std::vector<std::shared_ptr<std::vector<double>>> errors_shared {};
     // General purpose work array for storing intermediate
     // results. Size can vary throughout the code.
     std::vector<double> work_tmp {};
-
     // Determines all relevant dimensions and parameter positions in
     // the Jacobian. Also, if using MPI, distributes all data among
     // the processes. This is called before every fitting procedure in
@@ -241,32 +256,19 @@ private:
     [[nodiscard]] auto ioTest(io::flag flag) const -> bool;
 };
 
-// Because errors are optional (they come with a default value) they
-// have to be of type vector<double> and not T.
+// LCOV_EXCL_START
 template <typename T>
 auto LMsolver::addDataset(const T& x_data,
                           const T& y_data,
                           const std::vector<double>& errors) -> void
 {
-    // As was mentioned above, this is just a convenience
-    // function. Convert the input data of type T into a
-    // vector<double> as pass it as a shared pointer to the main
-    // addDataset function.
-    const auto x_data_dbl { std::make_shared<std::vector<double>>(
-      std::vector<double>(x_data.size())) };
-    const auto y_data_dbl { std::make_shared<std::vector<double>>(
-      std::vector<double>(y_data.size())) };
-    for (int i {}; i < static_cast<int>(x_data.size()); ++i) {
-        x_data_dbl->operator[](i) = x_data[i];
-        y_data_dbl->operator[](i) = y_data[i];
-    }
-    if (!errors.empty()) {
-        addDataset(x_data_dbl,
-                   y_data_dbl,
-                   std::make_shared<std::vector<double>>(errors));
-    } else {
-        addDataset(x_data_dbl, y_data_dbl, {});
-    }
+    assert(x_data.size() == y_data.size());
+    assert(errors.empty() || x_data.size() == errors.size());
+    addDataset(static_cast<int>(x_data.size()),
+               x_data.data(),
+               y_data.data(),
+               errors.data());
 }
+// LCOV_EXCL_STOP
 
 } // namespace gadfit

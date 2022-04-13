@@ -896,7 +896,7 @@ where \texttt{f} is any function with the correct signature, e.g. \texttt{expone
 solver.addDataset(x_data_1, y_data_1);
 solver.addDataset(x_data_2, y_data_2);
 \end{verbatim}
-If you look into \verb+lm_solver_data.h+ you'll see that \verb+x_data_1+ and \verb+y_data_1+ are of type \texttt{std::array<double>} and \verb+x_data_2+ and \verb+y_data_2+ are of type \verb+std::shared_ptr<std::vector<double>>+. This is just to demonstrate two different approaches. The latter is better because it avoids an unnecessary copy of data. But for convenience the container solution is also supported. Then set the initial values of all fitting parameters. In this example, all starting values are set to 1.0.
+If you look into \verb+lm_solver_data.h+ you'll see that the input data are of type \texttt{std::array}. Internally the data are captured by \texttt{std::span} which is a view of the data and thus avoids a copy. The data could also be of type \texttt{std::vector} or anything that is compatible with \texttt{std::span}. Then set the initial values of all fitting parameters. In this example, all starting values are set to 1.0.
 \begin{verbatim}
 solver.setPar(0, 1.0, true, 0);  // I0 of curve 1
 solver.setPar(2, 1.0, true, 0);  // bgr of curve 1
@@ -992,8 +992,9 @@ where $\erf$ is the error function.
 You will mainly be interacting with the \verb+gadfit::LMsolver+ class. Here is an overview of the most important member functions and variables. Several of the functions and variables come with default values. Those are easily found in the source code (\texttt{c++/gadfit/lm\_solver.h}) and not duplicated here. The following functions and variables should be called on an \texttt{LMsolver} instance (i.e. not directly like static functions and variables).
 
 \begin{verbatim}
-gadfit::LMsolver::LMsolver(const fitSignature& function_body,
-                           const MPI_Comm mpi_comm = MPI_COMM_NULL)
+gadfit::LMsolver::LMsolver(
+  const fitSignature& function_body,
+  const MPI_Comm mpi_comm = MPI_COMM_NULL)
 \end{verbatim}
 \begin{itemize}
 \item \verb+function_body+: the function body. See Sec.~\ref{sec:fit_function_cxx} for how to define one.
@@ -1002,11 +1003,24 @@ gadfit::LMsolver::LMsolver(const fitSignature& function_body,
 
 \begin{verbatim}
 gadfit::LMsolver::addDataset(
+  const T& x_data,
+  const T& y_data,
+  const std::vector<double>& errors = {})
+\end{verbatim}
+Add a dataset. The type \texttt{T} needs to be compatible with \texttt{std::span}, e.g. \texttt{std::vector<double>}.
+\begin{itemize}
+\item \verb+x_data+: array of independent variables of a data set.
+\item \verb+y_data+: array of dependent variables of a data set.
+\item \verb+errors+: if present, defines data point errors. Default is to set all errors equal to 1, i.e. all data points have the same weight.
+\end{itemize}
+
+\begin{verbatim}
+gadfit::LMsolver::addDataset(
   const std::shared_ptr<std::vector<double>>& x_data,
   const std::shared_ptr<std::vector<double>>& y_data,
-  const std::shared_ptr<std::vector<double>>& errors
+  const std::shared_ptr<std::vector<double>>& errors = {})
 \end{verbatim}
-Add a data set.
+The previous version of \texttt{addDataset} captures data via \texttt{std::span} which requires the caller to ensure that the data do not go out of scope before a fitting procedure is called. If the data do go out of scope before \texttt{LMsolver::fit} is called, it is better to call addDataset with shared pointers.
 \begin{itemize}
 \item \verb+x_data+: shared pointer of an array of independent variables of a data set.
 \item \verb+y_data+: shared pointer of an array of dependent variables of a data set.
@@ -1014,22 +1028,24 @@ Add a data set.
 \end{itemize}
 
 \begin{verbatim}
-gadfit::LMsolver::addDataset(const T& x_data,
-                             const T& y_data,
-                             const std::vector<double>& errors
+gadfit::LMsolver::addDataset(const int n_datapoints,
+                             const double* x_data,
+                             const double* y_data,
+                             const double* errors = nullptr)
 \end{verbatim}
-Convenience function for adding a data set. This is an easy way to support containers of any kind but at the expense of a copy of all data.
+A low level version of \texttt{addDataset} that deals directly with pointers. Use this if pointing to a segment of an array or when the template type \texttt{T} above is incompatible with \texttt{std::span}.
 \begin{itemize}
-\item \verb+x_data+: array of independent variables of a data set of type \texttt{T} (e.g., \texttt{double}).
-\item \verb+y_data+: array of dependent variables of a data set of type \texttt{T}.
-\item \verb+errors+: if present, defines data point errors. Default is to set all errors equal to 1, i.e. all data points have the same weight.
+\item \verb+x_data+: shared pointer of an array of independent variables of a data set.
+\item \verb+y_data+: shared pointer of an array of dependent variables of a data set.
+\item \verb+errors+: if present, defines a shared pointer of data point errors. Default is to set all errors equal to 1, i.e. all data points have the same weight.
 \end{itemize}
 
 \begin{verbatim}
-gadfit::LMsolver::setPar(const int i_par,
-                         const double val,
-                         const bool active = false,
-                         const int i_dataset = global_dataset_idx)
+gadfit::LMsolver::setPar(
+  const int i_par,
+  const double val,
+  const bool active = false,
+  const int i_dataset = global_dataset_idx)
 \end{verbatim}
 Set fitting parameters.
 \begin{itemize}

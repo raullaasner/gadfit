@@ -183,8 +183,13 @@ TEST_CASE( "Access functions" )
 {
     spdlog::set_level(spdlog::level::off);
     gadfit::LMsolver solver { exponential, MPI_COMM_WORLD };
-    solver.addDataset(x_data_1, y_data_1);
-    solver.addDataset(x_data_2, y_data_2);
+    solver.addDataset(
+      std::make_shared<std::vector<double>>(x_data_1.begin(), x_data_1.end()),
+      std::make_shared<std::vector<double>>(y_data_1.begin(), y_data_1.end()),
+      std::make_shared<std::vector<double>>(x_data_1.size(), 1.0));
+    solver.addDataset(
+      std::make_shared<std::vector<double>>(x_data_2.begin(), x_data_2.end()),
+      std::make_shared<std::vector<double>>(y_data_2.begin(), y_data_2.end()));
     solver.settings.iteration_limit = 4;
     solver.setPar(0, fix_d[0], true, 0);
     solver.setPar(2, fix_d[1], true, 0);
@@ -259,18 +264,10 @@ TEST_CASE( "Exceptions" )
             REQUIRE( 0 == 0 );
         }
     }
-    const auto reduceVector { [](const auto& in, const int N) {
-        return std::vector<double>(in.cbegin(), in.cbegin() + N);
-    } };
-    const auto reduceVectorPtr { [](const auto& in, const int N) {
-        return std::vector<double>(in->cbegin(), in->cbegin() + N);
-    } };
     SECTION( "Too few data points (or too many fitting parameters)" ) {
         try {
-            solver.addDataset(
-              reduceVector(x_data_1, 2), reduceVector(y_data_1, 2));
-            solver.addDataset(
-              reduceVectorPtr(x_data_2, 2), reduceVectorPtr(y_data_2, 2));
+            solver.addDataset(2, x_data_1.data(), y_data_1.data());
+            solver.addDataset(2, x_data_2.data(), y_data_2.data());
             solver.setPar(0, fix_d[0], true, 0);
             solver.setPar(2, fix_d[1], true, 0);
             solver.setPar(0, fix_d[4], true, 1);
@@ -284,9 +281,8 @@ TEST_CASE( "Exceptions" )
         }
     }
     SECTION( "No degrees of freedom" ) {
-        solver.addDataset(reduceVector(x_data_1, 3), reduceVector(y_data_1, 3));
-        solver.addDataset(reduceVectorPtr(x_data_2, 2),
-                          reduceVectorPtr(y_data_2, 2));
+        solver.addDataset(3, x_data_1.data(), y_data_1.data());
+        solver.addDataset(2, x_data_2.data(), y_data_2.data());
         solver.setPar(0, fix_d[0], true, 0);
         solver.setPar(2, fix_d[1], true, 0);
         solver.setPar(0, fix_d[4], true, 1);

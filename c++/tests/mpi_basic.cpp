@@ -19,10 +19,7 @@ static auto exponential(const std::vector<gadfit::AdVar>& parameters,
 static auto setSolverState(gadfit::LMsolver& solver) -> void {
     solver.addDataset(x_data_1, y_data_1);
     solver.addDataset(x_data_3, y_data_3);
-    const auto reduceVector { [](const auto& in, const int N) {
-        return std::vector<double>(in->cbegin(), in->cbegin() + N);
-    } };
-    solver.addDataset(reduceVector(x_data_2, 97), reduceVector(y_data_2, 97));
+    solver.addDataset(97, x_data_2.data(), y_data_2.data());
     solver.setPar(0, fix_d[0], true, 0);
     solver.setPar(2, fix_d[2], true, 0);
     solver.setPar(0, fix_d[17], true, 1);

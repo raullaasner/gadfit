@@ -12,7 +12,6 @@
 #include <automatic_differentiation.h>
 #include <exceptions.h>
 #include <catch2/catch.hpp>
-#include <array>
 
 constexpr std::array fix_d {
     6.1360420701563498,  2.9606444748278875,  9.9253736972586246,
