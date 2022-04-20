@@ -105,7 +105,6 @@ jobs:
           -D CMAKE_BUILD_TYPE=Debug \
           -D LIBRARY_PATHS=/opt/intel/oneapi/mkl/latest/lib/intel64 \
           -D LIBRARIES="mkl_gf_lp64;mkl_sequential;mkl_core" \
-          -D INCLUDE_PATHS=/opt/intel/oneapi/mkl/latest/include \
           ..
       - name: build
         run: cmake --build build
@@ -139,7 +138,6 @@ jobs:
           -D CMAKE_BUILD_TYPE=Release \
           -D LIBRARY_PATHS=/opt/intel/oneapi/mkl/latest/lib/intel64 \
           -D LIBRARIES="mkl_gf_lp64;mkl_sequential;mkl_core" \
-          -D INCLUDE_PATHS=/opt/intel/oneapi/mkl/latest/include \
           ..
       - name: build
         run: cmake --build build

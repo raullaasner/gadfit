@@ -10,7 +10,7 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
-#include "lapack_wrapper.h"
+#include "lapack.h"
 
 extern "C"
 {
@@ -47,10 +47,10 @@ extern "C"
 
 namespace gadfit {
 
-auto dsyrk_wrapper(const int N,
-                   const int K,
-                   const std::vector<double>& A,
-                   std::vector<double>& C) -> void
+auto dsyrk(const int N,
+           const int K,
+           const std::vector<double>& A,
+           std::vector<double>& C) -> void
 {
     // 'l' because this is Fortran ordering
     constexpr char uplo { 'l' };
@@ -60,11 +60,11 @@ auto dsyrk_wrapper(const int N,
     dsyrk_(&uplo, &trans, &N, &K, &alpha, A.data(), &N, &beta, C.data(), &N);
 }
 
-auto dgemv_tr_wrapper(const int M,
-                      const int N,
-                      const std::vector<double>& A,
-                      const std::vector<double>& x,
-                      std::vector<double>& y) -> void
+auto dgemv(const int M,
+           const int N,
+           const std::vector<double>& A,
+           const std::vector<double>& x,
+           std::vector<double>& y) -> void
 {
     constexpr char trans { 'n' };
     constexpr double alpha { 1.0 };
@@ -83,9 +83,9 @@ auto dgemv_tr_wrapper(const int M,
            &inc);
 }
 
-auto dpptrs_wrapper(const int dimension,
-                    std::vector<double>& A,
-                    std::vector<double>& b) -> void
+auto dpptrs(const int dimension,
+            std::vector<double>& A,
+            std::vector<double>& b) -> void
 {
     std::vector<double> A_packed((A.size() * (A.size() + 1)) / 2);
     auto it { A_packed.begin() };

@@ -18,8 +18,6 @@
 
 #include <numeric>
 
-#include <iomanip>
-#include <iostream>
 namespace gadfit {
 
 // Gauss-Kronrod parameters

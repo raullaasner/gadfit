@@ -42,9 +42,7 @@ endif()
 # Options and variables (C++ only)
 set(SPDLOG_PATH "" CACHE STRING "Path to spdlog installation directory")
 
-# Determine linear algebra library
-set(linalg_library_name "fallback") # Start with the fallback
-# Next test for anything that passes the linear algebra test
+# Linear algebra library
 try_compile(LINALG_TEST ${CMAKE_CURRENT_BINARY_DIR}
   ${PROJECT_SOURCE_DIR}/cmake/tests/Linalg.cpp
   CMAKE_FLAGS
@@ -52,26 +50,12 @@ try_compile(LINALG_TEST ${CMAKE_CURRENT_BINARY_DIR}
   "-DLINK_DIRECTORIES=${LIBRARY_PATHS}"
   "-DLINK_LIBRARIES=${LIBRARIES}")
 if (LINALG_TEST)
-  set(linalg_library_name "lapack")
-endif()
-# Next test for MKL
-try_compile(LINALG_TEST ${CMAKE_CURRENT_BINARY_DIR}
-  ${PROJECT_SOURCE_DIR}/cmake/tests/MKL.cpp
-  CMAKE_FLAGS
-  "-DINCLUDE_DIRECTORIES=${INCLUDE_PATHS}"
-  "-DLINK_DIRECTORIES=${LIBRARY_PATHS}"
-  "-DLINK_LIBRARIES=${LIBRARIES}")
-if (LINALG_TEST)
-  set(linalg_library_name "MKL")
-endif()
-if (linalg_library_name STREQUAL "MKL")
-  target_sources(gadfit PRIVATE lapack_wrapper_mkl.cpp)
-elseif (linalg_library_name STREQUAL "lapack")
-  target_sources(gadfit PRIVATE lapack_wrapper.cpp)
+  target_sources(gadfit PRIVATE lapack.cpp)
+  message("Using optimized linear algebra library")
 else()
-  target_sources(gadfit PRIVATE lapack_wrapper_fallback.cpp)
+  target_sources(gadfit PRIVATE lapack_fallback.cpp)
+  message("Using fallback linear algebra routines")
 endif()
-message("Using linear algebra library: ${linalg_library_name}")
 
 # Logging
 include(FetchContent)
