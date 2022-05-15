@@ -15,16 +15,17 @@
 // library. These are intentionally unoptimized for debugging
 // purposes.
 
-#include "lapack_wrapper.h"
+#include "lapack.h"
 
 #include <cmath>
 
 namespace gadfit {
 
-auto dsyrk_wrapper(const int N,
-                   const int K,
-                   const std::vector<double>& A,
-                   std::vector<double>& C) -> void
+auto dsyrk(const char,
+           const int N,
+           const int K,
+           const std::vector<double>& A,
+           std::vector<double>& C) -> void
 {
     std::fill(C.begin(), C.end(), 0.0);
     for (int i {}; i < N; ++i) {
@@ -36,11 +37,12 @@ auto dsyrk_wrapper(const int N,
     }
 }
 
-auto dgemv_tr_wrapper(const int M,
-                      const int N,
-                      const std::vector<double>& A,
-                      const std::vector<double>& X,
-                      std::vector<double>& Y) -> void
+auto dgemv(const char,
+           const int M,
+           const int N,
+           const std::vector<double>& A,
+           const std::vector<double>& X,
+           std::vector<double>& Y) -> void
 {
     std::fill(Y.begin(), Y.end(), 0.0);
     for (int i {}; i < N; ++i) {
@@ -50,11 +52,8 @@ auto dgemv_tr_wrapper(const int M,
     }
 }
 
-auto dpptrs_wrapper(const int dimension,
-                    std::vector<double>& A,
-                    std::vector<double>& B) -> void
+auto dpptrf(const int dimension, std::vector<double>& A) -> void
 {
-    // Cholesky decomposition
     std::vector<double> L(A.size(), 0.0);
     for (int i {}; i < dimension; ++i) {
         // L_ij
@@ -74,23 +73,30 @@ auto dpptrs_wrapper(const int dimension,
         }
         L[ii] = std::sqrt(L[ii]);
     }
-    // Forward substitution (solving L*y=b)
-    std::vector<double> y(b.size());
+    A = L;
+}
+
+auto dpptrs(const int dimension,
+            const std::vector<double>& A,
+            std::vector<double>& B) -> void
+{
+    // Forward substitution (solving A*y=b)
+    std::vector<double> y(B.size());
     for (int i {}; i < dimension; ++i) {
-        y[i] = b[i];
+        y[i] = B[i];
         for (int j {}; j < i; ++j) {
-            y[i] -= L[i * dimension + j] * y[j];
+            y[i] -= A[i * dimension + j] * y[j];
         }
-        y[i] /= L[i * dimension + i];
+        y[i] /= A[i * dimension + i];
     }
-    // Backward substitution (solving L^T*x=y)
+    // Backward substitution (solving A^T*x=y)
     for (int i { dimension - 1 }; i >= 0; --i) {
         B[i] = y[i]; // Here B=x
         for (int j { dimension - 1 }; j > i; --j) {
-            // No need to explicitly use L^T here
-            B[i] -= L[j * dimension + i] * B[j];
+            // No need to explicitly use A^T here
+            B[i] -= A[j * dimension + i] * B[j];
         }
-        B[i] /= L[i * dimension + i];
+        B[i] /= A[i * dimension + i];
     }
 }
 
