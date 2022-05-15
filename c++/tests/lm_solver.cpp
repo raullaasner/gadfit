@@ -195,7 +195,7 @@ TEST_CASE( "Access functions" )
     REQUIRE( sum(solver.getDTD(), 5) == approx(34340.67196549198) );
     REQUIRE( sum(solver.getLeftSide(), 5) == approx(614.6894835127398) );
     REQUIRE( sum(solver.getRightSide(), 5) == approx(4410.585412402702) );
-    REQUIRE( sum(solver.getResiduals()) == approx(213.3530475167955) );
+    REQUIRE( sum(solver.getResiduals()) == approx(213.3530475167955, 1e3) );
 }
 
 TEST_CASE( "Exceptions" )
