@@ -461,7 +461,7 @@ TEST_CASE( "Double integral (nested)" )
         REQUIRE( solver.getParValue(1) == approx(1.5691886469730438) );
         REQUIRE( solver.getParValue(2) == approx(1.4762979593902223) );
         REQUIRE( solver.getParValue(3) == approx(2.3508567481628528) );
-        REQUIRE( solver.getParValue(4) == approx(0.14450095129620641) );
+        REQUIRE( solver.getParValue(4) == approx(0.14450095129620641, 1e3) );
         REQUIRE( solver.getParValue(5) == approx(2.1000000000000001) );
     }
     SECTION( "Active bounds: x1 x2" ) {
@@ -1287,7 +1287,7 @@ TEST_CASE( "Double integral (direct)" )
         solver.setPar(5, 2.1, false);
         solver.setPar(6, 1.0, false);
         solver.fit(0.1);
-        REQUIRE( solver.chi2() == approx(7.119223309181207e-07, 1e6) );
+        REQUIRE( solver.chi2() == approx(7.119223309181207e-07, 1e7) );
         REQUIRE( solver.getParValue(0) == approx(7) );
         REQUIRE( solver.getParValue(1) == approx(1.3) );
         REQUIRE( solver.getParValue(2) == approx(1.2) );
