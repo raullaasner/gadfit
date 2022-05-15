@@ -11,7 +11,7 @@
 % limitations under the License.
 
 \documentclass{article}
-\def\version{1.4}
+\def\version{1.5}
 
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -605,6 +605,8 @@ cmake --build . --target install
 set(SPDLOG_PATH $ENV{HOME}/builds/spdlog-install
     CACHE STRING "")
 \end{verbatim}
+\item An MPI compiler is optional but recommended in order to exploit multiple cores.
+\item Link against a Scalapack implementation in addition to MPI to exploit multiple cores even more.
 \end{itemize}
 
 \subsubsection{\label{sec:fortran_prerequisites}Fortran prerequisites}
@@ -771,7 +773,7 @@ This is useful for developers.
 
 \subsubsection{C++}
 
-If the derivatives were calculated with finite differences, a simple usage of OpenMP would be sufficient to parallelize most of GADfit. However, with AD, both function evaluation and the gradient calculation have side effects, which means that a simple parallelization scheme is not possible. The C++ version of GADfit is parallelized using MPI. In particular, all computations that run over the number of data points (Jacobian, residuals, sum of squares, \ldots), are divided into fragments of roughly equal size and distributed among the MPI processes. The rest of the linear algebra is done in serial.
+If the derivatives were calculated with finite differences, a simple usage of OpenMP would be sufficient to parallelize most of GADfit. However, with AD, both function evaluation and the gradient calculation have side effects, which means that a simple parallelization scheme is not possible. The C++ version of GADfit is parallelized using MPI. In particular, all computations that run over the number of data points (Jacobian, residuals, sum of squares, \ldots), are declared as shared arrays making use the MPI remote memory access (RMA) paradigm. If we stop here then the rest of the linear algebra is done in serial. However, if you have access to a Scalapack implementation, the linear algebra part can run in parallel as well. You may build the Netlib reference implementation of Scalapack yourself or use, e.g., the one supplied with MKL which, at the time of writing, is freely available.
 
 \subsubsection{\label{sec:parallelism_fortran}Fortran}
 
@@ -1058,7 +1060,7 @@ Set fitting parameters.
 \begin{verbatim}
 gadfit::LMsolver::settings
 \end{verbatim}
-A struct containing parameters that define runtime behavior.
+A struct containing parameters that define runtime behavior. Find the default values in \texttt{c++/gadfit/lm\_solver.h}.
 \begin{itemize}
 \item \verb+iteration_limit (int)+: iteration limit.
 \item \verb+lambda_down (double)+: Factor by which $\lambda$ is increased for accepted steps.
@@ -1067,6 +1069,9 @@ A struct containing parameters that define runtime behavior.
 \item \verb+damp_max (bool)+: Whether to update the damping matrix with the largest entries of $J^TJ$ yet encountered. If \texttt{false}, the classical Marquardt scheme is used.
 \item \verb+DTD_min (std::vector<double>)+: Minimum initial values of the diagonal entries of the damping matrix. Only relevant if \verb+damp_max == true+. Length of this array must equal the number of fitting parameters.
 \item \verb+acceleration_threshold (double)+: Acceleration threshold [$\alpha$ in Eq.~\eqref{eq:acc_alpha}]. If negative, the acceleration term is not calculated.
+\item \verb+blacs_single_column+: whether to create an $N\times1$ BLACS process grid where $N$ is the number of processes. If false, then a rectangular process grid is created with \verb+MPI_Dims_create+.
+\item \verb+min_n_blocks+: Minimum number of blocks of a 2D block-cyclic array held by each process. For minimal MPI communication set this values to 1 but for better load balancing set it to a larger value. Set \texttt{spdlog} level to \texttt{debug} in order to see details about the structure of block cyclic arrays.
+\item \verb+prepare_getters+: Use this if you want to use getters after the fitting procedure has ended (e.g. \texttt{getJacobian()}).
 \end{itemize}
 
 \begin{verbatim}
@@ -1094,6 +1099,28 @@ Performs the fitting procedure.
 \begin{itemize}
 \item \verb+lambda+: the adaptive damping parameter.
 \end{itemize}
+
+\begin{verbatim}
+gadfit::LMsolver::getParValue(const int i_par,
+                              const int i_dataset = 0)
+\end{verbatim}
+Get parameter \verb+i_par+ corresponding to data set \verb+i_dataset+.
+
+\begin{verbatim}
+gadfit::LMsolver::getValue(const double arg,
+                           const int i_dataset = 0)
+\end{verbatim}
+Get the fitting function value at \texttt{arg} using parameters corresponding to data set \verb+i_dataset+.
+
+\begin{verbatim}
+gadfit::LMsolver::getJacobian()
+gadfit::LMsolver::getJTJ()
+gadfit::LMsolver::getDTD()
+gadfit::LMsolver::getLeftSide()
+gadfit::LMsolver::getRightSide()
+gadfit::LMsolver::getResiduals()
+\end{verbatim}
+Get $\bm J$, $\bm J^T\bm J$, $\bm D^T\bm D$, left side of Eq.~\eqref{eq:LM}, right side of Eq.~\eqref{eq:LM}, or the residuals $\bm y - \bm f(\bm \beta)$, respectively. The setting \verb+prepare_getters+ must be set before the fitting procedure. Otherwise, these quantities are not returned correctly.
 
 \begin{verbatim}
 spdlog::set_pattern(pattern_string)

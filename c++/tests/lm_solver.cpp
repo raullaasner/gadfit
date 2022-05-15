@@ -163,20 +163,6 @@ TEST_CASE( "Indexing scheme" )
         REQUIRE( solver.getParValue(0, 1) == approx(147.1783948678938) );
         REQUIRE( solver.getParValue(2, 1) == approx(fix_d[5]) );
     }
-    SECTION( "No active parameters" ) {
-        solver.setPar(0, fix_d[0], false, 0);
-        solver.setPar(2, fix_d[1], false, 0);
-        solver.setPar(0, fix_d[4], false, 1);
-        solver.setPar(2, fix_d[5], false, 1);
-        solver.setPar(1, fix_d[3], false);
-        solver.fit(1.0);
-        REQUIRE( solver.chi2() == approx(284681.4650859555) );
-        REQUIRE( solver.getParValue(1) == approx(0.5356792380861322) );
-        REQUIRE( solver.getParValue(0, 0) == approx(6.13604207015635) );
-        REQUIRE( solver.getParValue(2, 0) == approx(2.960644474827888) );
-        REQUIRE( solver.getParValue(0, 1) == approx(-1.472720596147903) );
-        REQUIRE( solver.getParValue(2, 1) == approx(4.251266120087788) );
-    }
 }
 
 TEST_CASE( "Access functions" )
@@ -197,6 +183,7 @@ TEST_CASE( "Access functions" )
     solver.setPar(2, fix_d[5], true, 1);
     solver.setPar(1, fix_d[3], true);
     REQUIRE( solver.getValue(fix_d[2]) == approx(2.960644529912441) );
+    solver.settings.prepare_getters = true;
     solver.fit(1.0);
     REQUIRE( solver.getValue(fix_d[2]) == approx(36.39905496310918) );
     const auto sum { [](const std::vector<double>& x, const int limit = -1) {
@@ -290,15 +277,32 @@ TEST_CASE( "Exceptions" )
         solver.setPar(1, fix_d[3], true);
         try {
             solver.fit(1.0);
-            REQUIRE( solver.chi2() == approx(12.06947119410627, 1e3) );
             REQUIRE( solver.getParValue(1) == approx(2.945868346541738) );
-            REQUIRE( solver.getParValue(0, 0) == approx(7.351966871429208) );
+            REQUIRE( solver.getParValue(0, 0)
+                     == approx(7.351966871429208, 1e3) );
             REQUIRE( solver.getParValue(2, 0) == approx(49.68674387147235) );
             REQUIRE( solver.getParValue(0, 1)
                      == approx(-13.18731292934496, 1e3) );
             REQUIRE( solver.getParValue(2, 1) == approx(162.1781165060048) );
-        } catch (const gadfit::UnusedMPIProcess& e) {
+        } catch (const gadfit::UnusedMPIProcesses& e) {
             e.what();
+            REQUIRE( 0 == 0 );
+        }
+    }
+    SECTION( "No active parameters" ) {
+        solver.addDataset(x_data_1, y_data_1);
+        solver.addDataset(x_data_2, y_data_2);
+        solver.setPar(0, fix_d[0], false, 0);
+        solver.setPar(2, fix_d[1], false, 0);
+        solver.setPar(0, fix_d[4], false, 1);
+        solver.setPar(2, fix_d[5], false, 1);
+        solver.setPar(1, fix_d[3], false);
+        try {
+            solver.fit(1.0);
+            REQUIRE( 1 == 0 );
+        } catch (const gadfit::NoFittingParameters& e) {
+            e.what();
+            REQUIRE( 0 == 0 );
         }
     }
     SECTION( "Active: bgr-0, I0-1" ) {
@@ -415,7 +419,7 @@ TEST_CASE( "Geodesic acceleration" )
     solver.settings.verbosity =
       gadfit::io::delta1 | gadfit::io::delta2 | gadfit::io::timings;
     solver.fit(1.0);
-    REQUIRE( solver.chi2() == approx(5641.660305504621) );
+    REQUIRE( solver.chi2() == approx(5641.660305504621, 1e3) );
     REQUIRE( solver.getParValue(1) == approx(20.70654799943915) );
     REQUIRE( solver.getParValue(0, 0) == approx(46.48065799723028) );
     REQUIRE( solver.getParValue(2, 0) == approx(10.39142422387267) );

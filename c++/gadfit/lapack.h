@@ -16,25 +16,23 @@
 
 namespace gadfit {
 
-// C = A^T*A
-auto dsyrk(const int N,
+auto dsyrk(const char trans_c,
+           const int N,
            const int K,
            const std::vector<double>& A,
            std::vector<double>& C) -> void;
 
-// y = A^T*x where x is a vector
-auto dgemv(const int M,
+auto dgemv(const char trans_c,
+           const int M,
            const int N,
            const std::vector<double>& A,
-           const std::vector<double>& x,
-           std::vector<double>& y) -> void;
+           const std::vector<double>& X,
+           std::vector<double>& Y) -> void;
 
-// Solve A*x = b with A a real symmetric positive definite matrix in
-// two steps: first by computing the Cholesky factorization of the
-// form L*L^T of A, and then solving the linear system of equations
-// L*y = b followed by L^T*x = y.
+auto dpptrf(const int dimension, std::vector<double>& A) -> void;
+
 auto dpptrs(const int dimension,
-            std::vector<double>& A,
-            std::vector<double>& b) -> void;
+            const std::vector<double>& A,
+            std::vector<double>& B) -> void;
 
 } // namespace gadfit

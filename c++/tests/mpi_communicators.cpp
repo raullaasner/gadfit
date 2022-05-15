@@ -1,6 +1,6 @@
 #include "testing.h"
 
-#include "mpi_basic_data.h"
+#include "mpi_communicators_data.h"
 
 #include <lm_solver.h>
 #include <spdlog/spdlog.h>

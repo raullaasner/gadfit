@@ -15,9 +15,10 @@ target_sources(gadfit PRIVATE
   fit_function.cpp
   lm_solver.cpp
   exceptions.cpp
-  parallel.cpp
   numerical_integration.cpp
   timer.cpp
+  gadfit_mpi.cpp
+  gadfit_scalapack.cpp
   )
 
 # C++20 features
@@ -29,6 +30,13 @@ if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
   try_compile(MPI_OK ${PROJECT_BINARY_DIR}
     ${PROJECT_SOURCE_DIR}/cmake/tests/MPI.cpp)
   option(USE_MPI "Whether to compile with MPI support" ${MPI_OK})
+  try_compile(SCALAPACK_OK ${PROJECT_BINARY_DIR}
+    ${PROJECT_SOURCE_DIR}/cmake/tests/Scalapack.cpp
+    CMAKE_FLAGS
+    "-DLINK_DIRECTORIES=${LIBRARY_PATHS}"
+    "-DLINK_LIBRARIES=${LIBRARIES}")
+  option(USE_SCALAPACK "Whether to compile with Scalapack support"
+    ${SCALAPACK_OK})
 endif()
 
 # MPI
@@ -37,6 +45,14 @@ if (USE_MPI)
   message("Using MPI")
 else()
   message("Not using MPI")
+endif()
+
+# Scalapack
+if (USE_SCALAPACK)
+  target_compile_definitions(gadfit PUBLIC USE_SCALAPACK)
+  message("Using Scalapack")
+else()
+  message("Not using Scalapack")
 endif()
 
 # Options and variables (C++ only)
@@ -76,7 +92,7 @@ target_include_directories(gadfit INTERFACE
   $<INSTALL_INTERFACE:include>)
 set(_headers
   lm_solver.h automatic_differentiation.h exceptions.h fit_function.h
-  parallel.h numerical_integration.h timer.h)
+  gadfit_mpi.h gadfit_scalapack.h numerical_integration.h timer.h)
 set_target_properties(gadfit PROPERTIES PUBLIC_HEADER "${_headers}")
 if (NOT CMAKE_VERSION VERSION_LESS 3.14.7)
   install(TARGETS gadfit

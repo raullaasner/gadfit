@@ -50,7 +50,12 @@ SetParInvalidIndex::SetParInvalidIndex(const int index)
 [[nodiscard]] auto NegativeDegreesOfFreedom::what() const noexcept -> const
   char*
 {
-    return "More independent fitting parameters than data points.";
+    return "More independent fitting parameters than data points";
+}
+
+[[nodiscard]] auto NoFittingParameters::what() const noexcept -> const char*
+{
+    return "No active fitting parameters";
 }
 
 [[nodiscard]] auto MPIUninitialized::what() const noexcept -> const char*
@@ -59,9 +64,10 @@ SetParInvalidIndex::SetParInvalidIndex(const int index)
            "initialized.";
 }
 
-[[nodiscard]] auto UnusedMPIProcess::what() const noexcept -> const char*
+[[nodiscard]] auto UnusedMPIProcesses::what() const noexcept -> const char*
 {
-    return "Rank of this MPI process exceeds the number of data points.";
+    return "Less data points than MPI processes. Stopping now to make sure you "
+           "are not wasting resources.";
 }
 
 [[nodiscard]] auto NoGlobalParameters::what() const noexcept -> const char*

@@ -42,10 +42,10 @@ public:
 // A handy utility struct for collecting results from different processes
 struct Times
 {
-    double wall;
-    double cpu;
-    double wall_ave;
-    double cpu_ave;
+    double wall {};
+    double cpu {};
+    double wall_ave {};
+    double cpu_ave {};
 };
 
 } // namespace gadfit

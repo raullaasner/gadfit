@@ -47,45 +47,46 @@ extern "C"
 
 namespace gadfit {
 
-auto dsyrk(const int N,
+constexpr char uplo_l { 'l' };
+
+auto dsyrk(const char trans_c,
+           const int N,
            const int K,
            const std::vector<double>& A,
            std::vector<double>& C) -> void
 {
-    // 'l' because this is Fortran ordering
-    constexpr char uplo { 'l' };
-    constexpr char trans { 'n' };
     constexpr double alpha { 1.0 };
     constexpr double beta { 0.0 };
-    dsyrk_(&uplo, &trans, &N, &K, &alpha, A.data(), &N, &beta, C.data(), &N);
+    const char trans_fort { trans_c == 'n' ? 't' : 'n' };
+    dsyrk_(
+      &uplo_l, &trans_fort, &N, &K, &alpha, A.data(), &N, &beta, C.data(), &N);
 }
 
-auto dgemv(const int M,
+auto dgemv(const char trans_c,
+           const int M,
            const int N,
            const std::vector<double>& A,
-           const std::vector<double>& x,
-           std::vector<double>& y) -> void
+           const std::vector<double>& X,
+           std::vector<double>& Y) -> void
 {
-    constexpr char trans { 'n' };
     constexpr double alpha { 1.0 };
     constexpr double beta { 0.0 };
     constexpr int inc { 1 };
-    dgemv_(&trans,
+    const char trans_fort { trans_c == 'n' ? 't' : 'n' };
+    dgemv_(&trans_fort,
            &N,
            &M,
            &alpha,
            A.data(),
            &N,
-           x.data(),
+           X.data(),
            &inc,
            &beta,
-           y.data(),
+           Y.data(),
            &inc);
 }
 
-auto dpptrs(const int dimension,
-            std::vector<double>& A,
-            std::vector<double>& b) -> void
+auto dpptrf(const int dimension, std::vector<double>& A) -> void
 {
     std::vector<double> A_packed((A.size() * (A.size() + 1)) / 2);
     auto it { A_packed.begin() };
@@ -94,13 +95,18 @@ auto dpptrs(const int dimension,
             *it++ = A.at(i * dimension + j);
         }
     }
-    // 'l' because this is Fortran ordering
-    constexpr char uplo { 'l' };
     int info {};
-    dpptrf_(&uplo, &dimension, A_packed.data(), &info);
+    dpptrf_(&uplo_l, &dimension, A_packed.data(), &info);
+    A = A_packed;
+}
+
+auto dpptrs(const int dimension,
+            const std::vector<double>& A,
+            std::vector<double>& B) -> void
+{
+    int info {};
     constexpr int nrhs { 1 };
-    dpptrs_(
-      &uplo, &dimension, &nrhs, A_packed.data(), b.data(), &dimension, &info);
+    dpptrs_(&uplo_l, &dimension, &nrhs, A.data(), B.data(), &dimension, &info);
 }
 
 } // namespace gadfit

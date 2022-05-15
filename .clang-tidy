@@ -2,12 +2,15 @@
 Checks: "-*,\
 bugprone-*,\
 -bugprone-easily-swappable-parameters,\
+-bugprone-implicit-widening-of-multiplication-result,\
 clang-analyzer-*,\
 cppcoreguidelines-*,\
 -cppcoreguidelines-pro-bounds-array-to-pointer-decay,\
 -cppcoreguidelines-pro-bounds-constant-array-index,\
+-cppcoreguidelines-non-private-member-variables-in-classes,\
 misc-*,\
 -misc-misplaced-const,\
+-misc-non-private-member-variables-in-classes,\
 modernize-*,\
 mpi-*,\
 performance-*,\

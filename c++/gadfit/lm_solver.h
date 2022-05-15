@@ -17,14 +17,12 @@
 
 #include "exceptions.h"
 #include "fit_function.h"
-#include "parallel.h"
+#include "gadfit_scalapack.h"
 
 #include <bitset>
 #include <cassert>
 #include <memory>
 #include <set>
-#include <span>
-#include <vector>
 
 namespace gadfit {
 
@@ -44,7 +42,7 @@ static constexpr flag hide_global { 0b0010'0000 };
 class LMsolver
 {
 private:
-    // Defaults for options
+    // Defaults for settings
     static constexpr double default_lambda { 10.0 };
     static constexpr double default_lambda_down { 10.0 };
     static constexpr double default_lambda_up { 10.0 };
@@ -52,15 +50,14 @@ private:
     static constexpr bool default_damp_max { true };
     static constexpr double default_DTD_min {};
     static constexpr double default_acceleration_threshold { -1.0 };
+    static constexpr bool default_blacs_single_column { true };
+    static constexpr int default_min_n_blocks { 100 };
+    static constexpr bool default_prepare_getters { false };
 
     static constexpr int default_iteration_limit { 1000 };
 
     // If setPar is called with this value, denotes a global fitting parameter
-    static constexpr int global_dataset_idx { -1 };
-    // If data_ranges[i].back() equals this value, where i is a data
-    // set, then no data points from that data set are processed by
-    // the given MPI process.
-    static constexpr int passive_data_range_idx { -1 };
+    static constexpr int global_dataset_idx { passive_idx };
 
     struct
     {
@@ -104,18 +101,15 @@ private:
         // marks the starting index for different MPI processes.
         std::vector<int> global_starts {};
     } indices;
-
-    // MPI
-    MPI_Comm mpi_comm {};
-    int my_rank {};
-    int num_procs { 1 };
-
+    // Basic MPI and Scalapack variables
+    const MPIVars mpi;
+    BLACSVars sca {};
     // All data sets must be added before any calls to setPar. This
     // variable keeps track of that.
     bool set_par_called { false };
 
     // Input data are stored in x_data and y_data. x_data stores the
-    // independent values (typically the x-values on a plot).
+    // independent values (typically x-values in a plot).
     std::vector<std::span<const double>> x_data {};
     // y_data stores the dependent values
     std::vector<std::span<const double>> y_data {};
@@ -130,24 +124,26 @@ private:
     // sets.
     std::vector<FitFunction> fit_functions {};
     // Main work arrays. These are all publicly available via getters.
-    std::vector<double> Jacobian {};
-    std::vector<double> JTJ {};
-    std::vector<double> DTD {};
+    BCArray Jacobian {};
+    BCArray JTJ {};
+    BCArray DTD {};
     // JTJ + lambda * diag(JTJ), i.e. everything except delta on the left side
-    std::vector<double> left_side {};
+    BCArray left_side {};
+    BCArray left_side_chol {};
     // J^T * residuals, where residuals = (y - f(beta))/sigma
-    std::vector<double> right_side {};
-    std::vector<double> residuals {};
-    std::vector<double> delta1 {};
+    BCArray right_side {};
+    BCArray residuals {};
+    BCArray delta1 {};
     // Second directional derivative
-    std::vector<double> omega {};
-    std::vector<double> delta2 {};
-
+    BCArray omega {};
+    BCArray delta2 {};
+    BCArray D_delta {};
     // Performance
     Timer Jacobian_timer {};
     Timer chi2_timer {};
     Timer linalg_timer {};
     Timer omega_timer {};
+    Timer comm_timer {};
     Timer main_timer {};
 
 public:
@@ -155,7 +151,7 @@ public:
     // With an MPI communicator, runs in parallel. Default is to run
     // in serial.
     LMsolver(const fitSignature& function_body,
-             MPI_Comm mpi_comm = MPI_COMM_NULL);
+             const MPI_Comm& mpi_comm = MPI_COMM_NULL);
     LMsolver(const LMsolver&) = default;
     LMsolver(LMsolver&&) = default;
     auto operator=(const LMsolver&) -> LMsolver& = default;
@@ -213,6 +209,9 @@ public:
         bool damp_max { default_damp_max };
         std::vector<double> DTD_min { default_DTD_min };
         double acceleration_threshold { default_acceleration_threshold };
+        bool blacs_single_column { default_blacs_single_column };
+        int min_n_blocks { default_min_n_blocks };
+        bool prepare_getters { default_prepare_getters };
         io::flag verbosity {};
     } settings; // NOLINT: exposing this is harmless and convenient
                 // for the user
@@ -225,23 +224,24 @@ private:
     std::vector<std::shared_ptr<std::vector<double>>> x_data_shared {};
     std::vector<std::shared_ptr<std::vector<double>>> y_data_shared {};
     std::vector<std::shared_ptr<std::vector<double>>> errors_shared {};
-    // General purpose work array for storing intermediate
-    // results. Size can vary throughout the code.
-    std::vector<double> work_tmp {};
     // Determines all relevant dimensions and parameter positions in
     // the Jacobian. Also, if using MPI, distributes all data among
     // the processes. This is called before every fitting procedure in
     // case the user activates or deactivates some parameters between
     // multiple calls to fit.
     auto prepareIndexing() -> void;
+    // Detailed info about 2D block-cyclic arrays for debugging
+    auto printMatrixSizes() const -> void;
     auto resetTimers() -> void;
+    // J^T x J + lambda diag(D^T x D)
     auto computeLeftHandSide(const double lambda,
-                             std::vector<double>& Jacobian_fragment,
-                             std::vector<double>& residuals_fragment) -> void;
+                             SharedArray& Jacobian_shared,
+                             SharedArray& residuals_shared) -> void;
+    // J^T x (y - f(beta))
     auto computeRightHandSide() -> void;
     // Compute the update vector delta1 and optionally delta2 (the
     // acceleration term)
-    auto computeDeltas(std::vector<double>& omega_fragment) -> void;
+    auto computeDeltas(SharedArray& omega_shared) -> void;
     auto deactivateParameters(const int i_set) -> void;
     auto saveParameters(std::vector<std::vector<double>>& old_parameters)
       -> void;

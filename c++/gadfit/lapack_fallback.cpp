@@ -39,20 +39,20 @@ auto dsyrk_wrapper(const int N,
 auto dgemv_tr_wrapper(const int M,
                       const int N,
                       const std::vector<double>& A,
-                      const std::vector<double>& x,
-                      std::vector<double>& y) -> void
+                      const std::vector<double>& X,
+                      std::vector<double>& Y) -> void
 {
-    std::fill(y.begin(), y.end(), 0.0);
+    std::fill(Y.begin(), Y.end(), 0.0);
     for (int i {}; i < N; ++i) {
         for (int j {}; j < M; ++j) {
-            y[i] += A[j * N + i] * x[j];
+            Y[i] += A[j * N + i] * X[j];
         }
     }
 }
 
 auto dpptrs_wrapper(const int dimension,
                     std::vector<double>& A,
-                    std::vector<double>& b) -> void
+                    std::vector<double>& B) -> void
 {
     // Cholesky decomposition
     std::vector<double> L(A.size(), 0.0);
@@ -85,12 +85,12 @@ auto dpptrs_wrapper(const int dimension,
     }
     // Backward substitution (solving L^T*x=y)
     for (int i { dimension - 1 }; i >= 0; --i) {
-        b[i] = y[i]; // Here b=x
+        B[i] = y[i]; // Here B=x
         for (int j { dimension - 1 }; j > i; --j) {
             // No need to explicitly use L^T here
-            b[i] -= L[j * dimension + i] * b[j];
+            B[i] -= L[j * dimension + i] * B[j];
         }
-        b[i] /= L[i * dimension + i];
+        B[i] /= L[i * dimension + i];
     }
 }
 

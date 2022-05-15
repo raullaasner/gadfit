@@ -1,5 +1,3 @@
-#include <cblas.h>
-
 extern "C" {
     auto dpptrs_(const char*,
                 const int*,

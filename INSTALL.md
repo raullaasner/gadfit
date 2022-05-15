@@ -34,6 +34,8 @@ GADfit comes in two implementations, one in C++ and one in Fortran. The CMake va
 * C++ version:
   * **C++ compiler (required)**. GADfit is expected to work with the latest GNU C++ compiler (G++). One is probably present in your system so you don't need to do anything here.
   * **spdlog (required)**. This is a C++ logger. You may install it using your distribution's package manager or build it manually and point the CMake SPDLOG_PATH variable to the installation directory (see below for how CMake cache variables work).
+  * **MPI compiler library**. Use this instead of the serial compiler in order to exploit multiple cores.
+  * **Scalapack library (optional)**. Link against a Scalapack implementation to exploit multiple cores even more.
 
 * Fortran version:
   * **Fortran compiler (required)**. GADfit is expected to work with the latest GNU Fortran compiler (GFortran). In principle, any other F2008 compliant compiler should also work. On Ubuntu, GFortran, released under the GPL 3+ license, can be obtained by issuing

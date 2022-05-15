@@ -60,13 +60,19 @@ public:
     [[nodiscard]] auto what() const noexcept -> const char* override;
 };
 
+class NoFittingParameters : public GADfitException
+{
+public:
+    [[nodiscard]] auto what() const noexcept -> const char* override;
+};
+
 class MPIUninitialized : public GADfitException
 {
 public:
     [[nodiscard]] auto what() const noexcept -> const char* override;
 };
 
-class UnusedMPIProcess : public GADfitException
+class UnusedMPIProcesses : public GADfitException
 {
 public:
     [[nodiscard]] auto what() const noexcept -> const char* override;

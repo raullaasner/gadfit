@@ -19,7 +19,7 @@ set(tests
   )
 
 if (USE_MPI)
-  list(APPEND tests mpi_basic)
+  list(APPEND tests mpi_communicators)
 endif()
 
 enable_testing()
