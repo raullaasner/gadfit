@@ -123,6 +123,8 @@ private:
     // associated with the model function can differ between data
     // sets.
     std::vector<FitFunction> fit_functions {};
+    // Parameter names can be optionally displayed during the fitting procedure
+    std::vector<std::string> parameter_names {};
     // Main work arrays. These are all publicly available via getters.
     BCArray Jacobian {};
     BCArray JTJ {};
@@ -184,7 +186,8 @@ public:
     auto setPar(const int i_par,
                 const double val,
                 const bool active = false,
-                const int i_dataset = global_dataset_idx) -> void;
+                const int i_dataset = global_dataset_idx,
+                const std::string& parameter_name = "") -> void;
     auto fit(double lambda = default_lambda) -> void;
     [[nodiscard]] auto getParValue(const int i_par,
                                    const int i_dataset = 0) const -> double;

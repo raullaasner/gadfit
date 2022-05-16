@@ -1047,7 +1047,8 @@ gadfit::LMsolver::setPar(
   const int i_par,
   const double val,
   const bool active = false,
-  const int i_dataset = global_dataset_idx)
+  const int i_dataset = global_dataset_idx,
+  const std::string& parameter_name = "")
 \end{verbatim}
 Set fitting parameters.
 \begin{itemize}
@@ -1055,6 +1056,7 @@ Set fitting parameters.
 \item \verb+val+: initial value of a fitting parameter.
 \item \verb+active+: whether this is an active or a passive (constant) fitting parameter.
 \item \verb+i_dataset+: if present, specifies a data set. If not present, defines a global fitting parameter.
+\item \verb+parameter_name+: if present, displays the parameter name during fitting procedure. Default is to display the parameter index.
 \end{itemize}
 
 \begin{verbatim}
@@ -1069,7 +1071,7 @@ A struct containing parameters that define runtime behavior. Find the default va
 \item \verb+damp_max (bool)+: Whether to update the damping matrix with the largest entries of $J^TJ$ yet encountered. If \texttt{false}, the classical Marquardt scheme is used.
 \item \verb+DTD_min (std::vector<double>)+: Minimum initial values of the diagonal entries of the damping matrix. Only relevant if \verb+damp_max == true+. Length of this array must equal the number of fitting parameters.
 \item \verb+acceleration_threshold (double)+: Acceleration threshold [$\alpha$ in Eq.~\eqref{eq:acc_alpha}]. If negative, the acceleration term is not calculated.
-\item \verb+blacs_single_column+: whether to create an $N\times1$ BLACS process grid where $N$ is the number of processes. If false, then a rectangular process grid is created with \verb+MPI_Dims_create+.
+\item \verb+blacs_single_column+: whether to create an $N\times1$ BLACS process grid where $N$ is the number of processes. This might be suitable if the number of data points is (much) higher than the number of fitting parameters. If false, then a rectangular process grid is created with \verb+MPI_Dims_create+.
 \item \verb+min_n_blocks+: Minimum number of blocks of a 2D block-cyclic array held by each process. For minimal MPI communication set this values to 1 but for better load balancing set it to a larger value. Set \texttt{spdlog} level to \texttt{debug} in order to see details about the structure of block cyclic arrays.
 \item \verb+prepare_getters+: Use this if you want to use getters after the fitting procedure has ended (e.g. \texttt{getJacobian()}).
 \end{itemize}

@@ -94,7 +94,8 @@ auto LMsolver::addDataset(const std::shared_ptr<std::vector<double>>& x_data,
 auto LMsolver::setPar(const int i_par,
                       const double val,
                       const bool active,
-                      const int i_dataset) -> void
+                      const int i_dataset,
+                      const std::string& parameter_name) -> void
 {
     // Make sure addDataset was called enough times.
     if (i_dataset >= static_cast<int>(x_data.size())
@@ -130,6 +131,12 @@ auto LMsolver::setPar(const int i_par,
         } else {
             indices.active.at(i_dataset).erase(i_par);
         }
+    }
+    if (i_par >= static_cast<int>(parameter_names.size())) {
+        parameter_names.resize(i_par + 1, "");
+    }
+    if (!parameter_name.empty()) {
+        parameter_names.at(i_par) = parameter_name;
     }
 }
 
@@ -680,9 +687,15 @@ auto LMsolver::printIterationResults(const int i_iteration,
         const auto active_pos { indices.active.at(i_set).find(i_par) };
         const bool is_active { active_pos != indices.active.at(i_set).cend() };
         std::ostringstream line {};
-        line << std::setprecision(std::numeric_limits<double>::digits10)
-             << "    Parameter " << i_par << ": "
-             << fit_functions.at(i_set).getParValue(i_par);
+        line << std::setprecision(std::numeric_limits<double>::digits10);
+        if (!parameter_names.at(i_par).empty()) {
+            constexpr int max_expected_par_name_length { 15 };
+            line << std::setw(max_expected_par_name_length)
+                 << parameter_names.at(i_par) << ": ";
+        } else {
+            line << "    Parameter " << i_par << ": ";
+        }
+        line << fit_functions.at(i_set).getParValue(i_par);
         if (is_active) {
             // Parameter index if all inactive parameters were skipped
             const auto idx { std::distance(indices.active.at(i_set).cbegin(),

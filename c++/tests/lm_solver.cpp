@@ -95,8 +95,8 @@ TEST_CASE( "Indexing scheme" )
     }
     SECTION( "Active: I0-0, bgr-0, bgr-1, tau" ) {
         solver.setPar(0, fix_d[0], true, 0);
-        solver.setPar(2, fix_d[1], true, 0);
-        solver.setPar(0, fix_d[4], false, 1);
+        solver.setPar(2, fix_d[1], true, 0, "bgr");
+        solver.setPar(0, fix_d[4], false, 1, "I0");
         solver.setPar(2, fix_d[5], true, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
