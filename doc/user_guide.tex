@@ -782,13 +782,12 @@ In Fortran, if we were working with finite differences, using \texttt{do concurr
 In order to compile a Coarray program with GFortran, the compiler flag \texttt{-fcoarray=lib} must be used. For GFortran, the Coarray support is provided by the OpenCoarrays project. It can be automatically downloaded and built with \verb+cmake --build . --target example+ or \verb+cmake --build . --target test+. The Coarray communication library, \verb+libcaf_mpi.a+, is installed in \\
 \verb+~gadfit/fortran/tests+. Alternatively, one may issue, e.g.,
 \begin{verbatim}
-  wget https://github.com/sourceryinstitute/opencoarrays/\
-  archive/2.8.0.tar.gz
-  tar xf 2.8.0.tar.gz
-  mkdir OpenCoarrays-2.8.0/build && cd OpenCoarrays-2.8.0/build
-  cmake -DCMAKE_Fortran_COMPILER=mpif90 ..
-  make -j caf_mpi_static # libcaf_mpi.a is in
-                         # OpenCoarrays-2.8.0/build/lib
+  wget https://github.com/sourceryinstitute/OpenCoarrays/\
+  releases/download/2.10.0/OpenCoarrays-2.10.0.tar.gz
+  tar xf OpenCoarrays-2.10.0.tar.gz
+  mkdir OpenCoarrays-2.10.0/build && cd OpenCoarrays-2.10.0/build
+  cmake ..
+  make -j # libcaf_mpi.a is in lib
 \end{verbatim}
 and set the \verb+OPEN_COARRAYS+ variable in the GADfit configuration to the full path of \verb+libcaf_mpi.a+. If using the Intel compiler, there is no such external dependency.
 
