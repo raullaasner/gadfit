@@ -16,7 +16,7 @@ Features
 * Modified Levenberg-Marquardt
 * Multi-curve fitting with shared parameters
 * Automatic differentiation
-* MPI (C++) and Coarray (Fortran) parallelism
+* MPI, Scalapack (C++) and Coarray (Fortran) parallelism
 
 Downloading
 -----------
