@@ -532,8 +532,8 @@ auto LMsolver::computeDeltas(SharedArray& omega_shared) -> void
                                          D_delta.local.cbegin(),
                                          0.0) };
     if (mpi.comm != MPI_COMM_NULL) {
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
         MPI_Allreduce(
+          // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
           MPI_IN_PLACE, &D_delta2, 1, MPI_DOUBLE, MPI_SUM, mpi.comm);
     }
     pdgemv('n', DTD, delta1, D_delta);
@@ -542,8 +542,8 @@ auto LMsolver::computeDeltas(SharedArray& omega_shared) -> void
                                          D_delta.local.cbegin(),
                                          0.0) };
     if (mpi.comm != MPI_COMM_NULL) {
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
         MPI_Allreduce(
+          // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
           MPI_IN_PLACE, &D_delta1, 1, MPI_DOUBLE, MPI_SUM, mpi.comm);
     }
     double acc_ratio { std::sqrt(D_delta2 / D_delta1) };
