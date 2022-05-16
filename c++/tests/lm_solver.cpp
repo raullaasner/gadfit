@@ -168,34 +168,70 @@ TEST_CASE( "Indexing scheme" )
 TEST_CASE( "Access functions" )
 {
     spdlog::set_level(spdlog::level::off);
-    gadfit::LMsolver solver { exponential, MPI_COMM_WORLD };
-    solver.addDataset(
-      std::make_shared<std::vector<double>>(x_data_1.begin(), x_data_1.end()),
-      std::make_shared<std::vector<double>>(y_data_1.begin(), y_data_1.end()),
-      std::make_shared<std::vector<double>>(x_data_1.size(), 1.0));
-    solver.addDataset(
-      std::make_shared<std::vector<double>>(x_data_2.begin(), x_data_2.end()),
-      std::make_shared<std::vector<double>>(y_data_2.begin(), y_data_2.end()));
-    solver.settings.iteration_limit = 4;
-    solver.setPar(0, fix_d[0], true, 0);
-    solver.setPar(2, fix_d[1], true, 0);
-    solver.setPar(0, fix_d[4], true, 1);
-    solver.setPar(2, fix_d[5], true, 1);
-    solver.setPar(1, fix_d[3], true);
-    REQUIRE( solver.getValue(fix_d[2]) == approx(2.960644529912441) );
-    solver.settings.prepare_getters = true;
-    solver.fit(1.0);
-    REQUIRE( solver.getValue(fix_d[2]) == approx(36.39905496310918) );
     const auto sum { [](const std::vector<double>& x, const int limit = -1) {
         return std::accumulate(
           x.cbegin(), limit == -1 ? x.cend() : x.cbegin() + limit, 0.0);
     } };
-    REQUIRE( sum(solver.getJacobian()) == approx(353.6485673748525) );
-    REQUIRE( sum(solver.getJTJ(), 5) == approx(580.3488115472478) );
-    REQUIRE( sum(solver.getDTD(), 5) == approx(34340.67196549198) );
-    REQUIRE( sum(solver.getLeftSide(), 5) == approx(614.6894835127398) );
-    REQUIRE( sum(solver.getRightSide(), 5) == approx(4410.585412402702) );
-    REQUIRE( sum(solver.getResiduals()) == approx(213.3530475167955, 1e3) );
+    SECTION( "Parallel" ) {
+        gadfit::LMsolver solver { exponential, MPI_COMM_WORLD };
+        solver.addDataset(
+          std::make_shared<std::vector<double>>(x_data_1.begin(),
+                                                x_data_1.end()),
+          std::make_shared<std::vector<double>>(y_data_1.begin(),
+                                                y_data_1.end()),
+          std::make_shared<std::vector<double>>(x_data_1.size(), 1.0));
+        solver.addDataset(
+          std::make_shared<std::vector<double>>(x_data_2.begin(),
+                                                x_data_2.end()),
+          std::make_shared<std::vector<double>>(y_data_2.begin(),
+                                                y_data_2.end()));
+        solver.settings.iteration_limit = 4;
+        solver.setPar(0, fix_d[0], true, 0);
+        solver.setPar(2, fix_d[1], true, 0);
+        solver.setPar(0, fix_d[4], true, 1);
+        solver.setPar(2, fix_d[5], true, 1);
+        solver.setPar(1, fix_d[3], true);
+        REQUIRE( solver.getValue(fix_d[2]) == approx(2.960644529912441) );
+        solver.settings.prepare_getters = true;
+        solver.fit(1.0);
+        REQUIRE( solver.getValue(fix_d[2]) == approx(36.39905496310918) );
+        REQUIRE( sum(solver.getJacobian()) == approx(353.6485673748525) );
+        REQUIRE( sum(solver.getJTJ(), 5) == approx(580.3488115472478) );
+        REQUIRE( sum(solver.getDTD(), 5) == approx(34340.67196549198) );
+        REQUIRE( sum(solver.getLeftSide(), 5) == approx(614.6894835127398) );
+        REQUIRE( sum(solver.getRightSide(), 5) == approx(4410.585412402702) );
+        REQUIRE( sum(solver.getResiduals()) == approx(213.3530475167955, 1e3) );
+    }
+    SECTION( "Sequential" ) {
+        gadfit::LMsolver solver { exponential };
+        solver.addDataset(
+          std::make_shared<std::vector<double>>(x_data_1.begin(),
+                                                x_data_1.end()),
+          std::make_shared<std::vector<double>>(y_data_1.begin(),
+                                                y_data_1.end()),
+          std::make_shared<std::vector<double>>(x_data_1.size(), 1.0));
+        solver.addDataset(
+          std::make_shared<std::vector<double>>(x_data_2.begin(),
+                                                x_data_2.end()),
+          std::make_shared<std::vector<double>>(y_data_2.begin(),
+                                                y_data_2.end()));
+        solver.settings.iteration_limit = 4;
+        solver.setPar(0, fix_d[0], true, 0);
+        solver.setPar(2, fix_d[1], true, 0);
+        solver.setPar(0, fix_d[4], true, 1);
+        solver.setPar(2, fix_d[5], true, 1);
+        solver.setPar(1, fix_d[3], true);
+        REQUIRE( solver.getValue(fix_d[2]) == approx(2.960644529912441) );
+        solver.settings.prepare_getters = true;
+        solver.fit(1.0);
+        REQUIRE( solver.getValue(fix_d[2]) == approx(36.39905496310918) );
+        REQUIRE( sum(solver.getJacobian()) == approx(353.6485673748525) );
+        REQUIRE( sum(solver.getJTJ(), 5) == approx(580.3488115472478) );
+        REQUIRE( sum(solver.getDTD(), 5) == approx(34340.67196549198) );
+        REQUIRE( sum(solver.getLeftSide(), 5) == approx(614.6894835127398) );
+        REQUIRE( sum(solver.getRightSide(), 5) == approx(4410.585412402702) );
+        REQUIRE( sum(solver.getResiduals()) == approx(213.3530475167955, 1e3) );
+    }
 }
 
 TEST_CASE( "Exceptions" )

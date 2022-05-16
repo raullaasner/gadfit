@@ -22,6 +22,10 @@ if (USE_MPI)
   list(APPEND tests mpi_communicators)
 endif()
 
+if (USE_SCALAPACK)
+  list(APPEND tests scalapack)
+endif()
+
 enable_testing()
 
 find_package(Catch2 QUIET)

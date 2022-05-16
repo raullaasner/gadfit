@@ -66,7 +66,7 @@ class BCArray
 {
 private:
     static constexpr int scalapack_descriptor_length { 9 };
-    bool initialized { false };
+    bool with_scalapack { false };
     auto initNoScalapack(const int data_rows, const int data_cols) -> void;
 
 public:
@@ -122,7 +122,7 @@ public:
               const int data_cols,
               const int min_n_blocks = 1,
               const bool equal_blocks = false) -> void;
-    [[nodiscard]] auto isInitialized() const -> bool;
+    [[nodiscard]] auto isWithScalapack() const -> bool;
     // Use local to populate global
     auto populateGlobal(const MPIVars& mpi) -> void;
     // Same but transpose global. But since global still follows

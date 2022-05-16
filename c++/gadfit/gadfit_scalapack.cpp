@@ -272,7 +272,7 @@ auto BCArray::init(const BLACSVars& sca,
             cols.at(local_idx++) = global_idx;
         }
     }
-    initialized = true;
+    with_scalapack = true;
 #endif
 }
 
@@ -293,15 +293,15 @@ auto BCArray::initNoScalapack(const int data_rows, const int data_cols) -> void
     local.resize(data_rows * data_cols);
 }
 
-auto BCArray::isInitialized() const -> bool
+auto BCArray::isWithScalapack() const -> bool
 {
-    return initialized;
+    return with_scalapack;
 }
 
 auto BCArray::populateGlobal(const MPIVars& mpi) -> void
 {
     const int global_size { desc[idx_sca_r] * desc[idx_sca_c] };
-    if (initialized) {
+    if (with_scalapack) {
 #ifdef USE_SCALAPACK
         global.resize(global_size);
         pdgeadd_(&trans_n,
@@ -327,7 +327,7 @@ auto BCArray::populateGlobal(const MPIVars& mpi) -> void
 auto BCArray::populateGlobalTranspose(const MPIVars& mpi) -> void
 {
     const int global_size { desc[idx_sca_r] * desc[idx_sca_c] };
-    if (initialized) {
+    if (with_scalapack) {
 #ifdef USE_SCALAPACK
         global.resize(global_size);
         pdgeadd_(&trans_t,
@@ -380,7 +380,7 @@ auto sharedToBC(const SharedArray& src, BCArray& dest) -> void
         MPI_Win_fence(0, src.getWin());
     }
 #endif
-    if (dest.isInitialized()) {
+    if (dest.isWithScalapack()) {
         for (int i {}; i < dest.n_rows; ++i) {
             for (int j {}; j < dest.n_cols; ++j) {
                 // The block-cyclic array will be used in Scalapck
@@ -401,7 +401,7 @@ auto sharedToBC(const SharedArray& src, BCArray& dest) -> void
 
 auto copyBCArray(const BCArray& A, BCArray& B) -> void
 {
-    if (A.isInitialized()) {
+    if (A.isWithScalapack()) {
 #ifdef USE_SCALAPACK
         pdgeadd_(&trans_n,
                  &A.desc[idx_sca_r],
@@ -425,7 +425,7 @@ auto copyBCArray(const BCArray& A, BCArray& B) -> void
 auto pdgemv(const char trans, const BCArray& A, const BCArray& B, BCArray& C)
   -> void
 {
-    if (A.isInitialized()) {
+    if (A.isWithScalapack()) {
 #ifdef USE_SCALAPACK
         pdgemv_(&trans,
                 &A.desc[idx_sca_r],
@@ -461,7 +461,7 @@ auto pdsyr2k(const char trans, const BCArray& A, const BCArray& B, BCArray& C)
   -> void
 {
     const int K { trans == 'n' ? A.desc[idx_sca_c] : A.desc[idx_sca_r] };
-    if (A.isInitialized()) {
+    if (A.isWithScalapack()) {
 #ifdef USE_SCALAPACK
         pdsyr2k_(&uplo,
                  &trans,
@@ -489,7 +489,7 @@ auto pdsyr2k(const char trans, const BCArray& A, const BCArray& B, BCArray& C)
 
 auto pdpotrf(BCArray& A) -> void
 {
-    if (A.isInitialized()) {
+    if (A.isWithScalapack()) {
 #ifdef USE_SCALAPACK
         int info {};
         pdpotrf_(&uplo,
@@ -507,7 +507,7 @@ auto pdpotrf(BCArray& A) -> void
 
 auto pdpotrs(const BCArray& A, BCArray& B) -> void
 {
-    if (A.isInitialized()) {
+    if (A.isWithScalapack()) {
 #ifdef USE_SCALAPACK
         int info {};
         pdpotrs_(&uplo,
