@@ -1059,6 +1059,14 @@ Set fitting parameters.
 \end{itemize}
 
 \begin{verbatim}
+gadfit::LMsolver::setPar(const int i_par,
+                         const double val,
+                         const bool active,
+                         const std::string& parameter_name)
+\end{verbatim}
+Call this for setting a global parameter with a name. Otherwise it is the same as the other \texttt{setPar}.
+
+\begin{verbatim}
 gadfit::LMsolver::settings
 \end{verbatim}
 A struct containing parameters that define runtime behavior. Find the default values in \texttt{c++/gadfit/lm\_solver.h}.

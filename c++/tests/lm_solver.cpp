@@ -154,7 +154,7 @@ TEST_CASE( "Indexing scheme" )
         solver.setPar(2, fix_d[1], true, 0);
         solver.setPar(0, fix_d[4], true, 1);
         solver.setPar(2, fix_d[5], false, 1);
-        solver.setPar(1, fix_d[3], true);
+        solver.setPar(1, fix_d[3], true, "global parameter");
         solver.fit(1.0);
         REQUIRE( solver.chi2() == approx(15348.60122706107) );
         REQUIRE( solver.getParValue(1) == approx(21.87456778662339) );

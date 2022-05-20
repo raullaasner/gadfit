@@ -47,7 +47,7 @@ macro(get_all_flags language flags)
   if (CMAKE_BUILD_TYPE)
     string(TOUPPER ${CMAKE_BUILD_TYPE} buildtype)
     set(${flags} "${${flags}} ${CMAKE_${language}_FLAGS_${buildtype}}")
-    string(STRIP ${${flags}} ${flags})
+    string(STRIP "${${flags}}" ${flags})
   endif()
 endmacro()
 

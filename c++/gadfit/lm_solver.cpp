@@ -140,6 +140,14 @@ auto LMsolver::setPar(const int i_par,
     }
 }
 
+auto LMsolver::setPar(const int i_par,
+                      const double val,
+                      const bool active,
+                      const std::string& parameter_name) -> void
+{
+    setPar(i_par, val, active, global_dataset_idx, parameter_name);
+}
+
 auto LMsolver::fit(double lambda) -> void
 {
     prepareIndexing();

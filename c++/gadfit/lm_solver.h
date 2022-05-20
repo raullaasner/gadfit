@@ -156,8 +156,8 @@ public:
              const MPI_Comm& mpi_comm = MPI_COMM_NULL);
     LMsolver(const LMsolver&) = default;
     LMsolver(LMsolver&&) = default;
-    auto operator=(const LMsolver&) -> LMsolver& = default;
-    auto operator=(LMsolver&&) -> LMsolver& = default;
+    auto operator=(const LMsolver&) -> LMsolver& = delete;
+    auto operator=(LMsolver&&) -> LMsolver& = delete;
 
     // Data (x- and y-values and the corresponding errors if present)
     // are captured as std::span in order to avoid copies. The data
@@ -188,6 +188,11 @@ public:
                 const bool active = false,
                 const int i_dataset = global_dataset_idx,
                 const std::string& parameter_name = "") -> void;
+    // Same but for setting a global parameter with a name
+    auto setPar(const int i_par,
+                const double val,
+                const bool active,
+                const std::string& parameter_name) -> void;
     auto fit(double lambda = default_lambda) -> void;
     [[nodiscard]] auto getParValue(const int i_par,
                                    const int i_dataset = 0) const -> double;
