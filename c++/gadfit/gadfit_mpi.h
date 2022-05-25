@@ -38,15 +38,6 @@ constexpr int MPI_SUM {};
 constexpr int MPI_STATUS_IGNORE {};
 constexpr int MPI_INFO_NULL {};
 
-auto MPI_Comm_rank(MPI_Comm, int*) -> void;
-auto MPI_Comm_size(MPI_Comm, int*) -> void;
-auto MPI_Initialized(int*) -> void;
-auto MPI_Finalized(int*) -> void;
-auto MPI_Allreduce(int, double*, int, int, int, MPI_Comm) -> void;
-auto MPI_Comm_split(MPI_Comm, int, int, MPI_Comm*) -> void;
-auto MPI_Recv(void*, int, int, int, int, MPI_Comm, int) -> void;
-auto MPI_Send(const void*, int, int, int, int, MPI_Comm) -> void;
-
 #endif // USE_MPI
 
 namespace gadfit {

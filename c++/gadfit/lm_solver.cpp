@@ -29,6 +29,7 @@ namespace gadfit {
 LMsolver::LMsolver(const fitSignature& function_body, const MPI_Comm& mpi_comm)
   : mpi { mpi_comm }
 {
+#ifdef USE_MPI
     if (mpi_comm != MPI_COMM_NULL) {
         int mpi_initialized {};
         MPI_Initialized(&mpi_initialized);
@@ -39,6 +40,7 @@ LMsolver::LMsolver(const fitSignature& function_body, const MPI_Comm& mpi_comm)
             throw MPIUninitialized {};
         }
     }
+#endif
     initializeADReverse();
     fit_functions.emplace_back(FitFunction { function_body });
 }
@@ -270,9 +272,11 @@ auto LMsolver::fit(double lambda) -> void
         right_side.populateGlobalTranspose(mpi);
         residuals.populateGlobalTranspose(mpi);
     }
+#ifdef USE_SCALAPACK
     if (sca.isInitialized()) {
         Cblacs_gridexit(sca.blacs_context);
     }
+#endif
 }
 
 auto LMsolver::prepareIndexing() -> void
@@ -539,21 +543,25 @@ auto LMsolver::computeDeltas(SharedArray& omega_shared) -> void
                                          delta2.local.cend(),
                                          D_delta.local.cbegin(),
                                          0.0) };
+#ifdef USE_MPI
     if (mpi.comm != MPI_COMM_NULL) {
         MPI_Allreduce(
           // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
           MPI_IN_PLACE, &D_delta2, 1, MPI_DOUBLE, MPI_SUM, mpi.comm);
     }
+#endif
     pdgemv('n', DTD, delta1, D_delta);
     double D_delta1 { std::inner_product(delta1.local.cbegin(),
                                          delta1.local.cend(),
                                          D_delta.local.cbegin(),
                                          0.0) };
+#ifdef USE_MPI
     if (mpi.comm != MPI_COMM_NULL) {
         MPI_Allreduce(
           // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
           MPI_IN_PLACE, &D_delta1, 1, MPI_DOUBLE, MPI_SUM, mpi.comm);
     }
+#endif
     double acc_ratio { std::sqrt(D_delta2 / D_delta1) };
     delta2.populateGlobal(mpi);
     if (acc_ratio > settings.acceleration_threshold) {
@@ -641,10 +649,12 @@ auto LMsolver::chi2() -> double
     }
     chi2_timer.stop();
     comm_timer.start();
+#ifdef USE_MPI
     if (mpi.comm != MPI_COMM_NULL && !indices.data_ranges.empty()) {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
         MPI_Allreduce(MPI_IN_PLACE, &sum, 1, MPI_DOUBLE, MPI_SUM, mpi.comm);
     }
+#endif
     comm_timer.stop();
     return sum;
 }

@@ -14,22 +14,6 @@
 
 #include <cstring>
 
-#ifndef USE_MPI
-
-auto MPI_Comm_rank(MPI_Comm, int*) -> void {}
-
-auto MPI_Comm_size(MPI_Comm, int*) -> void {}
-
-auto MPI_Initialized(int*) -> void {}
-
-auto MPI_Finalized(int*) -> void {}
-
-auto MPI_Comm_split(MPI_Comm, int, int, MPI_Comm*) -> void {}
-
-auto MPI_Allreduce(int, double*, int, int, int, MPI_Comm) -> void {}
-
-#endif // USE_MPI
-
 namespace gadfit {
 
 MPIVars::MPIVars(MPI_Comm comm) : comm { comm }
@@ -37,12 +21,14 @@ MPIVars::MPIVars(MPI_Comm comm) : comm { comm }
     if (comm == MPI_COMM_NULL) {
         return;
     }
+#ifdef USE_MPI
     int mpi_finalized {};
     MPI_Finalized(&mpi_finalized);
     if (!static_cast<bool>(mpi_finalized)) {
         MPI_Comm_rank(comm, &rank);
         MPI_Comm_size(comm, &n_procs);
     }
+#endif
 }
 
 SharedArray::SharedArray(const MPIVars& mpi, const int n_values)

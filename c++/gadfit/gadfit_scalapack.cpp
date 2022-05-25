@@ -110,10 +110,6 @@ extern "C"
                   int*) -> void;
 }
 
-#else
-
-auto Cblacs_gridexit(int) -> void {}
-
 #endif
 
 namespace gadfit {
