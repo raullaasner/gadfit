@@ -42,7 +42,7 @@ LMsolver::LMsolver(const fitSignature& function_body, const MPI_Comm& mpi_comm)
     }
 #endif
     initializeADReverse();
-    fit_functions.emplace_back(FitFunction { function_body });
+    fit_functions.emplace_back(function_body);
 }
 
 auto LMsolver::addDataset(const int n_datapoints,
@@ -53,13 +53,10 @@ auto LMsolver::addDataset(const int n_datapoints,
     if (set_par_called) {
         throw LateAddDatasetCall {};
     }
-    this->x_data.emplace_back(
-      std::span<const double> { x_data, static_cast<size_t>(n_datapoints) });
-    this->y_data.emplace_back(
-      std::span<const double> { y_data, static_cast<size_t>(n_datapoints) });
+    this->x_data.emplace_back(x_data, static_cast<size_t>(n_datapoints));
+    this->y_data.emplace_back(y_data, static_cast<size_t>(n_datapoints));
     if (static_cast<bool>(errors)) {
-        this->errors.emplace_back(std::span<const double> {
-          errors, static_cast<size_t>(n_datapoints) });
+        this->errors.emplace_back(errors, static_cast<size_t>(n_datapoints));
     } else {
         if (errors_shared.size() < this->x_data.size()) {
             errors_shared.resize(this->x_data.size());
@@ -67,15 +64,16 @@ auto LMsolver::addDataset(const int n_datapoints,
         // By default all data points to have equal weights
         errors_shared.back() = std::make_shared<std::vector<double>>(
           std::vector<double>(n_datapoints, 1.0));
-        this->errors.emplace_back(
-          std::span<const double> { *errors_shared.back() });
+        // this->errors.emplace_back(
+        //   std::span<const double> { *errors_shared.back() });
+        this->errors.emplace_back(*errors_shared.back());
     }
     // Make a new copy of the fitting function corresponding to the
     // last data set.
     if (fit_functions.size() < this->x_data.size()) {
         fit_functions.push_back(fit_functions.back());
     }
-    indices.active.emplace_back(std::set<int> {});
+    indices.active.emplace_back();
 }
 
 auto LMsolver::addDataset(const std::shared_ptr<std::vector<double>>& x_data,
@@ -546,7 +544,6 @@ auto LMsolver::computeDeltas(SharedArray& omega_shared) -> void
 #ifdef USE_MPI
     if (mpi.comm != MPI_COMM_NULL) {
         MPI_Allreduce(
-          // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
           MPI_IN_PLACE, &D_delta2, 1, MPI_DOUBLE, MPI_SUM, mpi.comm);
     }
 #endif
@@ -558,7 +555,6 @@ auto LMsolver::computeDeltas(SharedArray& omega_shared) -> void
 #ifdef USE_MPI
     if (mpi.comm != MPI_COMM_NULL) {
         MPI_Allreduce(
-          // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
           MPI_IN_PLACE, &D_delta1, 1, MPI_DOUBLE, MPI_SUM, mpi.comm);
     }
 #endif
@@ -651,7 +647,6 @@ auto LMsolver::chi2() -> double
     comm_timer.start();
 #ifdef USE_MPI
     if (mpi.comm != MPI_COMM_NULL && !indices.data_ranges.empty()) {
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
         MPI_Allreduce(MPI_IN_PLACE, &sum, 1, MPI_DOUBLE, MPI_SUM, mpi.comm);
     }
 #endif

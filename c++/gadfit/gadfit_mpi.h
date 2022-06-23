@@ -52,7 +52,7 @@ struct MPIVars
     MPIVars(MPI_Comm comm);
 };
 
-// Defines are shared array using the MPI RMA model
+// Defines a shared array using the MPI RMA model
 class SharedArray
 {
 private:

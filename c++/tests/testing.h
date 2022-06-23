@@ -9,8 +9,8 @@
     REQUIRE( x.dd  == approx(ref_dd)  );                \
     REQUIRE( x.idx == ref_idx         );
 
-#include <automatic_differentiation.h>
-#include <exceptions.h>
+#include <gadfit/automatic_differentiation.h>
+#include <gadfit/exceptions.h>
 #include <catch2/catch.hpp>
 
 constexpr std::array fix_d {

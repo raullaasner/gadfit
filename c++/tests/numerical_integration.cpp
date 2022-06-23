@@ -1,9 +1,9 @@
 #include "testing.h"
 
-#include "numerical_integration.h"
 #include "numerical_integration_data.h"
 
-#include <lm_solver.h>
+#include <gadfit/numerical_integration.h>
+#include <gadfit/lm_solver.h>
 #include <spdlog/spdlog.h>
 
 // Except for the fit function, the fitting procedures use the same

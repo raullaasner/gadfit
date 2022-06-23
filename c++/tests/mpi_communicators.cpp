@@ -2,7 +2,7 @@
 
 #include "mpi_communicators_data.h"
 
-#include <lm_solver.h>
+#include <gadfit/lm_solver.h>
 #include <spdlog/spdlog.h>
 
 static auto exponential(const std::vector<gadfit::AdVar>& parameters,

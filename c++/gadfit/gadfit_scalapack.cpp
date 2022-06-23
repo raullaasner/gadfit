@@ -18,8 +18,6 @@
 #include <numeric>
 #include <spdlog/spdlog.h>
 
-#include <spdlog/spdlog.h>
-
 #ifdef USE_SCALAPACK
 
 extern "C"

@@ -88,7 +88,7 @@ target_link_libraries(gadfit PUBLIC spdlog::spdlog)
 
 # Exporting
 target_include_directories(gadfit INTERFACE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
   $<INSTALL_INTERFACE:include>)
 set(_headers
   lm_solver.h automatic_differentiation.h exceptions.h fit_function.h

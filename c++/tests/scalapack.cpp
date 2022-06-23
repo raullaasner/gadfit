@@ -2,7 +2,7 @@
 
 #include "lm_solver_data.h"
 
-#include <lm_solver.h>
+#include <gadfit/lm_solver.h>
 #include <spdlog/spdlog.h>
 
 // If compiled with Scalapack, its functionality is already
