@@ -34,7 +34,7 @@ set(INCLUDE_PATHS "" CACHE STRING
 set(LIBRARY_PATHS "" CACHE STRING
   "Directories containing libraries to be linked against")
 set(LIBRARIES "" CACHE STRING "Libraries to be linked against")
-option(USE_GSL "Whether to link against GSL" ON)
+option(USE_GSL "Whether to link against GSL" OFF)
 option(INCLUDE_COVERAGE "Defines new target called 'coverage'" OFF)
 set(COVERAGE_FLAGS "--coverage" CACHE STRING
   "Additional compiler flags used when running code coverage")
