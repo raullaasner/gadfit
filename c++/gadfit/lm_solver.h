@@ -17,7 +17,7 @@
 
 #include "exceptions.h"
 #include "fit_function.h"
-#include "gadfit_scalapack.h"
+#include "scalapack.h"
 
 #include <bitset>
 #include <cassert>

@@ -10,7 +10,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the License.
 
-#include "gadfit_scalapack.h"
+#include "scalapack.h"
 
 #include "automatic_differentiation.h"
 #include "lapack.h"

@@ -17,8 +17,8 @@ target_sources(gadfit PRIVATE
   exceptions.cpp
   numerical_integration.cpp
   timer.cpp
-  gadfit_mpi.cpp
-  gadfit_scalapack.cpp
+  mpi.cpp
+  scalapack.cpp
   )
 
 # C++20 features

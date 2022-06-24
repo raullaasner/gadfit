@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "gadfit_mpi.h"
+#include "mpi.h"
 
 #include <array>
 #include <vector>
