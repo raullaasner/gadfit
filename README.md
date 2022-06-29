@@ -34,9 +34,12 @@ Installation
 Screenshots
 -----------
 
-* [Fitting procedure](https://raullaasner.github.io/gadfit/screenshot1.png)
-* [Example input](https://raullaasner.github.io/gadfit/screenshot2.png)
-* [Example fitting function](https://raullaasner.github.io/gadfit/screenshot3.png)
+* [C++ Example driver code](https://raullaasner.github.io/gadfit/cxx_driver_code.png)
+* [C++ output](https://raullaasner.github.io/gadfit/cxx_output.png)
+
+* [Fortran example driver code](https://raullaasner.github.io/gadfit/fortran_driver_code.png)
+* [Fortran example fitting function](https://raullaasner.github.io/gadfit/fortran_fitting_function.png)
+* [Fortran output](https://raullaasner.github.io/gadfit/fortran_output.png)
 
 Authors and how to contact them
 -------------------------------
