@@ -24,6 +24,9 @@
 
 namespace gadfit {
 
+template <typename T>
+concept Number = std::is_arithmetic_v<T>;
+
 // If AdVar::idx has this value then it is a passive variable in both
 // modes. If its index is higher than passive_idx then it is active in
 // the reverse mode.
@@ -46,7 +49,7 @@ public:
     // NOLINTNEXTLINE(modernize-use-default-member-init)
     int idx;
 
-    // For performance reasons, don't use any default values in the
+    // For performance reasons don't use any default values in the
     // constructors.
     AdVar() = default;
     // NOLINTNEXTLINE
@@ -65,8 +68,7 @@ public:
 
     auto operator=(const AdVar&) -> AdVar& = default;
     auto operator=(AdVar&&) -> AdVar& = default;
-    template <typename T>
-    auto operator=(const T x) -> AdVar&
+    auto operator=(const Number auto x) -> AdVar&
     {
         val = static_cast<double>(x);
         return *this;
@@ -75,10 +77,8 @@ public:
     auto operator-() const -> AdVar;
     auto operator+() const -> AdVar;
 
-    template <typename T>
-    auto operator-=(const T& rhs) -> AdVar&;
-    template <typename T>
-    auto operator+=(const T& rhs) -> AdVar&;
+    auto operator-=(const auto& rhs) -> AdVar&;
+    auto operator+=(const auto& rhs) -> AdVar&;
 
     ~AdVar() = default;
 };
@@ -150,14 +150,12 @@ auto addADSeed(const AdVar& x) -> void;
 // BEGIN AD ELEMENTAL OPERATIONS
 
 // Greater than
-template <typename T>
-auto operator>(const AdVar& x, const T y) -> bool
+auto operator>(const AdVar& x, const Number auto y) -> bool
 {
     return x.val > static_cast<double>(y);
 }
 
-template <typename T>
-auto operator>(const T y, const AdVar& x) -> bool
+auto operator>(const Number auto y, const AdVar& x) -> bool
 {
     return static_cast<double>(y) > x.val;
 }
@@ -165,14 +163,12 @@ auto operator>(const T y, const AdVar& x) -> bool
 auto operator>(const AdVar& x, const AdVar& y) -> bool;
 
 // Less than
-template <typename T>
-auto operator<(const AdVar& x, const T y) -> bool
+auto operator<(const AdVar& x, const Number auto y) -> bool
 {
     return x.val < static_cast<double>(y);
 }
 
-template <typename T>
-auto operator<(const T y, const AdVar& x) -> bool
+auto operator<(const Number auto y, const AdVar& x) -> bool
 {
     return static_cast<double>(y) < x.val;
 }
@@ -180,8 +176,7 @@ auto operator<(const T y, const AdVar& x) -> bool
 auto operator<(const AdVar& x, const AdVar& y) -> bool;
 
 // Addition
-template <typename T>
-auto operator+(const AdVar& x1, const T x2) -> AdVar
+auto operator+(const AdVar& x1, const Number auto x2) -> AdVar
 {
     AdVar y { x1.val + x2 };
     if (x1.idx > passive_idx) {
@@ -203,8 +198,7 @@ auto operator+(const AdVar& x1, const T x2) -> AdVar
     return y;
 }
 
-template <typename T>
-auto operator+(const T x1, const AdVar& x2) -> AdVar
+auto operator+(const Number auto x1, const AdVar& x2) -> AdVar
 {
     AdVar y { x1 + x2.val };
     if (x2.idx > passive_idx) {
@@ -226,8 +220,7 @@ auto operator+(const T x1, const AdVar& x2) -> AdVar
     return y;
 }
 
-template <typename T>
-auto AdVar::operator+=(const T& rhs) -> AdVar&
+auto AdVar::operator+=(const auto& rhs) -> AdVar&
 {
     *this = *this + rhs;
     return *this;
@@ -236,9 +229,8 @@ auto AdVar::operator+=(const T& rhs) -> AdVar&
 auto operator+(const AdVar& x1, const AdVar& x2) -> AdVar;
 
 // Subtraction
-template <typename T>
 // LCOV_EXCL_START
-auto operator-(const AdVar& x1, const T x2) -> AdVar
+auto operator-(const AdVar& x1, const Number auto x2) -> AdVar
 {
     AdVar y { x1.val - x2 };
     if (x1.idx > passive_idx) {
@@ -261,8 +253,7 @@ auto operator-(const AdVar& x1, const T x2) -> AdVar
 }
 // LCOV_EXCL_STOP
 
-template <typename T>
-auto operator-(const T x1, const AdVar& x2) -> AdVar
+auto operator-(const Number auto x1, const AdVar& x2) -> AdVar
 {
     AdVar y { x1 - x2.val };
     if (x2.idx > passive_idx) {
@@ -284,8 +275,7 @@ auto operator-(const T x1, const AdVar& x2) -> AdVar
     return y;
 }
 
-template <typename T>
-auto AdVar::operator-=(const T& rhs) -> AdVar&
+auto AdVar::operator-=(const auto& rhs) -> AdVar&
 {
     *this = *this - rhs;
     return *this;
@@ -294,9 +284,8 @@ auto AdVar::operator-=(const T& rhs) -> AdVar&
 auto operator-(const AdVar& x1, const AdVar& x2) -> AdVar;
 
 // Multiplication
-template <typename T>
 // LCOV_EXCL_START
-auto operator*(const AdVar& x1, const T x2) -> AdVar
+auto operator*(const AdVar& x1, const Number auto x2) -> AdVar
 {
     AdVar y { x1.val * x2 };
     if (x1.idx > passive_idx) {
@@ -320,9 +309,8 @@ auto operator*(const AdVar& x1, const T x2) -> AdVar
 }
 // LCOV_EXCL_STOP
 
-template <typename T>
 // LCOV_EXCL_START
-auto operator*(const T x1, const AdVar& x2) -> AdVar
+auto operator*(const Number auto x1, const AdVar& x2) -> AdVar
 {
     AdVar y { x1 * x2.val };
     if (x2.idx > passive_idx) {
@@ -349,8 +337,7 @@ auto operator*(const T x1, const AdVar& x2) -> AdVar
 auto operator*(const AdVar& x1, const AdVar& x2) -> AdVar;
 
 // Division
-template <typename T>
-auto operator/(const AdVar& x1, const T x2) -> AdVar
+auto operator/(const AdVar& x1, const Number auto x2) -> AdVar
 {
     const double& inv_x2 { 1.0 / x2 };
     AdVar y { x1.val * inv_x2 };
@@ -374,8 +361,7 @@ auto operator/(const AdVar& x1, const T x2) -> AdVar
     return y;
 }
 
-template <typename T>
-auto operator/(const T x1, const AdVar& x2) -> AdVar
+auto operator/(const Number auto x1, const AdVar& x2) -> AdVar
 {
     const double& inv_x2 { 1.0 / x2.val };
     AdVar y { x1 * inv_x2 };
@@ -404,8 +390,7 @@ auto operator/(const AdVar& x1, const AdVar& x2) -> AdVar;
 // Exponentiation
 auto pow(const AdVar& x1, const AdVar& x2) -> AdVar;
 
-template <typename T>
-auto pow(const AdVar& x1, const T x2) -> AdVar
+auto pow(const AdVar& x1, const Number auto x2) -> AdVar
 {
     AdVar y { std::pow(x1.val, x2) };
     if (x1.idx > passive_idx) {
@@ -429,8 +414,7 @@ auto pow(const AdVar& x1, const T x2) -> AdVar
     return y;
 }
 
-template <typename T>
-auto pow(const T x1, const AdVar& x2) -> AdVar
+auto pow(const Number auto x1, const AdVar& x2) -> AdVar
 {
     AdVar y { std::pow(x1, x2.val) };
     if (x2.idx > passive_idx) {

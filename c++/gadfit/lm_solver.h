@@ -163,9 +163,8 @@ public:
     // are captured as std::span in order to avoid copies. The data
     // array type T needs to be compatible with std::span,
     // e.g. std::vector or std::array.
-    template <typename T>
-    auto addDataset(const T& x_data,
-                    const T& y_data,
+    auto addDataset(const auto& x_data,
+                    const auto& y_data,
                     const std::vector<double>& errors = {}) -> void;
     // If the data go out of scope before LMsolver::fit is called, it
     // is better to call addDataset with shared pointers.
@@ -265,9 +264,8 @@ private:
 };
 
 // LCOV_EXCL_START
-template <typename T>
-auto LMsolver::addDataset(const T& x_data,
-                          const T& y_data,
+auto LMsolver::addDataset(const auto& x_data,
+                          const auto& y_data,
                           const std::vector<double>& errors) -> void
 {
     assert(x_data.size() == y_data.size());
