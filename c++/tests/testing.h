@@ -30,11 +30,11 @@ constexpr double defeault_tolerance_factor { 1e2 };
 // can be used to increase the tolerance for the cases where different
 // configurations lead to slightly different results, for instance MKL
 // vs the fallback linear algebra routines.
-template <typename T>
-auto approx(const T x,
+auto approx(const auto x,
             const double tolerance_factor = defeault_tolerance_factor) -> Approx
 {
     Approx app { x };
-    return app.epsilon(tolerance_factor * std::numeric_limits<T>::epsilon())
+    return app
+      .epsilon(tolerance_factor * std::numeric_limits<decltype(x)>::epsilon())
       .margin(1e-300);
 }

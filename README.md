@@ -29,14 +29,13 @@ Installation
 ------------
 
 * See [INSTALL.md](https://github.com/raullaasner/gadfit/blob/master/INSTALL.md) for quick installation instructions.
-* See the [user guide](https://raullaasner.github.io/gadfit/doc/user_guide/user_guide.pdf) for detailed instructions (recommended).
+* See the [user guide](https://raullaasner.github.io/gadfit/doc/user_guide.pdf) for detailed instructions (recommended).
 
 Screenshots
 -----------
 
 * [C++ Example driver code](https://raullaasner.github.io/gadfit/cxx_driver_code.png)
 * [C++ output](https://raullaasner.github.io/gadfit/cxx_output.png)
-
 * [Fortran example driver code](https://raullaasner.github.io/gadfit/fortran_driver_code.png)
 * [Fortran example fitting function](https://raullaasner.github.io/gadfit/fortran_fitting_function.png)
 * [Fortran output](https://raullaasner.github.io/gadfit/fortran_output.png)
@@ -44,12 +43,12 @@ Screenshots
 Authors and how to contact them
 -------------------------------
 
-See the [user guide](https://raullaasner.github.io/gadfit/doc/user_guide/user_guide.pdf), Section 1.1.
+See the [user guide](https://raullaasner.github.io/gadfit/doc/user_guide.pdf), Section 1.1.
 
 Documentation
 -------------
 
-Details about theory, implementation, configuring and compilation of GADfit, and usage are found in the [user guide](https://raullaasner.github.io/gadfit/doc/user_guide/user_guide.pdf).
+Details about theory, implementation, configuring and compilation of GADfit, and usage are found in the [user guide](https://raullaasner.github.io/gadfit/doc/user_guide.pdf).
 
 Troubleshooting
 ---------------
