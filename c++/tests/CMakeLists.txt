@@ -28,33 +28,37 @@ endif()
 
 enable_testing()
 
-find_package(Catch2 QUIET)
-if (Catch2_FOUND)
-  add_library(catch2_init OBJECT EXCLUDE_FROM_ALL catch2_init.cpp)
-  target_link_libraries(catch2_init PUBLIC ${LIBRARIES} gadfit Catch2::Catch2)
-  foreach(_test ${tests})
-    add_executable(${_test} EXCLUDE_FROM_ALL ${_test}.cpp)
-    target_link_libraries(${_test} PRIVATE catch2_init)
-    if (USE_MPI)
-      add_test(NAME ${_test} COMMAND
-        ${TESTS_RUN_PREFIX}
-        ${CMAKE_CURRENT_BINARY_DIR}/${_test})
-    else()
-      add_test(${_test} ${_test})
-    endif()
-    find_package(spdlog QUIET)
-    if (NOT TARGET spdlog::spdlog)
-      target_include_directories(${_test} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}\
-/../../c++/gadfit/spdlog-prefix/src/spdlog/include")
-    endif()
-  endforeach()
-  add_custom_target(test COMMAND ctest --output-on-failure DEPENDS ${tests})
+add_library(catch2_init OBJECT EXCLUDE_FROM_ALL catch2_init.cpp)
+
+find_package(Catch2 3.1 QUIET)
+if (NOT Catch2_FOUND)
+  message("Catch2 >= 3.1 not found, downloading")
+  FetchContent_Declare(catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2
+    GIT_TAG 97c48e0c343d26d50764fafdc90b1e630fbd10ce)
+  FetchContent_MakeAvailable(catch2)
+  target_link_libraries(catch2_init PUBLIC ${LIBRARIES} gadfit Catch2)
 else()
-  add_custom_target(test
-    COMMAND cmake -E echo
-    "Error: Testing is disabled because could not find Catch2."
-    COMMAND cmake -E false)
+  target_link_libraries(catch2_init PUBLIC ${LIBRARIES} gadfit Catch2::Catch2)
 endif()
+
+foreach(_test ${tests})
+  add_executable(${_test} EXCLUDE_FROM_ALL ${_test}.cpp)
+  target_link_libraries(${_test} PRIVATE catch2_init)
+  if (USE_MPI)
+    add_test(NAME ${_test} COMMAND
+      ${TESTS_RUN_PREFIX}
+      ${CMAKE_CURRENT_BINARY_DIR}/${_test})
+  else()
+    add_test(${_test} ${_test})
+  endif()
+  find_package(spdlog QUIET)
+  if (NOT TARGET spdlog::spdlog)
+    target_include_directories(${_test} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}\
+/../../c++/gadfit/spdlog-prefix/src/spdlog/include")
+  endif()
+endforeach()
+add_custom_target(test COMMAND ctest --output-on-failure DEPENDS ${tests})
 
 # Example input
 add_executable(example0 EXCLUDE_FROM_ALL example.cpp)

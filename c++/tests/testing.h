@@ -9,9 +9,11 @@
     REQUIRE( x.dd  == approx(ref_dd)  );                \
     REQUIRE( x.idx == ref_idx         );
 
+#include <array>
+#include <catch2/catch_approx.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <gadfit/automatic_differentiation.h>
 #include <gadfit/exceptions.h>
-#include <catch2/catch.hpp>
 
 constexpr std::array fix_d {
     6.1360420701563498,  2.9606444748278875,  9.9253736972586246,
@@ -31,9 +33,10 @@ constexpr double defeault_tolerance_factor { 1e2 };
 // configurations lead to slightly different results, for instance MKL
 // vs the fallback linear algebra routines.
 auto approx(const auto x,
-            const double tolerance_factor = defeault_tolerance_factor) -> Approx
+            const double tolerance_factor = defeault_tolerance_factor)
+  -> Catch::Approx
 {
-    Approx app { x };
+    Catch::Approx app { x };
     return app
       .epsilon(tolerance_factor * std::numeric_limits<decltype(x)>::epsilon())
       .margin(1e-300);

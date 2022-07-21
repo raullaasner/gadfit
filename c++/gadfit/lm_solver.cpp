@@ -64,8 +64,6 @@ auto LMsolver::addDataset(const int n_datapoints,
         // By default all data points to have equal weights
         errors_shared.back() = std::make_shared<std::vector<double>>(
           std::vector<double>(n_datapoints, 1.0));
-        // this->errors.emplace_back(
-        //   std::span<const double> { *errors_shared.back() });
         this->errors.emplace_back(*errors_shared.back());
     }
     // Make a new copy of the fitting function corresponding to the

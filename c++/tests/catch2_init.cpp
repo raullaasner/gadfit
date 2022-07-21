@@ -1,7 +1,7 @@
+#include <catch2/catch_session.hpp>
+
 #ifdef USE_MPI
 
-#define CATCH_CONFIG_RUNNER
-#include <catch2/catch.hpp>
 #include <mpi.h>
 
 int main(int argc, char* argv[]) {
@@ -17,12 +17,9 @@ int main(int argc, char* argv[]) {
 
 #else
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
-
-TEST_CASE( "All test cases reside in other .cpp files (empty)" ,
-           "[multi-file:1]")
-{
+int main(int argc, char* argv[]) {
+    int result = Catch::Session().run(argc, argv);
+    return result;
 }
 
 #endif // USE_MPI

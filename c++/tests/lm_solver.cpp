@@ -3,6 +3,7 @@
 #include "lm_solver_data.h"
 
 #include <gadfit/lm_solver.h>
+#include <numeric>
 #include <spdlog/spdlog.h>
 
 static auto exponential(const std::vector<gadfit::AdVar>& parameters,
