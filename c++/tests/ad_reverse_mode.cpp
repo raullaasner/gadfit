@@ -113,7 +113,7 @@ TEST_CASE( "Basic arithmetic (add, subtract, multiply, divide)" )
         try {
             gadfit::returnSweep();
             REQUIRE( 1 == 0 );
-        } catch (const gadfit::UnknownOperationException& e) {
+        } catch (const gadfit::UnknownOperation& e) {
             e.what();
             REQUIRE( 0 == 0 );
         }

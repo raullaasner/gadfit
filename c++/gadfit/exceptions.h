@@ -22,13 +22,13 @@ class GADfitException : public std::exception
 {};
 // LCOV_EXCL_STOP
 
-class UnknownOperationException : public GADfitException
+class UnknownOperation : public GADfitException
 {
 private:
     std::string message;
 
 public:
-    UnknownOperationException(const int op_code);
+    UnknownOperation(const int op_code);
     [[nodiscard]] auto what() const noexcept -> const char* override;
 };
 

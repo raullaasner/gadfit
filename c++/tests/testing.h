@@ -26,14 +26,14 @@ constexpr std::array fix_d {
 };
 
 // Tolerance in units of epsilon for all floating point comparisons
-constexpr double defeault_tolerance_factor { 1e2 };
+constexpr double default_tolerance_factor { 1e2 };
 
 // Small wrapper around the Catch2 Approx class. The optional argument
 // can be used to increase the tolerance for the cases where different
 // configurations lead to slightly different results, for instance MKL
 // vs the fallback linear algebra routines.
 auto approx(const auto x,
-            const double tolerance_factor = defeault_tolerance_factor)
+            const double tolerance_factor = default_tolerance_factor)
   -> Catch::Approx
 {
     Catch::Approx app { x };

@@ -14,14 +14,13 @@
 
 namespace gadfit {
 
-UnknownOperationException::UnknownOperationException(const int op_code)
+UnknownOperation::UnknownOperation(const int op_code)
 {
     message = "Unknown operation code during the return sweep: "
               + std::to_string(op_code);
 }
 
-[[nodiscard]] auto UnknownOperationException::what() const noexcept -> const
-  char*
+[[nodiscard]] auto UnknownOperation::what() const noexcept -> const char*
 {
     return message.c_str();
 }

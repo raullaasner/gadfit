@@ -959,7 +959,7 @@ auto returnSweep() -> void
             trace_count -= 3;
             break;
         default:
-            throw UnknownOperationException { trace[trace_count] };
+            throw UnknownOperation { trace[trace_count] };
         }
     }
     reverse::last_index = reverse::last_index_reset_value;
