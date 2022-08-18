@@ -49,7 +49,7 @@ set(QUAD_PRECISION OFF CACHE BOOL "")
 #set(SPDLOG_PATH /usr/local/spdlog CACHE STRING "")
 
 # If true, links against the GSL library.
-set(USE_GSL ON CACHE BOOL "")
+set(USE_GSL OFF CACHE BOOL "")
 # If GSL was not automatically found by CMake try setting this variable.
 #set(GSL_ROOT_DIR /usr/local/gsl CACHE STRING "")
 

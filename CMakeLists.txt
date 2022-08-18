@@ -46,6 +46,16 @@ if (INCLUDE_COVERAGE)
   endif()
 endif()
 
+# The first_run variable is useful when attempting to detect the
+# default value of a variable, but only during the first configuring
+# and only if not already specified by the user (e.g., in the initial
+# cache file).
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
+  set(first_run TRUE)
+else()
+  set(first_run FALSE)
+endif()
+
 # Define main target
 add_library(gadfit "")
 target_compile_definitions(gadfit PRIVATE

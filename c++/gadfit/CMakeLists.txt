@@ -24,8 +24,7 @@ target_sources(gadfit PRIVATE
 # C++20 features
 target_compile_features(gadfit PUBLIC cxx_std_20)
 
-# First run
-if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
+if (first_run)
   # Automatically detect USE_MPI
   try_compile(MPI_OK ${PROJECT_BINARY_DIR}
     ${PROJECT_SOURCE_DIR}/cmake/tests/MPI.cpp)
@@ -77,6 +76,9 @@ endif()
 include(FetchContent)
 find_package(spdlog HINTS ${SPDLOG_PATH})
 if (NOT TARGET spdlog::spdlog)
+  if (first_run)
+    message("spdlog not found, downloading")
+  endif()
   FetchContent_Declare(spdlog
     GIT_REPOSITORY https://github.com/gabime/spdlog
     GIT_TAG bae78f7b6c32fbfb97dd5751591734c12103fc1a)

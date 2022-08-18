@@ -30,9 +30,11 @@ enable_testing()
 
 add_library(catch2_init OBJECT EXCLUDE_FROM_ALL catch2_init.cpp)
 
-find_package(Catch2 3.1 QUIET)
+find_package(Catch2 3.0.1 QUIET)
 if (NOT Catch2_FOUND)
-  message("Catch2 >= 3.1 not found, downloading")
+  if (first_run)
+    message("Catch2 >= 3.0.1 not found, downloading")
+  endif()
   FetchContent_Declare(catch2
     GIT_REPOSITORY https://github.com/catchorg/Catch2
     GIT_TAG 97c48e0c343d26d50764fafdc90b1e630fbd10ce)
