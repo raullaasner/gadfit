@@ -93,8 +93,8 @@ target_include_directories(gadfit INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
   $<INSTALL_INTERFACE:include>)
 set(_headers
-  lm_solver.h automatic_differentiation.h exceptions.h fit_function.h
-  gadfit_mpi.h gadfit_scalapack.h numerical_integration.h timer.h)
+  lm_solver.h automatic_differentiation.h exceptions.h fit_function.h mpi.h
+  scalapack.h numerical_integration.h timer.h)
 set_target_properties(gadfit PROPERTIES PUBLIC_HEADER "${_headers}")
 if (NOT CMAKE_VERSION VERSION_LESS 3.14.7)
   install(TARGETS gadfit
