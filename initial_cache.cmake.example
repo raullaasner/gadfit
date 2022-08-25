@@ -31,6 +31,9 @@ set(CMAKE_BUILD_TYPE Release CACHE STRING "")
 # Whether to build a shared or a static library
 set(BUILD_SHARED ON CACHE BOOL "")
 
+# Path to the directory that contains Catch2
+#set(CATCH2_PATH /usr/local/catch2 CACHE STRING "")
+
 # Where to install GADfit
 set(CMAKE_INSTALL_PREFIX /usr/local/gadfit CACHE STRING "")
 
