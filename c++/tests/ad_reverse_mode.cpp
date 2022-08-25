@@ -33,7 +33,7 @@ TEST_CASE( "Basic arithmetic (add, subtract, multiply, divide)" )
         const AdVar result { expression(a, b, c) };
         gadfit::returnSweep();
         REQUIRE( result.val == approx(val_ref) );
-        REQUIRE( result.idx == 12 );
+        REQUIRE( result.idx == 16 );
         REQUIRE( gadfit::reverse::adjoints[0] == approx(a_ref) );
         gadfit::freeAdReverse();
     }
@@ -42,7 +42,7 @@ TEST_CASE( "Basic arithmetic (add, subtract, multiply, divide)" )
         const AdVar result { expression(a, b, c) };
         gadfit::returnSweep();
         REQUIRE( result.val == approx(val_ref) );
-        REQUIRE( result.idx == 11 );
+        REQUIRE( result.idx == 16 );
         REQUIRE( gadfit::reverse::adjoints[0] == approx(b_ref) );
         gadfit::freeAdReverse();
     }
@@ -51,7 +51,7 @@ TEST_CASE( "Basic arithmetic (add, subtract, multiply, divide)" )
         const AdVar result { expression(a, b, c) };
         gadfit::returnSweep();
         REQUIRE( result.val == approx(val_ref) );
-        REQUIRE( result.idx == 7 );
+        REQUIRE( result.idx == 9 );
         REQUIRE( gadfit::reverse::adjoints[0] == approx(c_ref) );
         gadfit::freeAdReverse();
     }
@@ -61,7 +61,7 @@ TEST_CASE( "Basic arithmetic (add, subtract, multiply, divide)" )
         const AdVar result { expression(a, b, c) };
         gadfit::returnSweep();
         REQUIRE( result.val == approx(val_ref) );
-        REQUIRE( result.idx == 17 );
+        REQUIRE( result.idx == 25 );
         REQUIRE( gadfit::reverse::adjoints[0] == approx(a_ref) );
         REQUIRE( gadfit::reverse::adjoints[1] == approx(b_ref) );
         gadfit::freeAdReverse();
@@ -77,7 +77,7 @@ TEST_CASE( "Basic arithmetic (add, subtract, multiply, divide)" )
         const AdVar result { expression(a, b, c) };
         gadfit::returnSweep();
         REQUIRE( result.val == approx(val_ref) );
-        REQUIRE( result.idx == 16 );
+        REQUIRE( result.idx == 20 );
         REQUIRE( gadfit::reverse::adjoints[0] == approx(a_ref) );
         REQUIRE( gadfit::reverse::adjoints[1] == approx(c_ref) );
         gadfit::freeAdReverse();
@@ -88,7 +88,7 @@ TEST_CASE( "Basic arithmetic (add, subtract, multiply, divide)" )
         const AdVar result { expression(a, b, c) };
         gadfit::returnSweep();
         REQUIRE( result.val == approx(val_ref) );
-        REQUIRE( result.idx == 14 );
+        REQUIRE( result.idx == 17 );
         REQUIRE( gadfit::reverse::adjoints[0] == approx(b_ref) );
         REQUIRE( gadfit::reverse::adjoints[1] == approx(c_ref) );
         gadfit::freeAdReverse();
@@ -99,7 +99,7 @@ TEST_CASE( "Basic arithmetic (add, subtract, multiply, divide)" )
         c.idx = 2; gadfit::addADSeed(c);
         const AdVar result { expression(a, b, c) };
         gadfit::returnSweep();
-        TEST_AD( result, val_ref, 0.0, 0.0, 20 );
+        TEST_AD( result, val_ref, 0.0, 0.0, 26 );
         REQUIRE( gadfit::reverse::adjoints[0] == approx(a_ref) );
         REQUIRE( gadfit::reverse::adjoints[1] == approx(b_ref) );
         REQUIRE( gadfit::reverse::adjoints[2] == approx(c_ref) );
@@ -152,7 +152,7 @@ TEST_CASE( "Exponentiation, logarithm, other" )
         const AdVar result { expression(a, b) };
         gadfit::returnSweep();
         REQUIRE( result.val == approx(val_ref) );
-        REQUIRE( result.idx == 19 );
+        REQUIRE( result.idx == 25 );
         REQUIRE( gadfit::reverse::adjoints[0] == approx(a_ref) );
         gadfit::freeAdReverse();
     }
@@ -161,7 +161,7 @@ TEST_CASE( "Exponentiation, logarithm, other" )
         const AdVar result { expression(a, b) };
         gadfit::returnSweep();
         REQUIRE( result.val == approx(val_ref) );
-        REQUIRE( result.idx == 18 );
+        REQUIRE( result.idx == 25 );
         REQUIRE( gadfit::reverse::adjoints[0] == approx(b_ref) );
         gadfit::freeAdReverse();
     }
@@ -171,7 +171,7 @@ TEST_CASE( "Exponentiation, logarithm, other" )
         const AdVar result { expression(a, b) };
         gadfit::returnSweep();
         REQUIRE( result.val == approx(val_ref) );
-        REQUIRE( result.idx == 26 );
+        REQUIRE( result.idx == 32 );
         REQUIRE( gadfit::reverse::adjoints[0] == approx(a_ref) );
         REQUIRE( gadfit::reverse::adjoints[1] == approx(b_ref) );
         gadfit::freeAdReverse();
@@ -207,7 +207,7 @@ TEST_CASE( "Trigonometric" )
         const AdVar result { expression(a, b) };
         gadfit::returnSweep();
         REQUIRE( result.val == approx(val_ref) );
-        REQUIRE( result.idx == 36 );
+        REQUIRE( result.idx == 47 );
         REQUIRE( gadfit::reverse::adjoints[0] == approx(a_ref) );
         gadfit::freeAdReverse();
     }
@@ -216,7 +216,7 @@ TEST_CASE( "Trigonometric" )
         const AdVar result { expression(a, b) };
         gadfit::returnSweep();
         REQUIRE( result.val == approx(val_ref) );
-        REQUIRE( result.idx == 32 );
+        REQUIRE( result.idx == 43 );
         REQUIRE( gadfit::reverse::adjoints[0] == approx(b_ref) );
         gadfit::freeAdReverse();
     }
@@ -226,7 +226,7 @@ TEST_CASE( "Trigonometric" )
         const AdVar result { expression(a, b) };
         gadfit::returnSweep();
         REQUIRE( result.val == approx(val_ref) );
-        REQUIRE( result.idx == 38 );
+        REQUIRE( result.idx == 39 );
         REQUIRE( gadfit::reverse::adjoints[0] == approx(a_ref) );
         REQUIRE( gadfit::reverse::adjoints[1] == approx(b_ref) );
         gadfit::freeAdReverse();

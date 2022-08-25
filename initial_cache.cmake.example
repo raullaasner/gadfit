@@ -22,19 +22,19 @@
 # Whether to build the C++ or Fortran version of GADfit
 set(BUILD_CXX_VERSION ON CACHE BOOL "")
 
-# Whether to build in Release or Debug configuration.
+# Whether to build in Release or Debug configuration
 set(CMAKE_BUILD_TYPE Release CACHE STRING "")
 
 # Whether to build with MPI support (C++ only)
 #set(USE_MPI ON CACHE BOOL "")
 
-# Whether to build a shared or a static library.
+# Whether to build a shared or a static library
 set(BUILD_SHARED ON CACHE BOOL "")
 
 # Where to install GADfit
 set(CMAKE_INSTALL_PREFIX /usr/local/gadfit CACHE STRING "")
 
-# Whether to use quadruple or double precision (Fortran only).
+# Whether to use quadruple or double precision (Fortran only)
 set(QUAD_PRECISION OFF CACHE BOOL "")
 
 # Use this prefix if you want to run the tests in parallel with
@@ -48,7 +48,7 @@ set(QUAD_PRECISION OFF CACHE BOOL "")
 # SPDLOG_PATH to the installation directory.
 #set(SPDLOG_PATH /usr/local/spdlog CACHE STRING "")
 
-# If true, links against the GSL library.
+# If true, link against the GSL library
 set(USE_GSL OFF CACHE BOOL "")
 # If GSL was not automatically found by CMake try setting this variable.
 #set(GSL_ROOT_DIR /usr/local/gsl CACHE STRING "")

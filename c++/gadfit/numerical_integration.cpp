@@ -323,10 +323,11 @@ static auto traceRecordLower(const integrandSignature& function,
             result.idx = ++reverse::last_index;
             reverse::forwards[reverse::last_index] = result.val;
         }
-        reverse::constants[++reverse::const_count] =
+        reverse::constants.emplace_back(
           -function(workspaces.front().inactive_parameters,
                     AdVar { lower.val, passive_idx })
-             .val;
+             .val);
+        ++reverse::const_count;
         reverse::trace[++reverse::trace_count] = lower.idx;
         reverse::trace[++reverse::trace_count] = result.idx;
         reverse::trace[++reverse::trace_count] =
@@ -355,10 +356,11 @@ static auto traceRecordUpper(const integrandSignature& function,
             result.idx = ++reverse::last_index;
             reverse::forwards[reverse::last_index] = result.val;
         }
-        reverse::constants[++reverse::const_count] =
+        reverse::constants.emplace_back(
           function(workspaces.front().inactive_parameters,
                    AdVar { upper.val, passive_idx })
-            .val;
+            .val);
+        ++reverse::const_count;
         reverse::trace[++reverse::trace_count] = upper.idx;
         reverse::trace[++reverse::trace_count] = result.idx;
         reverse::trace[++reverse::trace_count] =
@@ -554,14 +556,15 @@ static auto traceRecordY1(const integrandSignature2D& function,
             result.idx = ++reverse::last_index;
             reverse::forwards[reverse::last_index] = result.val;
         }
-        reverse::constants[++reverse::const_count] =
+        reverse::constants.emplace_back(
           -integrate(f_fixed_y,
                      workspaces.front().inactive_parameters,
                      x1.val,
                      x2.val,
                      rel_error,
                      abs_error)
-             .val;
+             .val);
+        ++reverse::const_count;
         reverse::trace[++reverse::trace_count] = y1.idx;
         reverse::trace[++reverse::trace_count] = result.idx;
         reverse::trace[++reverse::trace_count] =
@@ -588,11 +591,10 @@ static auto traceRecordY1(const integrandSignature2D& function,
         } };
         const AdVar f_full { integrate(
           f_fixed_y_active, parameters, x1.val, x2.val, rel_error, abs_error) };
-        // clang-format off
-        result.dd -= y1.dd * f_x.val + y1.d
-                     * (x2.d * f_x2_y1.val - x1.d * f_x1_y1.val + f_chi.d
-                        + f_full.d);
-        // clang-format on
+        result.dd -=
+          y1.dd * f_x.val
+          + y1.d
+              * (x2.d * f_x2_y1.val - x1.d * f_x1_y1.val + f_chi.d + f_full.d);
         if (result.idx == passive_idx) {
             result.idx = forward_active_idx;
         }
@@ -617,14 +619,15 @@ static auto traceRecordY2(const integrandSignature2D& function,
             result.idx = ++reverse::last_index;
             reverse::forwards[reverse::last_index] = result.val;
         }
-        reverse::constants[++reverse::const_count] =
+        reverse::constants.emplace_back(
           integrate(f_fixed_y,
                     workspaces.front().inactive_parameters,
                     x1.val,
                     x2.val,
                     rel_error,
                     abs_error)
-            .val;
+            .val);
+        ++reverse::const_count;
         reverse::trace[++reverse::trace_count] = y2.idx;
         reverse::trace[++reverse::trace_count] = result.idx;
         reverse::trace[++reverse::trace_count] =
@@ -651,11 +654,10 @@ static auto traceRecordY2(const integrandSignature2D& function,
         } };
         const AdVar f_full { integrate(
           f_fixed_y_active, parameters, x1.val, x2.val, rel_error, abs_error) };
-        // clang-format off
-        result.dd += y2.dd * f_x.val + y2.d
-                     * (x2.d * f_x2_y2.val - x1.d * f_x1_y2.val + f_chi.d
-                        + f_full.d);
-        // clang-format on
+        result.dd +=
+          y2.dd * f_x.val
+          + y2.d
+              * (x2.d * f_x2_y2.val - x1.d * f_x1_y2.val + f_chi.d + f_full.d);
         if (result.idx == passive_idx) {
             result.idx = forward_active_idx;
         }
@@ -680,14 +682,15 @@ static auto traceRecordX1(const integrandSignature2D& function,
             result.idx = ++reverse::last_index;
             reverse::forwards[reverse::last_index] = result.val;
         }
-        reverse::constants[++reverse::const_count] =
+        reverse::constants.emplace_back(
           -integrate(f_fixed_x,
                      workspaces.front().inactive_parameters,
                      y1.val,
                      y2.val,
                      rel_error,
                      abs_error)
-             .val;
+             .val);
+        ++reverse::const_count;
         reverse::trace[++reverse::trace_count] = x1.idx;
         reverse::trace[++reverse::trace_count] = result.idx;
         reverse::trace[++reverse::trace_count] =
@@ -714,11 +717,10 @@ static auto traceRecordX1(const integrandSignature2D& function,
         } };
         const AdVar f_full { integrate(
           f_fixed_x_active, parameters, y1.val, y2.val, rel_error, abs_error) };
-        // clang-format off
-        result.dd -= x1.dd * f_y.val + x1.d
-                     * (y2.d * f_x1_y2.val - y1.d * f_x1_y1.val + f_chi.d
-                        + f_full.d);
-        // clang-format on
+        result.dd -=
+          x1.dd * f_y.val
+          + x1.d
+              * (y2.d * f_x1_y2.val - y1.d * f_x1_y1.val + f_chi.d + f_full.d);
         if (result.idx == passive_idx) {
             result.idx = forward_active_idx;
         }
@@ -743,14 +745,15 @@ static auto traceRecordX2(const integrandSignature2D& function,
             result.idx = ++reverse::last_index;
             reverse::forwards[reverse::last_index] = result.val;
         }
-        reverse::constants[++reverse::const_count] =
+        reverse::constants.emplace_back(
           integrate(f_fixed_x,
                     workspaces.front().inactive_parameters,
                     y1.val,
                     y2.val,
                     rel_error,
                     abs_error)
-            .val;
+            .val);
+        ++reverse::const_count;
         reverse::trace[++reverse::trace_count] = x2.idx;
         reverse::trace[++reverse::trace_count] = result.idx;
         reverse::trace[++reverse::trace_count] =
@@ -777,11 +780,10 @@ static auto traceRecordX2(const integrandSignature2D& function,
         } };
         const AdVar f_full { integrate(
           f_fixed_x_active, parameters, y1.val, y2.val, rel_error, abs_error) };
-        // clang-format off
-        result.dd += x2.dd * f_y.val + x2.d
-                     * (y2.d * f_x2_y2.val - y1.d * f_x2_y1.val + f_chi.d
-                        + f_full.d);
-        // clang-format on
+        result.dd +=
+          x2.dd * f_y.val
+          + x2.d
+              * (y2.d * f_x2_y2.val - y1.d * f_x2_y1.val + f_chi.d + f_full.d);
         if (result.idx == passive_idx) {
             result.idx = forward_active_idx;
         }

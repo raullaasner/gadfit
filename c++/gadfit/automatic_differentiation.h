@@ -289,9 +289,9 @@ auto operator*(const AdVar& x1, const Number auto x2) -> AdVar
 {
     AdVar y { x1.val * x2 };
     if (x1.idx > passive_idx) {
+        reverse::forwards[++reverse::last_index] = static_cast<double>(x2);
         y.idx = ++reverse::last_index;
         reverse::forwards[reverse::last_index] = y.val;
-        reverse::constants[++reverse::const_count] = static_cast<double>(x2);
         reverse::trace[++reverse::trace_count] = x1.idx;
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] =
@@ -314,9 +314,9 @@ auto operator*(const Number auto x1, const AdVar& x2) -> AdVar
 {
     AdVar y { x1 * x2.val };
     if (x2.idx > passive_idx) {
+        reverse::forwards[++reverse::last_index] = static_cast<double>(x1);
         y.idx = ++reverse::last_index;
         reverse::forwards[reverse::last_index] = y.val;
-        reverse::constants[++reverse::const_count] = static_cast<double>(x1);
         reverse::trace[++reverse::trace_count] = x2.idx;
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] =
@@ -342,9 +342,9 @@ auto operator/(const AdVar& x1, const Number auto x2) -> AdVar
     const double& inv_x2 { 1.0 / x2 };
     AdVar y { x1.val * inv_x2 };
     if (x1.idx > passive_idx) {
+        reverse::forwards[++reverse::last_index] = inv_x2;
         y.idx = ++reverse::last_index;
         reverse::forwards[reverse::last_index] = y.val;
-        reverse::constants[++reverse::const_count] = inv_x2;
         reverse::trace[++reverse::trace_count] = x1.idx;
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] =
@@ -366,9 +366,9 @@ auto operator/(const Number auto x1, const AdVar& x2) -> AdVar
     const double& inv_x2 { 1.0 / x2.val };
     AdVar y { x1 * inv_x2 };
     if (x2.idx > passive_idx) {
+        reverse::forwards[++reverse::last_index] = static_cast<double>(x1);
         y.idx = ++reverse::last_index;
         reverse::forwards[reverse::last_index] = y.val;
-        reverse::constants[++reverse::const_count] = static_cast<double>(x1);
         reverse::trace[++reverse::trace_count] = x2.idx;
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] =
@@ -394,9 +394,9 @@ auto pow(const AdVar& x1, const Number auto x2) -> AdVar
 {
     AdVar y { std::pow(x1.val, x2) };
     if (x1.idx > passive_idx) {
+        reverse::forwards[++reverse::last_index] = static_cast<double>(x2);
         y.idx = ++reverse::last_index;
         reverse::forwards[reverse::last_index] = y.val;
-        reverse::constants[++reverse::const_count] = static_cast<double>(x2);
         reverse::trace[++reverse::trace_count] = x1.idx;
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::pow_a_r);
@@ -418,9 +418,9 @@ auto pow(const Number auto x1, const AdVar& x2) -> AdVar
 {
     AdVar y { std::pow(x1, x2.val) };
     if (x2.idx > passive_idx) {
+        reverse::forwards[++reverse::last_index] = static_cast<double>(x1);
         y.idx = ++reverse::last_index;
         reverse::forwards[reverse::last_index] = y.val;
-        reverse::constants[++reverse::const_count] = static_cast<double>(x1);
         reverse::trace[++reverse::trace_count] = x2.idx;
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::pow_r_a);

@@ -55,7 +55,7 @@ auto initializeADReverse(const int sweep_size) -> void
     reverse::trace_count = -1;
     // We assume that 1/2 of all elemental operations produce a
     // constant to be saved for the return sweep.
-    reverse::constants.resize(sweep_size / 2);
+    reverse::constants.clear();
     reverse::const_count = -1;
     // last_index is reset in addADSeed
 }
@@ -202,17 +202,24 @@ auto operator*(const AdVar& x1, const AdVar& x2) -> AdVar
         reverse::trace[++reverse::trace_count] =
           static_cast<int>(Op::multiply_a_a);
     } else if (x1.idx > passive_idx) {
+        // Typically we start by setting the index and value of the
+        // result (y). However, if there is a constant involved we
+        // save that first. It can be referenced in the return sweep
+        // as forwards[trace[trace_count-1]-1] where
+        // trace[trace_count-1] is the index of y and by subtracting 1
+        // we refer to the value that precedes y in the forward array,
+        // i.e. the constant.
+        reverse::forwards[++reverse::last_index] = x2.val;
         y.idx = ++reverse::last_index;
         reverse::forwards[reverse::last_index] = y.val;
-        reverse::constants[++reverse::const_count] = x2.val;
         reverse::trace[++reverse::trace_count] = x1.idx;
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] =
           static_cast<int>(Op::multiply_divide_a_r);
     } else if (x2.idx > passive_idx) {
+        reverse::forwards[++reverse::last_index] = x1.val;
         y.idx = ++reverse::last_index;
         reverse::forwards[reverse::last_index] = y.val;
-        reverse::constants[++reverse::const_count] = x1.val;
         reverse::trace[++reverse::trace_count] = x2.idx;
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] =
@@ -252,17 +259,17 @@ auto operator/(const AdVar& x1, const AdVar& x2) -> AdVar
         reverse::trace[++reverse::trace_count] =
           static_cast<int>(Op::divide_a_a);
     } else if (x1.idx > passive_idx) {
+        reverse::forwards[++reverse::last_index] = inv_x2;
         y.idx = ++reverse::last_index;
         reverse::forwards[reverse::last_index] = y.val;
-        reverse::constants[++reverse::const_count] = inv_x2;
         reverse::trace[++reverse::trace_count] = x1.idx;
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] =
           static_cast<int>(Op::multiply_divide_a_r);
     } else if (x2.idx > passive_idx) {
+        reverse::forwards[++reverse::last_index] = x1.val;
         y.idx = ++reverse::last_index;
         reverse::forwards[reverse::last_index] = y.val;
-        reverse::constants[++reverse::const_count] = x1.val;
         reverse::trace[++reverse::trace_count] = x2.idx;
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] =
@@ -300,16 +307,16 @@ auto pow(const AdVar& x1, const AdVar& x2) -> AdVar
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::pow_a_a);
     } else if (x1.idx > passive_idx) {
+        reverse::forwards[++reverse::last_index] = x2.val;
         y.idx = ++reverse::last_index;
         reverse::forwards[reverse::last_index] = y.val;
-        reverse::constants[++reverse::const_count] = x2.val;
         reverse::trace[++reverse::trace_count] = x1.idx;
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::pow_a_r);
     } else if (x2.idx > passive_idx) {
+        reverse::forwards[++reverse::last_index] = x1.val;
         y.idx = ++reverse::last_index;
         reverse::forwards[reverse::last_index] = y.val;
-        reverse::constants[++reverse::const_count] = x1.val;
         reverse::trace[++reverse::trace_count] = x2.idx;
         reverse::trace[++reverse::trace_count] = y.idx;
         reverse::trace[++reverse::trace_count] = static_cast<int>(Op::pow_r_a);
@@ -318,12 +325,12 @@ auto pow(const AdVar& x1, const AdVar& x2) -> AdVar
         y.d = x1.d * x2.val * std::pow(x1.val, x2.val - 1)
               + x2.d * log_value * y.val;
         const double inv_x1 { 1.0 / x1.val };
-        // clang-format off
-        y.dd = y.d * y.d / y.val
-               + y.val * (x2.dd * log_value
-                          + (2 * x1.d * x2.d + x2.val
-                             * (x1.dd - x1.d * x1.d * inv_x1)) * inv_x1);
-        // clang-format on
+        y.dd =
+          y.d * y.d / y.val
+          + y.val
+              * (x2.dd * log_value
+                 + (2 * x1.d * x2.d + x2.val * (x1.dd - x1.d * x1.d * inv_x1))
+                     * inv_x1);
         y.idx = forward_active_idx;
     } else if (x1.idx == forward_active_idx) {
         y.d = x1.d * x2.val * std::pow(x1.val, x2.val - 1);
@@ -772,7 +779,7 @@ auto returnSweep() -> void
         case Op::multiply_divide_a_r:
             adjoints[trace[trace_count - 2]] +=
               adjoints[trace[trace_count - 1]]
-              * reverse::constants[reverse::const_count--];
+              * forwards[trace[trace_count - 1] - 1];
             trace_count -= 3;
             break;
         case Op::divide_a_a:
@@ -788,7 +795,7 @@ auto returnSweep() -> void
         case Op::divide_r_a:
             adjoints[trace[trace_count - 2]] -=
               adjoints[trace[trace_count - 1]]
-              * reverse::constants[reverse::const_count--]
+              * forwards[trace[trace_count - 1] - 1]
               / forwards[trace[trace_count - 2]]
               / forwards[trace[trace_count - 2]];
             trace_count -= 3;
@@ -809,19 +816,18 @@ auto returnSweep() -> void
         case Op::pow_a_r:
             adjoints[trace[trace_count - 2]] +=
               adjoints[trace[trace_count - 1]]
-              * reverse::constants[reverse::const_count]
+              * forwards[trace[trace_count - 1] - 1]
               * std::pow(forwards[trace[trace_count - 2]],
-                         reverse::constants[reverse::const_count] - 1);
-            --reverse::const_count;
+                         forwards[trace[trace_count - 1] - 1] - 1);
             trace_count -= 3;
             break;
         case Op::pow_r_a:
             adjoints[trace[trace_count - 2]] +=
               adjoints[trace[trace_count - 1]]
-              * std::log(reverse::constants[reverse::const_count])
-              * std::pow(reverse::constants[reverse::const_count],
+              * std::log(forwards[trace[trace_count - 1] - 1])
+              * std::pow(forwards[trace[trace_count - 1] - 1],
                          forwards[trace[trace_count - 2]]);
-            --reverse::const_count;
+            // --reverse::const_count;
             trace_count -= 3;
             break;
         case Op::log_a:
@@ -871,30 +877,27 @@ auto returnSweep() -> void
             trace_count -= 3;
             break;
         case Op::asin_a:
-            // clang-format off
             adjoints[trace[trace_count - 2]] +=
               adjoints[trace[trace_count - 1]]
-              / std::sqrt(1 - forwards[trace[trace_count - 2]]
-                          * forwards[trace[trace_count - 2]]);
-            // clang-format on
+              / std::sqrt(1
+                          - forwards[trace[trace_count - 2]]
+                              * forwards[trace[trace_count - 2]]);
             trace_count -= 3;
             break;
         case Op::acos_a:
-            // clang-format off
             adjoints[trace[trace_count - 2]] -=
               adjoints[trace[trace_count - 1]]
-              / std::sqrt(1 - forwards[trace[trace_count - 2]]
-                          * forwards[trace[trace_count - 2]]);
-            // clang-format on
+              / std::sqrt(1
+                          - forwards[trace[trace_count - 2]]
+                              * forwards[trace[trace_count - 2]]);
             trace_count -= 3;
             break;
         case Op::atan_a:
-            // clang-format off
             adjoints[trace[trace_count - 2]] +=
               adjoints[trace[trace_count - 1]]
-              / (1 + forwards[trace[trace_count - 2]]
-                 * forwards[trace[trace_count - 2]]);
-            // clang-format on
+              / (1
+                 + forwards[trace[trace_count - 2]]
+                     * forwards[trace[trace_count - 2]]);
             trace_count -= 3;
             break;
         case Op::sinh_a:
@@ -916,40 +919,34 @@ auto returnSweep() -> void
             trace_count -= 3;
             break;
         case Op::asinh_a:
-            // clang-format off
             adjoints[trace[trace_count - 2]] +=
               adjoints[trace[trace_count - 1]]
               / std::sqrt(forwards[trace[trace_count - 2]]
-                          * forwards[trace[trace_count - 2]] + 1);
-            // clang-format on
+                            * forwards[trace[trace_count - 2]]
+                          + 1);
             trace_count -= 3;
             break;
         case Op::acosh_a:
-            // clang-format off
             adjoints[trace[trace_count - 2]] +=
               adjoints[trace[trace_count - 1]]
               / std::sqrt(forwards[trace[trace_count - 2]]
-                          * forwards[trace[trace_count - 2]] - 1);
-            // clang-format on
+                            * forwards[trace[trace_count - 2]]
+                          - 1);
             trace_count -= 3;
             break;
         case Op::atanh_a:
-            // clang-format off
             adjoints[trace[trace_count - 2]] +=
               adjoints[trace[trace_count - 1]]
-              / (1 - forwards[trace[trace_count - 2]]
-                 * forwards[trace[trace_count - 2]]);
-            // clang-format on
+              / (1
+                 - forwards[trace[trace_count - 2]]
+                     * forwards[trace[trace_count - 2]]);
             trace_count -= 3;
             break;
         case Op::erf_a:
-            // clang-format off
             adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]] * 2
-              * std::numbers::inv_sqrtpi
+              adjoints[trace[trace_count - 1]] * 2 * std::numbers::inv_sqrtpi
               * std::exp(-forwards[trace[trace_count - 2]]
                          * forwards[trace[trace_count - 2]]);
-            // clang-format on
             trace_count -= 3;
             break;
         case Op::integration_bound:
@@ -962,6 +959,7 @@ auto returnSweep() -> void
             throw UnknownOperation { trace[trace_count] };
         }
     }
+    reverse::constants.clear();
     reverse::last_index = reverse::last_index_reset_value;
 }
 
