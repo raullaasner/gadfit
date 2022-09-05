@@ -163,9 +163,9 @@ public:
     // are captured as std::span in order to avoid copies. The data
     // array type T needs to be compatible with std::span,
     // e.g. std::vector or std::array.
-    auto addDataset(const auto& x_data,
-                    const auto& y_data,
-                    const std::vector<double>& errors = {}) -> void;
+    auto addDataset(const auto& x_data, const auto& y_data, const auto& errors)
+      -> void;
+    auto addDataset(const auto& x_data, const auto& y_data) -> void;
     // If the data go out of scope before LMsolver::fit is called, it
     // is better to call addDataset with shared pointers.
     auto addDataset(const std::shared_ptr<std::vector<double>>& x_data,
@@ -266,14 +266,20 @@ private:
 // LCOV_EXCL_START
 auto LMsolver::addDataset(const auto& x_data,
                           const auto& y_data,
-                          const std::vector<double>& errors) -> void
+                          const auto& errors) -> void
 {
     assert(x_data.size() == y_data.size());
-    assert(errors.empty() || x_data.size() == errors.size());
+    assert(x_data.size() == errors.size());
     addDataset(static_cast<int>(x_data.size()),
                x_data.data(),
                y_data.data(),
                errors.data());
+}
+auto LMsolver::addDataset(const auto& x_data, const auto& y_data) -> void
+{
+    assert(x_data.size() == y_data.size());
+    addDataset(
+      static_cast<int>(x_data.size()), x_data.data(), y_data.data(), nullptr);
 }
 // LCOV_EXCL_STOP
 

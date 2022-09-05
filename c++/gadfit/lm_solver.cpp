@@ -85,7 +85,7 @@ auto LMsolver::addDataset(const std::shared_ptr<std::vector<double>>& x_data,
         errors_shared.push_back(errors);
         addDataset(*x_data, *y_data, *errors);
     } else {
-        addDataset(*x_data, *y_data, {});
+        addDataset(*x_data, *y_data);
     }
 }
 
