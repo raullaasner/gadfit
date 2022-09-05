@@ -12,6 +12,7 @@
 
 #include "mpi.h"
 
+#include <algorithm>
 #include <cstring>
 
 namespace gadfit {
@@ -48,7 +49,7 @@ SharedArray::SharedArray(const MPIVars& mpi, const int n_values)
                             &local_ptr,
                             &win);
     local = std::span { local_ptr, static_cast<size_t>(n_values) };
-    std::fill(local.begin(), local.end(), 0.0);
+    std::ranges::fill(local, 0.0);
     MPI_Aint size {};
     int disp_unit {};
     double* global_ptr {};

@@ -166,7 +166,7 @@ auto LMsolver::fit(double lambda) -> void
     Jacobian.init(sca, indices.n_datapoints, indices.n_active, nb);
     JTJ.init(sca, indices.n_active, indices.n_active, nb);
     DTD.init(sca, indices.n_active, indices.n_active, nb);
-    std::fill(DTD.local.begin(), DTD.local.end(), 0.0);
+    std::ranges::fill(DTD.local, 0.0);
     // Need equal block sizes for the left hand side because pdpotrf
     // (Cholesky) requires square block decomposition
     left_side.init(sca, indices.n_active, indices.n_active, nb);
@@ -559,7 +559,7 @@ auto LMsolver::computeDeltas(SharedArray& omega_shared) -> void
     double acc_ratio { std::sqrt(D_delta2 / D_delta1) };
     delta2.populateGlobal(mpi);
     if (acc_ratio > settings.acceleration_threshold) {
-        std::fill(delta2.global.begin(), delta2.global.end(), 0.0);
+        std::ranges::fill(delta2.global, 0.0);
     }
     linalg_timer.stop();
 }

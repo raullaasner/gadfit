@@ -17,6 +17,7 @@
 
 #include "lapack.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace gadfit {
@@ -27,7 +28,7 @@ auto dsyrk(const char,
            const std::vector<double>& A,
            std::vector<double>& C) -> void
 {
-    std::fill(C.begin(), C.end(), 0.0);
+    std::ranges::fill(C, 0.0);
     for (int i {}; i < N; ++i) {
         for (int j {}; j < N; ++j) {
             for (int k {}; k < K; ++k) {
