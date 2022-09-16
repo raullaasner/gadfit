@@ -174,7 +174,7 @@ auto LMsolver::fit(double lambda) -> void
     residuals.init(sca, indices.n_datapoints, 1, nb);
     delta1.init(sca, indices.n_active, 1, nb);
     right_side.init(sca, indices.n_active, 1, nb);
-    if (sca.isInitialized()) {
+    if (!ioTest(io::final_only) && sca.isInitialized()) {
         printMatrixSizes();
     }
     SharedArray omega_shared {};
@@ -215,7 +215,7 @@ auto LMsolver::fit(double lambda) -> void
         // lambda_incs times consecutively.
         for (int i_lambda {}; i_lambda <= settings.lambda_incs; ++i_lambda) {
             const double new_chi2 { chi2() };
-            if (mpi.rank == 0) {
+            if (!ioTest(io::final_only) && mpi.rank == 0) {
                 spdlog::debug("Current lambda: {}, new chi2 = {}, old chi2: {}",
                               lambda,
                               new_chi2,
