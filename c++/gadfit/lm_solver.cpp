@@ -224,7 +224,9 @@ auto LMsolver::fit(double lambda) -> void
             if (new_chi2 < old_chi2) {
                 lambda /= settings.lambda_down;
                 old_chi2 = new_chi2;
-                printIterationResults(i_iteration, lambda, new_chi2);
+                if (!ioTest(io::final_only)) {
+                    printIterationResults(i_iteration, lambda, new_chi2);
+                }
                 break;
             }
             if (i_lambda < settings.lambda_incs) {
@@ -238,11 +240,15 @@ auto LMsolver::fit(double lambda) -> void
                 updateParameters();
             } else {
                 revertParameters(old_parameters);
-                if (mpi.rank == 0) {
+                if (!ioTest(io::final_only) && mpi.rank == 0) {
                     spdlog::info("Lambda increased {} times in a row",
                                  settings.lambda_incs);
                     spdlog::info("");
                 }
+                // This iteration was unsuccessful. Decrease
+                // i_iteration so it shows the total number of
+                // successful iterations.
+                --i_iteration;
                 finished = true;
             }
         }
@@ -254,8 +260,8 @@ auto LMsolver::fit(double lambda) -> void
         }
     }
     main_timer.stop();
-    if (settings.iteration_limit == 0) {
-        printIterationResults(0, lambda, old_chi2);
+    if (ioTest(io::final_only) || settings.iteration_limit == 0) {
+        printIterationResults(i_iteration, lambda, old_chi2);
     }
     if (ioTest(io::timings)) {
         printTimings();
