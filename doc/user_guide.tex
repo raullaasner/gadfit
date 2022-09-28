@@ -11,7 +11,7 @@
 % limitations under the License.
 
 \documentclass{article}
-\def\version{1.5}
+\def\version{1.6}
 
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -1080,7 +1080,6 @@ A struct containing parameters that define runtime behavior. Find the default va
 \item \verb+acceleration_threshold (double)+: Acceleration threshold [$\alpha$ in Eq.~\eqref{eq:acc_alpha}]. If negative, the acceleration term is not calculated.
 \item \verb+blacs_single_column+: whether to create an $N\times1$ BLACS process grid where $N$ is the number of processes. This might be suitable if the number of data points is (much) higher than the number of fitting parameters. If false, then a rectangular process grid is created with \verb+MPI_Dims_create+.
 \item \verb+min_n_blocks+: Minimum number of blocks of a 2D block-cyclic array held by each process. For minimal MPI communication set this values to 1 but for better load balancing set it to a larger value. Set \texttt{spdlog} level to \texttt{debug} in order to see details about the structure of block cyclic arrays.
-\item \verb+prepare_getters+: Use this if you want to use getters after the fitting procedure has ended (e.g. \texttt{getJacobian()}).
 \end{itemize}
 
 \begin{verbatim}
@@ -1129,8 +1128,9 @@ gadfit::LMsolver::getDTD()
 gadfit::LMsolver::getLeftSide()
 gadfit::LMsolver::getRightSide()
 gadfit::LMsolver::getResiduals()
+gadfit::LMsolver::getInvJTJ()
 \end{verbatim}
-Get $\bm J$, $\bm J^T\bm J$, $\bm D^T\bm D$, left side of Eq.~\eqref{eq:LM}, right side of Eq.~\eqref{eq:LM}, or the residuals $\bm y - \bm f(\bm \beta)$, respectively. The setting \verb+prepare_getters+ must be set before the fitting procedure. Otherwise, these quantities are not returned correctly.
+Get $\bm J$, $\bm J^T\bm J$, $\bm D^T\bm D$, left side of Eq.~\eqref{eq:LM}, right side of Eq.~\eqref{eq:LM}, the residuals $\bm y - \bm f(\bm \beta)$, or $(\bm J^T\bm J)^{-1}$, respectively.
 
 \begin{verbatim}
 spdlog::set_pattern(pattern_string)

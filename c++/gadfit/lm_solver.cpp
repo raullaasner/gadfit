@@ -153,6 +153,11 @@ auto LMsolver::fit(double lambda) -> void
         throw NoFittingParameters {};
     }
     resetTimers();
+#ifdef USE_SCALAPACK
+    if (sca.isInitialized()) {
+        Cblacs_gridexit(sca.blacs_context);
+    }
+#endif
     sca.init(mpi, settings.blacs_single_column);
     // Initialize the shared arrays
     SharedArray Jacobian_shared {
@@ -266,19 +271,6 @@ auto LMsolver::fit(double lambda) -> void
     if (ioTest(io::timings)) {
         printTimings();
     }
-    if (settings.prepare_getters) {
-        Jacobian.populateGlobalTranspose(mpi);
-        JTJ.populateGlobalTranspose(mpi);
-        DTD.populateGlobalTranspose(mpi);
-        left_side.populateGlobalTranspose(mpi);
-        right_side.populateGlobalTranspose(mpi);
-        residuals.populateGlobalTranspose(mpi);
-    }
-#ifdef USE_SCALAPACK
-    if (sca.isInitialized()) {
-        Cblacs_gridexit(sca.blacs_context);
-    }
-#endif
 }
 
 auto LMsolver::prepareIndexing() -> void
@@ -658,34 +650,54 @@ auto LMsolver::chi2() -> double
     return sum;
 }
 
-auto LMsolver::getJacobian() const -> const std::vector<double>&
+[[nodiscard]] auto LMsolver::degreesOfFreedom() const -> int
 {
+    return indices.degrees_of_freedom;
+}
+
+[[nodiscard]] auto LMsolver::getJacobian() -> const std::vector<double>&
+{
+    Jacobian.populateGlobalTranspose(mpi);
     return Jacobian.global;
 }
 
-auto LMsolver::getJTJ() const -> const std::vector<double>&
+[[nodiscard]] auto LMsolver::getJTJ() -> const std::vector<double>&
 {
+    JTJ.populateGlobalTranspose(mpi);
     return JTJ.global;
 }
 
-auto LMsolver::getDTD() const -> const std::vector<double>&
+[[nodiscard]] auto LMsolver::getDTD() -> const std::vector<double>&
 {
+    DTD.populateGlobalTranspose(mpi);
     return DTD.global;
 }
 
-auto LMsolver::getLeftSide() const -> const std::vector<double>&
+[[nodiscard]] auto LMsolver::getLeftSide() -> const std::vector<double>&
 {
+    left_side.populateGlobalTranspose(mpi);
     return left_side.global;
 }
 
-auto LMsolver::getRightSide() const -> const std::vector<double>&
+[[nodiscard]] auto LMsolver::getRightSide() -> const std::vector<double>&
 {
+    right_side.populateGlobalTranspose(mpi);
     return right_side.global;
 }
 
-auto LMsolver::getResiduals() const -> const std::vector<double>&
+[[nodiscard]] auto LMsolver::getResiduals() -> const std::vector<double>&
 {
+    residuals.populateGlobalTranspose(mpi);
     return residuals.global;
+}
+
+[[nodiscard]] auto LMsolver::getInvJTJ() -> const std::vector<double>&
+{
+    copyBCArray(JTJ, left_side_chol);
+    pdpotrf(left_side_chol);
+    pdpotri(left_side_chol);
+    left_side_chol.populateGlobalTranspose(mpi);
+    return left_side_chol.global;
 }
 
 auto LMsolver::printIterationResults(const int i_iteration,

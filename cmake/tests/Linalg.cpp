@@ -1,11 +1,12 @@
-extern "C" {
+extern "C"
+{
     auto dpptrs_(const char*,
-                const int*,
-                const int*,
-                double*,
-                double*,
-                const int*,
-                int*) -> void;
+                 const int*,
+                 const int*,
+                 double*,
+                 double*,
+                 const int*,
+                 int*) -> void;
 }
 
 int main()

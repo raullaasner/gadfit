@@ -14,7 +14,7 @@
 cmake_minimum_required(VERSION 3.13.5)
 
 # Project
-project(GADfit VERSION 1.5.1 LANGUAGES C)
+project(GADfit VERSION 1.6 LANGUAGES C)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 

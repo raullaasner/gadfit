@@ -106,6 +106,13 @@ extern "C"
                   const int*,
                   const int*,
                   int*) -> void;
+    auto pdpotri_(const char*,
+                  const int*,
+                  const double*,
+                  const int*,
+                  const int*,
+                  const int*,
+                  const int*) -> void;
 }
 
 #endif
@@ -519,6 +526,24 @@ auto pdpotrs(const BCArray& A, BCArray& B) -> void
 #endif
     } else {
         dpptrs(A.desc[idx_sca_r], A.local, B.local);
+    }
+}
+
+auto pdpotri(BCArray& A) -> void
+{
+    if (A.isWithScalapack()) {
+#ifdef USE_SCALAPACK
+        int info {};
+        pdpotri_(&uplo,
+                 &A.desc[idx_sca_r],
+                 A.local.data(),
+                 &i_one,
+                 &i_one,
+                 A.desc.data(),
+                 &info);
+#endif
+    } else {
+        dpotri(A.desc[idx_sca_r], A.local);
     }
 }
 

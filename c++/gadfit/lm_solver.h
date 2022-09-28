@@ -53,7 +53,6 @@ private:
     static constexpr double default_acceleration_threshold { -1.0 };
     static constexpr bool default_blacs_single_column { true };
     static constexpr int default_min_n_blocks { 100 };
-    static constexpr bool default_prepare_getters { false };
 
     static constexpr int default_iteration_limit { 1000 };
 
@@ -199,12 +198,14 @@ public:
     [[nodiscard]] auto getValue(const double arg, const int i_dataset = 0) const
       -> double;
 
-    [[nodiscard]] auto getJacobian() const -> const std::vector<double>&;
-    [[nodiscard]] auto getJTJ() const -> const std::vector<double>&;
-    [[nodiscard]] auto getDTD() const -> const std::vector<double>&;
-    [[nodiscard]] auto getLeftSide() const -> const std::vector<double>&;
-    [[nodiscard]] auto getRightSide() const -> const std::vector<double>&;
-    [[nodiscard]] auto getResiduals() const -> const std::vector<double>&;
+    [[nodiscard]] auto degreesOfFreedom() const -> int;
+    [[nodiscard]] auto getJacobian() -> const std::vector<double>&;
+    [[nodiscard]] auto getJTJ() -> const std::vector<double>&;
+    [[nodiscard]] auto getDTD() -> const std::vector<double>&;
+    [[nodiscard]] auto getLeftSide() -> const std::vector<double>&;
+    [[nodiscard]] auto getRightSide() -> const std::vector<double>&;
+    [[nodiscard]] auto getResiduals() -> const std::vector<double>&;
+    [[nodiscard]] auto getInvJTJ() -> const std::vector<double>&;
     [[nodiscard]] auto chi2() -> double;
     ~LMsolver();
 
@@ -219,7 +220,6 @@ public:
         double acceleration_threshold { default_acceleration_threshold };
         bool blacs_single_column { default_blacs_single_column };
         int min_n_blocks { default_min_n_blocks };
-        bool prepare_getters { default_prepare_getters };
         io::flag verbosity {};
     } settings; // NOLINT: exposing this is harmless and convenient
                 // for the user

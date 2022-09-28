@@ -4,7 +4,8 @@
 
 #include <mpi.h>
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
     MPI_Init(&argc, &argv);
     int result = Catch::Session().run(argc, argv);
     int mpi_finalized {};
@@ -17,7 +18,8 @@ int main(int argc, char* argv[]) {
 
 #else
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
     int result = Catch::Session().run(argc, argv);
     return result;
 }

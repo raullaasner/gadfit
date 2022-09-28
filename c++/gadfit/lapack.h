@@ -35,4 +35,9 @@ auto dpptrs(const int dimension,
             const std::vector<double>& A,
             std::vector<double>& B) -> void;
 
+// It is assumed that the packed matrix A_packed is computed with
+// dpptrf and not dpotrf. Thus, it is first unpacked before dpotri_ is
+// called.
+auto dpotri(const int dimension, std::vector<double>& A_packed) -> void;
+
 } // namespace gadfit

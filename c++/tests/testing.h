@@ -3,11 +3,11 @@
 #pragma once
 
 // Test the accuracy of an AD variable
-#define TEST_AD(x, ref_val, ref_d, ref_dd, ref_idx)     \
-    REQUIRE( x.val == approx(ref_val) );                \
-    REQUIRE( x.d   == approx(ref_d)   );                \
-    REQUIRE( x.dd  == approx(ref_dd)  );                \
-    REQUIRE( x.idx == ref_idx         );
+#define TEST_AD(x, ref_val, ref_d, ref_dd, ref_idx)                            \
+    REQUIRE(x.val == approx(ref_val));                                         \
+    REQUIRE(x.d == approx(ref_d));                                             \
+    REQUIRE(x.dd == approx(ref_dd));                                           \
+    REQUIRE(x.idx == ref_idx);
 
 #include <array>
 #include <catch2/catch_approx.hpp>

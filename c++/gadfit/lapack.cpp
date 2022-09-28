@@ -43,6 +43,7 @@ extern "C"
                  const double*,
                  const int*,
                  int*) -> void;
+    auto dpotri_(const char*, const int*, double*, const int*, int*) -> void;
 }
 
 namespace gadfit {
@@ -92,7 +93,7 @@ auto dpptrf(const int dimension, std::vector<double>& A) -> void
     auto it { A_packed.begin() };
     for (int i {}; i < dimension; ++i) {
         for (int j { i }; j < dimension; ++j) {
-            *it++ = A.at(i * dimension + j);
+            *it++ = A[i * dimension + j];
         }
     }
     int info {};
@@ -107,6 +108,20 @@ auto dpptrs(const int dimension,
     int info {};
     constexpr int nrhs { 1 };
     dpptrs_(&uplo_l, &dimension, &nrhs, A.data(), B.data(), &dimension, &info);
+}
+
+auto dpotri(const int dimension, std::vector<double>& A_packed) -> void
+{
+    std::vector<double> A_full(dimension * dimension);
+    auto it { A_packed.begin() };
+    for (int i {}; i < dimension; ++i) {
+        for (int j { i }; j < dimension; ++j) {
+            A_full[i * dimension + j] = *it++;
+        }
+    }
+    int info {};
+    dpotri_(&uplo_l, &dimension, A_full.data(), &dimension, &info);
+    A_packed = A_full;
 }
 
 } // namespace gadfit

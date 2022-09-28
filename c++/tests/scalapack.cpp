@@ -19,14 +19,15 @@ static auto exponential(const std::vector<gadfit::AdVar>& parameters,
     return I0 * exp(-x / tau) + bgr;
 }
 
-TEST_CASE( "Memory layouts" )
+TEST_CASE("Memory layouts")
 {
     spdlog::set_level(spdlog::level::off);
     gadfit::LMsolver solver { exponential, MPI_COMM_WORLD };
     solver.addDataset(x_data_1, y_data_1);
     solver.addDataset(x_data_2, y_data_2);
     solver.settings.iteration_limit = 4;
-    SECTION( "General rectangular BLACS grid; large blocks" ) {
+    SECTION("General rectangular BLACS grid; large blocks")
+    {
         solver.setPar(0, fix_d[0], true, 0);
         solver.setPar(2, fix_d[1], true, 0);
         solver.setPar(0, fix_d[4], true, 1);
@@ -35,11 +36,11 @@ TEST_CASE( "Memory layouts" )
         solver.settings.blacs_single_column = false;
         solver.settings.min_n_blocks = 1;
         solver.fit(1.0);
-        REQUIRE( solver.chi2() == approx(30610.67204238355) );
-        REQUIRE( solver.getParValue(1) == approx(16.54682323514368) );
-        REQUIRE( solver.getParValue(0, 0) == approx(29.98632400541694) );
-        REQUIRE( solver.getParValue(2, 0) == approx(12.99477135618182) );
-        REQUIRE( solver.getParValue(0, 1) == approx(124.6991105597199) );
-        REQUIRE( solver.getParValue(2, 1) == approx(fix_d[5]) );
+        REQUIRE(solver.chi2() == approx(30610.67204238355));
+        REQUIRE(solver.getParValue(1) == approx(16.54682323514368));
+        REQUIRE(solver.getParValue(0, 0) == approx(29.98632400541694));
+        REQUIRE(solver.getParValue(2, 0) == approx(12.99477135618182));
+        REQUIRE(solver.getParValue(0, 1) == approx(124.6991105597199));
+        REQUIRE(solver.getParValue(2, 1) == approx(fix_d[5]));
     }
 }

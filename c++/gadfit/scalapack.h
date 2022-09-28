@@ -145,4 +145,6 @@ auto pdpotrf(BCArray& A) -> void;
 
 auto pdpotrs(const BCArray& A, BCArray& B) -> void;
 
+auto pdpotri(BCArray& A) -> void;
+
 } // namespace gadfit
