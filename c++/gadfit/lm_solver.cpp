@@ -661,9 +661,20 @@ auto LMsolver::chi2() -> double
     return Jacobian.global;
 }
 
+static auto populateLowerTriange(const int n_dim, std::vector<double>& data)
+  -> void
+{
+    for (int i {}; i < n_dim; ++i) {
+        for (int j {}; j < i; ++j) {
+            data[i * n_dim + j] = data[j * n_dim + i];
+        }
+    }
+}
+
 [[nodiscard]] auto LMsolver::getJTJ() -> const std::vector<double>&
 {
     JTJ.populateGlobalTranspose(mpi);
+    populateLowerTriange(indices.n_active, JTJ.global);
     return JTJ.global;
 }
 
@@ -676,6 +687,7 @@ auto LMsolver::chi2() -> double
 [[nodiscard]] auto LMsolver::getLeftSide() -> const std::vector<double>&
 {
     left_side.populateGlobalTranspose(mpi);
+    populateLowerTriange(indices.n_active, left_side.global);
     return left_side.global;
 }
 
@@ -697,6 +709,7 @@ auto LMsolver::chi2() -> double
     pdpotrf(left_side_chol);
     pdpotri(left_side_chol);
     left_side_chol.populateGlobalTranspose(mpi);
+    populateLowerTriange(indices.n_active, left_side_chol.global);
     return left_side_chol.global;
 }
 
