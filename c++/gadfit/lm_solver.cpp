@@ -661,12 +661,12 @@ auto LMsolver::chi2() -> double
     return Jacobian.global;
 }
 
-static auto populateLowerTriange(const int n_dim, std::vector<double>& data)
+static auto populateLowerTriange(const int dim, std::vector<double>& data)
   -> void
 {
-    for (int i {}; i < n_dim; ++i) {
+    for (int i {}; i < dim; ++i) {
         for (int j {}; j < i; ++j) {
-            data[i * n_dim + j] = data[j * n_dim + i];
+            data[i * dim + j] = data[j * dim + i];
         }
     }
 }

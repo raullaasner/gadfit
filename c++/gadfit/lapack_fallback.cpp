@@ -101,4 +101,24 @@ auto dpptrs(const int dimension,
     }
 }
 
+auto dpotri(const int dimension, std::vector<double>& A) -> void
+{
+    // Populate upper triangle
+    for (int j {}; j < dimension; ++j) {
+        for (int i {}; i < j; ++i) {
+            A[i * dimension + j] = A[j * dimension + i];
+        }
+    }
+    std::vector<double> B(dimension * dimension, 0.0);
+    for (int j {}; j < dimension; ++j) {
+        std::vector<double> B_slice(dimension, 0.0);
+        B_slice[j] = 1.0;
+        dpptrs(dimension, A, B_slice);
+        for (int i {}; i < dimension; ++i) {
+            B[i * dimension + j] = B_slice[i];
+        }
+    }
+    A = B;
+}
+
 } // namespace gadfit
