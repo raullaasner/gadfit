@@ -40,6 +40,14 @@ static constexpr flag final_only { 0b0100'0000 };
 
 } // namespace io
 
+// Loss functions
+enum class Loss
+{
+    linear,
+    cauchy,
+    huber,
+};
+
 class LMsolver
 {
 private:
@@ -221,6 +229,7 @@ public:
         bool blacs_single_column { default_blacs_single_column };
         int min_n_blocks { default_min_n_blocks };
         io::flag verbosity {};
+        Loss loss { Loss::linear };
     } settings; // NOLINT: exposing this is harmless and convenient
                 // for the user
 

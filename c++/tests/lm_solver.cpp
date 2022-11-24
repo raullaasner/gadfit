@@ -543,3 +543,52 @@ TEST_CASE("Geodesic acceleration")
     REQUIRE(solver.getParValue(0, 1) == approx(152.4514268293043));
     REQUIRE(solver.getParValue(2, 1) == approx(5.748941149916492));
 }
+
+TEST_CASE("Loss functions")
+{
+    spdlog::set_level(spdlog::level::off);
+    gadfit::LMsolver solver { exponential, MPI_COMM_WORLD };
+    solver.addDataset(x_data_1, y_data_1);
+    solver.addDataset(x_data_2, y_data_2);
+    solver.setPar(0, fix_d[0], true, 0);
+    solver.setPar(2, fix_d[1], true, 0);
+    solver.setPar(0, fix_d[4], true, 1);
+    solver.setPar(2, fix_d[5], true, 1);
+    solver.setPar(1, fix_d[3], true);
+    solver.settings.iteration_limit = 5;
+
+    SECTION("Linear")
+    {
+        solver.settings.loss = gadfit::Loss::linear;
+        solver.fit(1.0);
+        REQUIRE(solver.chi2() == approx(5687.451130305415));
+        REQUIRE(solver.getParValue(1) == approx(21.0189210889822));
+        REQUIRE(solver.getParValue(0, 0) == approx(46.183572533104));
+        REQUIRE(solver.getParValue(2, 0) == approx(10.4838635400299));
+        REQUIRE(solver.getParValue(0, 1) == approx(151.528395979801));
+        REQUIRE(solver.getParValue(2, 1) == approx(6.08740670266188));
+    }
+    SECTION("Cauchy")
+    {
+        solver.settings.loss = gadfit::Loss::cauchy;
+        solver.fit(1.0);
+        REQUIRE(solver.chi2() == approx(16869.67716299509));
+        REQUIRE(solver.getParValue(1) == approx(17.4544801475058));
+        REQUIRE(solver.getParValue(0, 0) == approx(40.28201426242));
+        REQUIRE(solver.getParValue(2, 0) == approx(9.27848058435527));
+        REQUIRE(solver.getParValue(0, 1) == approx(132.624219826402));
+        REQUIRE(solver.getParValue(2, 1) == approx(6.7051221338403));
+    }
+    SECTION("Huber")
+    {
+        solver.settings.iteration_limit = 2;
+        solver.settings.loss = gadfit::Loss::huber;
+        solver.fit(1.0);
+        REQUIRE(solver.chi2() == approx(120064.7930778129, 1e2));
+        REQUIRE(solver.getParValue(1) == approx(4.61849378663276));
+        REQUIRE(solver.getParValue(0, 0) == approx(52.2060064000457));
+        REQUIRE(solver.getParValue(2, 0) == approx(8.37229758091867));
+        REQUIRE(solver.getParValue(0, 1) == approx(165.903142253725));
+        REQUIRE(solver.getParValue(2, 1) == approx(8.50138400819885));
+    }
+}

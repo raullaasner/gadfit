@@ -59,14 +59,13 @@ macro(include_coverage)
   if (INCLUDE_COVERAGE)
     find_program(_lcov lcov)
     if (_lcov)
-      set(lcov_excluded_directory /usr)
       add_custom_target(coverage
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-        COMMAND lcov -c -d CMakeFiles -o cov.info
+        COMMAND lcov -c -d CMakeFiles -o tracefile.info
         COMMAND
-        sed -nr 's|SF:${lcov_excluded_directory}|${lcov_excluded_directory}|p'
-        cov.info | xargs lcov -r cov.info -o cov_filtered.info
-        COMMAND genhtml cov_filtered.info -o out
+        perl -ne 'print if s|^SF:\(?!${PROJECT_SOURCE_DIR}\)|\\1|'
+        tracefile.info | xargs lcov -r tracefile.info -o tracefile_filtered.info
+        COMMAND genhtml tracefile_filtered.info -o out
         COMMAND cmake -E echo
         "Open ${PROJECT_BINARY_DIR}/out/index.html to see the detailed report"
         DEPENDS test)

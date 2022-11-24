@@ -437,6 +437,8 @@ auto LMsolver::computeLeftHandSide(const double lambda,
     auto cur_residual { residuals_shared.local.begin() };
     auto cur_Jacobian { Jacobian_shared.local.begin() };
     Jacobian_timer.start();
+    // Square root of the derivative of the loss function
+    double rho_sd { 1.0 };
     for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
         adResetSweep();
         int cur_idx { -1 };
@@ -447,16 +449,43 @@ auto LMsolver::computeLeftHandSide(const double lambda,
         for (int i_point { indices.data_ranges.at(i_set).front() };
              i_point <= indices.data_ranges.at(i_set).back();
              ++i_point) {
-            *cur_residual++ =
-              (y_data[i_set][i_point]
-               - fit_functions[i_set](x_data[i_set][i_point]).val)
-              / errors[i_set][i_point];
+            // One residual
+            const double res {
+                (y_data[i_set][i_point]
+                 - fit_functions[i_set](x_data[i_set][i_point]).val)
+                / errors[i_set][i_point]
+            };
+            switch (settings.loss) {
+            case Loss::cauchy:
+                // rho(z) = ln(1 + z)
+                // sqrt(d rho(z) / dz) = sqrt(1 / (1 + z))
+                rho_sd = std::sqrt(1.0 / (1.0 + res * res));
+                break;
+            case Loss::huber:
+                // If res <= 1
+                //   rho(z) = z
+                //   sqrt(d rho(z) / dz) = 1
+                // else
+                //   rho(z) = 2 z^0.5 - 1
+                //   sqrt(d rho(z) / dz) = sqrt(1 / sqrt(z))
+                if (res * res > 1.0) {
+                    rho_sd = std::sqrt(1.0 / std::abs(res));
+                }
+                break;
+            case Loss::linear:
+                // rho(z) = z
+                // sqrt(d rho(z) / dz) = 1
+            default:
+                break;
+            }
+            *cur_residual++ = rho_sd * res;
             gadfit::returnSweep();
             for (int i_par {};
                  i_par < static_cast<int>(indices.jacobian[i_set].size());
                  ++i_par) {
                 *(cur_Jacobian + indices.jacobian[i_set][i_par]) =
-                  gadfit::reverse::adjoints[i_par] / errors[i_set][i_point];
+                  rho_sd * gadfit::reverse::adjoints[i_par]
+                  / errors[i_set][i_point];
             }
             cur_Jacobian += indices.n_active;
         }
