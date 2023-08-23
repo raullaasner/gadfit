@@ -32,19 +32,14 @@ if (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   set(HAS_CO_SUM FALSE)
 endif()
 
-if (TARGET GSL::gsl)
-  target_compile_definitions(gadfit PRIVATE USE_GSL)
-endif()
 target_include_directories(gadfit PRIVATE ${PROJECT_BINARY_DIR})
 
 target_compile_definitions(gadfit PRIVATE
   Fortran_COMPILER_ID='${CMAKE_Fortran_COMPILER_ID}'
   Fortran_COMPILER_VERSION='${CMAKE_Fortran_COMPILER_VERSION}')
-foreach(_flag QUAD_PRECISION HAS_CO_SUM GSL_DIR)
-  if (${_flag})
-    target_compile_definitions(gadfit PRIVATE ${_flag})
-  endif()
-endforeach()
+if (${QUAD_PRECISION})
+  target_compile_definitions(gadfit PRIVATE ${QUAD_PRECISION})
+endif()
 
 set_target_properties(gadfit PROPERTIES
   Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/include)

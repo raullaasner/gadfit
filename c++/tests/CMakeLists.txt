@@ -57,7 +57,6 @@ foreach(_test ${tests})
   else()
     add_test(${_test} ${_test})
   endif()
-  find_package(spdlog QUIET)
   if (NOT TARGET spdlog::spdlog)
     target_include_directories(${_test} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}\
 /../../c++/gadfit/spdlog-prefix/src/spdlog/include")

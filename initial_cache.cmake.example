@@ -51,11 +51,6 @@ set(QUAD_PRECISION OFF CACHE BOOL "")
 # SPDLOG_PATH to the installation directory.
 #set(SPDLOG_PATH /usr/local/spdlog CACHE STRING "")
 
-# If true, link against the GSL library
-set(USE_GSL OFF CACHE BOOL "")
-# If GSL was not automatically found by CMake try setting this variable.
-#set(GSL_ROOT_DIR /usr/local/gsl CACHE STRING "")
-
 # Additional directories containing header files
 #set(INCLUDE_PATHS /usr/local/include CACHE STRING "")
 

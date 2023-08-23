@@ -665,10 +665,10 @@ add_executable(main main.cpp)
 # here. If installed to a standard system location or not
 # installed at all, no need to do anything here.
 set(spdlog_dir /usr/local/spdlog)
+find_package(spdlog QUIET HINTS ${spdlog_dir})
 # Directory where GADfit is installed. Can also point to the
 # build directory.
 set(gadfit_dir /usr/local/gadfit)
-find_package(spdlog QUIET HINTS ${spdlog_dir})
 find_package(gadfit HINTS ${gadfit_dir})
 target_link_libraries(main PUBLIC gadfit::gadfit)
 \end{verbatim}
@@ -1849,7 +1849,6 @@ contains
 \item In the reverse mode, the operation body is supposed to do the following: the function body is evaluated; the newly created result variable is given a unique index; the result of evaluation is saved in \verb+forward_values+; the indices of all arguments, that of the result variable, and the operation code are saved in \verb+trace+; any constants are saved in \verb+ad_constants+; \verb+index_count+, \verb+trace_count+, and \verb+const_count+ are increased accordingly. In the forward mode, the implementation is straightforward. In either case, if the argument is a passive variable, only the function body is evaluated. For a better understanding, have a look at the implementation of any unary operation in the source code.
 \item In the reverse mode, the calculation of the adjoints is implemented in the return sweep (\verb+ad_grad+).
 \end{itemize}
-The function body may also refer to an external function. The dilogarithm function, $\Li2$, is an example of importing special functions from GSL. $\Li2$ is available if the CMake option \verb+USE_GSL+ is enabled (default) and CMake is able to automatically find the library (if not, try the \verb+GSL_ROOT_DIR+ variable). This is not required for running any of the tests.
 
 \section{Developer notes}
 

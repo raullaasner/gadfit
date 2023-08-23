@@ -228,16 +228,6 @@ module ad
      module procedure erf_advar
   end interface erf
 
-#ifdef USE_GSL
-  interface Li2
-     real(c_double) function Li2_real(arg) bind(c, name='gsl_sf_dilog')
-       import c_double
-       real(c_double), intent(in), value :: arg
-     end function Li2_real
-     module procedure Li2_advar
-  end interface Li2
-#endif
-
   ! Arrays for the intermediate values, the adjoints, constants, and
   ! the execution trace.
   real(kp), allocatable :: forward_values(:), adjoints(:), ad_constants(:)
@@ -1468,31 +1458,6 @@ contains
     end if
   end function erf_advar
 
-#ifdef USE_GSL
-  type(advar) function Li2_advar(x) result(y)
-    type(advar), intent(in) :: x
-    y%val = Li2(real(x%val, dp))
-    if (x%index /= 0) then
-       if (reverse_mode) then
-          index_count = index_count + 1
-          y%index = index_count
-          forward_values(index_count) = y%val
-          trace(trace_count+1) = x%index
-          trace(trace_count+2) = y%index
-          trace(trace_count+3) = LI2_A
-          trace_count = trace_count + 3
-       else
-          y%d = -x%d*log(abs(1-x%val))/x%val
-          if (abs(x%d) > tiny(1.0_kp)) then
-             y%dd = x%dd*y%d/x%d - x%d*(y%d + x%d/(x%val-1))/x%val
-          else
-             y%dd = -x%dd*log(abs(1-x%val)/x%val)
-          end if
-          y%index = 1
-       end if
-    end if
-  end function Li2_advar
-#endif
   ! For numerical integration see numerical_integration.f90
 
   ! AD ELEMENTAL OPERATIONS END
@@ -1668,14 +1633,6 @@ contains
                  & adjoints(trace(i-1))*2.0_kp/sqrtpi* &
                  & exp(-forward_values(trace(i-2))**2)
             i = i - 3
-#ifdef USE_GSL
-         case(LI2_A)
-            adjoints(trace(i-2)) = adjoints(trace(i-2)) - &
-                 & adjoints(trace(i-1))* &
-                 & log(abs(1-forward_values(trace(i-2))))/ &
-                 & forward_values(trace(i-2))
-            i = i - 3
-#endif
             ! Numerical integration
          case(INT_BOTH_BOUNDS)
             adjoints(trace(i-2)) = adjoints(trace(i-2)) + &
