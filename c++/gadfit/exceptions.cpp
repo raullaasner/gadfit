@@ -20,6 +20,7 @@ UnknownOperation::UnknownOperation(const int op_code)
               + std::to_string(op_code);
 }
 
+// LCOV_EXCL_START
 [[nodiscard]] auto UnknownOperation::what() const noexcept -> const char*
 {
     return message.c_str();
@@ -29,6 +30,7 @@ UnknownOperation::UnknownOperation(const int op_code)
 {
     return "All calls to addDataset must precede any call to setPar.";
 }
+// LCOV_EXCL_STOP
 
 SetParInvalidIndex::SetParInvalidIndex(const int index)
 {
@@ -36,6 +38,7 @@ SetParInvalidIndex::SetParInvalidIndex(const int index)
               + ". Use a lower value or add more data sets.";
 }
 
+// LCOV_EXCL_START
 [[nodiscard]] auto SetParInvalidIndex::what() const noexcept -> const char*
 {
     return message.c_str();
@@ -57,18 +60,6 @@ SetParInvalidIndex::SetParInvalidIndex(const int index)
     return "No active fitting parameters";
 }
 
-[[nodiscard]] auto MPIUninitialized::what() const noexcept -> const char*
-{
-    return "LMsolver initialized with an MPI communicator but MPI itself not "
-           "initialized.";
-}
-
-[[nodiscard]] auto UnusedMPIProcesses::what() const noexcept -> const char*
-{
-    return "Less data points than MPI processes. Stopping now to make sure you "
-           "are not wasting resources.";
-}
-
 [[nodiscard]] auto NoGlobalParameters::what() const noexcept -> const char*
 {
     return "With multiple data sets must have at least one global fitting "
@@ -82,5 +73,6 @@ SetParInvalidIndex::SetParInvalidIndex(const int index)
     return "Number of iterations was insufficient. "
            "Increase either workspace size or the error bound(s)";
 }
+// LCOV_EXCL_STOP
 
 } // namespace gadfit

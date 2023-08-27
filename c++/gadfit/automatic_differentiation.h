@@ -88,20 +88,20 @@ namespace reverse {
 
 // Value of index assigned to the most recent AD variable
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-extern int last_index;
+thread_local extern int last_index;
 // Forward values
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-extern std::vector<double> forwards;
+thread_local extern std::vector<double> forwards;
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-extern std::vector<double> adjoints;
+thread_local extern std::vector<double> adjoints;
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-extern std::vector<double> constants;
+thread_local extern std::vector<double> constants;
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-extern int const_count;
+thread_local extern int const_count;
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-extern std::vector<int> trace;
+thread_local extern std::vector<int> trace;
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-extern int trace_count;
+thread_local extern int trace_count;
 
 } // namespace reverse
 
@@ -141,10 +141,12 @@ enum class Op
 
 constexpr int default_sweep_size { 1000 };
 
+// Increase the characteristic tape size to sweep_size. In order to
+// reduce it call freeAdReverse first.
 auto initializeADReverse(const int sweep_size = default_sweep_size) -> void;
 
-auto adResetSweep() -> void;
-
+// Start recording to the tape with variable initializations. Each
+// call records a forward value and a variable index.
 auto addADSeed(const AdVar& x) -> void;
 
 // BEGIN AD ELEMENTAL OPERATIONS

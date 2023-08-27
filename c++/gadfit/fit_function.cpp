@@ -14,11 +14,16 @@
 
 namespace gadfit {
 
-auto FitFunction::par(const int i_par) -> AdVar&
+[[nodiscard]] auto FitFunction::par(const int i_par) -> AdVar&
 {
     if (i_par >= static_cast<int>(parameters.size())) {
         parameters.resize(i_par + 1);
     }
+    return parameters.at(i_par);
+}
+
+[[nodiscard]] auto FitFunction::par(const int i_par) const -> const AdVar&
+{
     return parameters.at(i_par);
 }
 
@@ -34,8 +39,7 @@ auto FitFunction::getNumPars() const -> int
 
 auto FitFunction::activateParReverse(const int par_i, const int idx) -> void
 {
-    AdVar& par { parameters.at(par_i) };
-    par.idx = idx;
+    parameters.at(par_i).idx = idx;
 }
 
 auto FitFunction::activateParForward(const int par_i, const double seed) -> void

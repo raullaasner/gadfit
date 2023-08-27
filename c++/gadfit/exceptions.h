@@ -66,28 +66,18 @@ public:
     [[nodiscard]] auto what() const noexcept -> const char* override;
 };
 
-class MPIUninitialized : public GADfitException
-{
-public:
-    [[nodiscard]] auto what() const noexcept -> const char* override;
-};
-
-class UnusedMPIProcesses : public GADfitException
-{
-public:
-    [[nodiscard]] auto what() const noexcept -> const char* override;
-};
-
 class NoGlobalParameters : public GADfitException
 {
 public:
     [[nodiscard]] auto what() const noexcept -> const char* override;
 };
 
+// LCOV_EXCL_START
 class InsufficientIntegrationWorkspace : public GADfitException
 {
 public:
     [[nodiscard]] auto what() const noexcept -> const char* override;
 };
+// LCOV_EXCL_STOP
 
 } // namespace gadfit

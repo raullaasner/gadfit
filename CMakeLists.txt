@@ -14,21 +14,18 @@
 cmake_minimum_required(VERSION 3.13.5)
 
 # Project
-project(GADfit VERSION 1.7 LANGUAGES C)
+project(GADfit VERSION 2.0 LANGUAGES CXX)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 
 # Options and variables
 option(BUILD_CXX_VERSION
   "If enabled, build the C++ version of GADFit, else the Fortran version" ON)
-if (BUILD_CXX_VERSION)
-  enable_language(CXX)
-else()
+if (NOT BUILD_CXX_VERSION)
   enable_language(Fortran)
 endif()
 option(BUILD_SHARED_LIBS
   "If enabled, builds a shared library, else static" ON)
-set(TESTS_RUN_PREFIX mpirun -np 8 CACHE STRING "Prefix used for running tests")
 set(INCLUDE_PATHS "" CACHE STRING
   "Directories containing necessary header files")
 set(LIBRARY_PATHS "" CACHE STRING

@@ -29,9 +29,11 @@ auto dsyrk(const char,
            std::vector<double>& C) -> void
 {
     std::ranges::fill(C, 0.0);
-    for (int i {}; i < N; ++i) {
-        for (int j {}; j < N; ++j) {
-            for (int k {}; k < K; ++k) {
+#pragma omp parallel
+    for (int k {}; k < K; ++k) {
+#pragma omp for nowait
+        for (int i = 0; i < N; ++i) {
+            for (int j {}; j < N; ++j) {
                 C[i * N + j] += A[k * N + i] * A[k * N + j];
             }
         }
@@ -46,7 +48,8 @@ auto dgemv(const char,
            std::vector<double>& Y) -> void
 {
     std::fill(Y.begin(), Y.end(), 0.0);
-    for (int i {}; i < N; ++i) {
+#pragma omp parallel for
+    for (int i = 0; i < N; ++i) {
         for (int j {}; j < M; ++j) {
             Y[i] += A[j * N + i] * X[j];
         }

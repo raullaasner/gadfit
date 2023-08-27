@@ -4,6 +4,7 @@ bugprone-*,\
 -bugprone-easily-swappable-parameters,\
 -bugprone-implicit-widening-of-multiplication-result,\
 clang-analyzer-*,\
+-clang-analyzer-core.CallAndMessage,\
 cppcoreguidelines-*,\
 -cppcoreguidelines-non-private-member-variables-in-classes,\
 misc-*,\

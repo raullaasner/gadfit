@@ -34,6 +34,7 @@ public:
     auto reset() -> void;
     auto start() -> void;
     auto stop() -> void;
+    // Return total wall and CPU times in seconds
     [[nodiscard]] auto totalWallTime() const -> double;
     [[nodiscard]] auto totalCPUTime() const -> double;
     [[nodiscard]] auto totalNumberOfCalls() const -> int;

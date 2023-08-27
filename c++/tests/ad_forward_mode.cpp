@@ -1,4 +1,15 @@
-#include "testing.h"
+#include "fixtures.h"
+
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
+#include <gadfit/automatic_differentiation.h>
+
+// Test the accuracy of an AD variable
+#define TEST_AD(x, ref_val, ref_d, ref_dd, ref_idx)                            \
+    CHECK_THAT(x.val, Catch::Matchers::WithinRel(ref_val, 1e-13));             \
+    CHECK_THAT(x.d, Catch::Matchers::WithinRel(ref_d, 1e-13));                 \
+    CHECK_THAT(x.dd, Catch::Matchers::WithinRel(ref_dd, 1e-13));               \
+    CHECK(x.idx == ref_idx);
 
 using gadfit::AdVar;
 

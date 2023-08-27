@@ -43,7 +43,8 @@ public:
 
     // Return reference to a parameter but resize first if
     // necessary. As such, there is no upper bound check.
-    auto par(const int i_par) -> AdVar&;
+    [[nodiscard]] auto par(const int i_par) -> AdVar&;
+    [[nodiscard]] auto par(const int i_par) const -> const AdVar&;
     [[nodiscard]] auto getParValue(const int i_par) const -> double;
     // Number of all parameters (active or passive)
     [[nodiscard]] auto getNumPars() const -> int;

@@ -10,57 +10,35 @@
 # implied.  See the License for the specific language governing
 # permissions and limitations under the License.
 
+# List test source files here without the extension
 set(tests
   ad_basic
   ad_forward_mode
   ad_reverse_mode
   lm_solver
   numerical_integration
-  )
-
-if (USE_MPI)
-  list(APPEND tests mpi_communicators)
-endif()
-
-if (USE_SCALAPACK)
-  list(APPEND tests scalapack)
-endif()
+)
 
 enable_testing()
 
-add_library(catch2_init OBJECT EXCLUDE_FROM_ALL catch2_init.cpp)
-
 set(CATCH2_PATH "" CACHE STRING "Path to Catch2 installation directory")
-find_package(Catch2 3.0.1 QUIET HINTS ${CATCH2_PATH})
+find_package(Catch2 3.3.2 QUIET HINTS ${CATCH2_PATH})
 if (Catch2_FOUND)
   get_target_property(_loc Catch2::Catch2 INTERFACE_INCLUDE_DIRECTORIES)
   message(STATUS "Found ${_loc}")
-  target_link_libraries(catch2_init PUBLIC ${LIBRARIES} gadfit Catch2::Catch2)
 else()
   if (first_run)
-    message("Catch2 >= 3.0.1 not found, downloading")
+    message("Catch2 >= 3.3.2 not found, downloading")
   endif()
   FetchContent_Declare(catch2
-    GIT_REPOSITORY https://github.com/catchorg/Catch2
-    GIT_TAG 97c48e0c343d26d50764fafdc90b1e630fbd10ce)
+    GIT_REPOSITORY https://github.com/catchorg/Catch2 GIT_TAG v3.3.2)
   FetchContent_MakeAvailable(catch2)
-  target_link_libraries(catch2_init PUBLIC ${LIBRARIES} gadfit Catch2)
 endif()
 
 foreach(_test ${tests})
   add_executable(${_test} EXCLUDE_FROM_ALL ${_test}.cpp)
-  target_link_libraries(${_test} PRIVATE catch2_init)
-  if (USE_MPI)
-    add_test(NAME ${_test} COMMAND
-      ${TESTS_RUN_PREFIX}
-      ${CMAKE_CURRENT_BINARY_DIR}/${_test})
-  else()
-    add_test(${_test} ${_test})
-  endif()
-  if (NOT TARGET spdlog::spdlog)
-    target_include_directories(${_test} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}\
-/../../c++/gadfit/spdlog-prefix/src/spdlog/include")
-  endif()
+  target_link_libraries(${_test} PRIVATE gadfit Catch2::Catch2WithMain)
+  add_test(${_test} ${_test})
 endforeach()
 add_custom_target(test COMMAND ctest --output-on-failure DEPENDS ${tests})
 

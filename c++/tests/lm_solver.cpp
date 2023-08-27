@@ -1,10 +1,12 @@
-#include "testing.h"
+#include "fixtures.h"
 
-#include "lm_solver_data.h"
-
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <gadfit/lm_solver.h>
 #include <numeric>
-#include <spdlog/spdlog.h>
+#include <omp.h>
+
+using Catch::Matchers::WithinRel;
 
 static auto exponential(const std::vector<gadfit::AdVar>& parameters,
                         const double x) -> gadfit::AdVar
@@ -18,11 +20,11 @@ static auto exponential(const std::vector<gadfit::AdVar>& parameters,
 
 TEST_CASE("Indexing scheme")
 {
-    spdlog::set_level(spdlog::level::off);
-    gadfit::LMsolver solver { exponential, MPI_COMM_WORLD };
+    gadfit::LMsolver solver { exponential };
     solver.addDataset(x_data_1, y_data_1);
     solver.addDataset(x_data_2, y_data_2);
     solver.settings.iteration_limit = 4;
+    solver.settings.n_threads = omp_get_max_threads();
 
     SECTION("Active: I0-0, bgr-0, I0-1, bgr-1, tau")
     {
@@ -32,12 +34,16 @@ TEST_CASE("Indexing scheme")
         solver.setPar(2, fix_d[5], true, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE(solver.chi2() == approx(11620.08672704751));
-        REQUIRE(solver.getParValue(1) == approx(17.86502436229641));
-        REQUIRE(solver.getParValue(0, 0) == approx(39.77705004578391));
-        REQUIRE(solver.getParValue(2, 0) == approx(13.57729652858559));
-        REQUIRE(solver.getParValue(0, 1) == approx(129.0275065609782));
-        REQUIRE(solver.getParValue(2, 1) == approx(16.09079665934463));
+        CHECK_THAT(solver.chi2(), WithinRel(11620.0867270475, 1e-14));
+        CHECK_THAT(solver.getParValue(1), WithinRel(17.8650243622964, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 0),
+                   WithinRel(39.77705004578393, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 0),
+                   WithinRel(13.57729652858559, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 1),
+                   WithinRel(129.0275065609783, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 1),
+                   WithinRel(16.09079665934463, 1e-14));
     }
     SECTION("Active: bgr-0, bgr-1, tau")
     {
@@ -47,12 +53,14 @@ TEST_CASE("Indexing scheme")
         solver.setPar(2, fix_d[5], true, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE(solver.chi2() == approx(153628.8903849508));
-        REQUIRE(solver.getParValue(1) == approx(31.95892116514992));
-        REQUIRE(solver.getParValue(0, 0) == approx(fix_d[0]));
-        REQUIRE(solver.getParValue(2, 0) == approx(17.81484199806565));
-        REQUIRE(solver.getParValue(0, 1) == approx(fix_d[4]));
-        REQUIRE(solver.getParValue(2, 1) == approx(36.73244337347508));
+        CHECK_THAT(solver.chi2(), WithinRel(153628.8903849508, 1e-14));
+        CHECK_THAT(solver.getParValue(1), WithinRel(31.95892116514992, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 0), WithinRel(fix_d[0], 1e-14));
+        CHECK_THAT(solver.getParValue(2, 0),
+                   WithinRel(17.81484199806565, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 1), WithinRel(fix_d[4], 1e-14));
+        CHECK_THAT(solver.getParValue(2, 1),
+                   WithinRel(36.73244337347508, 1e-14));
     }
     SECTION("Active: I0-0, I0-1, tau")
     {
@@ -62,12 +70,14 @@ TEST_CASE("Indexing scheme")
         solver.setPar(2, fix_d[5], false, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE(solver.chi2() == approx(10810.65153981583));
-        REQUIRE(solver.getParValue(1) == approx(21.30228862988602));
-        REQUIRE(solver.getParValue(0, 0) == approx(56.42893238415446));
-        REQUIRE(solver.getParValue(2, 0) == approx(fix_d[1]));
-        REQUIRE(solver.getParValue(0, 1) == approx(139.4901380914605));
-        REQUIRE(solver.getParValue(2, 1) == approx(fix_d[5]));
+        CHECK_THAT(solver.chi2(), WithinRel(10810.65153981582, 1e-14));
+        CHECK_THAT(solver.getParValue(1), WithinRel(21.30228862988602, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 0),
+                   WithinRel(56.42893238415446, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 0), WithinRel(fix_d[1], 1e-14));
+        CHECK_THAT(solver.getParValue(0, 1),
+                   WithinRel(139.4901380914605, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 1), WithinRel(fix_d[5], 1e-14));
     }
     SECTION("Active: tau")
     {
@@ -77,12 +87,12 @@ TEST_CASE("Indexing scheme")
         solver.setPar(2, fix_d[5], false, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE(solver.chi2() == approx(51624.83919460662));
-        REQUIRE(solver.getParValue(1) == approx(10.99329301695744));
-        REQUIRE(solver.getParValue(0, 0) == approx(fix_d[16]));
-        REQUIRE(solver.getParValue(2, 0) == approx(fix_d[1]));
-        REQUIRE(solver.getParValue(0, 1) == approx(fix_d[17]));
-        REQUIRE(solver.getParValue(2, 1) == approx(fix_d[5]));
+        CHECK_THAT(solver.chi2(), WithinRel(51624.83919460665, 1e-14));
+        CHECK_THAT(solver.getParValue(1), WithinRel(10.99329301695744, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 0), WithinRel(fix_d[16], 1e-14));
+        CHECK_THAT(solver.getParValue(2, 0), WithinRel(fix_d[1], 1e-14));
+        CHECK_THAT(solver.getParValue(0, 1), WithinRel(fix_d[17], 1e-14));
+        CHECK_THAT(solver.getParValue(2, 1), WithinRel(fix_d[5], 1e-14));
     }
     SECTION("Active: bgr-0, I0-1, bgr-1, tau")
     {
@@ -92,12 +102,15 @@ TEST_CASE("Indexing scheme")
         solver.setPar(2, fix_d[5], true, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE(solver.chi2() == approx(15974.61260816282));
-        REQUIRE(solver.getParValue(1) == approx(20.47926391663428));
-        REQUIRE(solver.getParValue(0, 0) == approx(fix_d[0]));
-        REQUIRE(solver.getParValue(2, 0) == approx(18.47600900933105));
-        REQUIRE(solver.getParValue(0, 1) == approx(143.0431252627764));
-        REQUIRE(solver.getParValue(2, 1) == approx(9.453915929181857));
+        CHECK_THAT(solver.chi2(), WithinRel(15974.61260816282, 1e-14));
+        CHECK_THAT(solver.getParValue(1), WithinRel(20.47926391663428, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 0), WithinRel(fix_d[0], 1e-14));
+        CHECK_THAT(solver.getParValue(2, 0),
+                   WithinRel(18.47600900933105, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 1),
+                   WithinRel(143.0431252627765, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 1),
+                   WithinRel(9.453915929181857, 1e-14));
     }
     SECTION("Active: I0-0, bgr-0, bgr-1, tau")
     {
@@ -107,12 +120,15 @@ TEST_CASE("Indexing scheme")
         solver.setPar(2, fix_d[5], true, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE(solver.chi2() == approx(145780.4588072045));
-        REQUIRE(solver.getParValue(1) == approx(8.408237957600139));
-        REQUIRE(solver.getParValue(0, 0) == approx(45.87087327322399));
-        REQUIRE(solver.getParValue(2, 0) == approx(16.59126759913267));
-        REQUIRE(solver.getParValue(0, 1) == approx(fix_d[4]));
-        REQUIRE(solver.getParValue(2, 1) == approx(36.38255403506549));
+        CHECK_THAT(solver.chi2(), WithinRel(145780.4588072044, 1e-14));
+        CHECK_THAT(solver.getParValue(1), WithinRel(8.408237957600141, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 0),
+                   WithinRel(45.87087327322397, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 0),
+                   WithinRel(16.59126759913267, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 1), WithinRel(fix_d[4], 1e-14));
+        CHECK_THAT(solver.getParValue(2, 1),
+                   WithinRel(36.38255403506549, 1e-14));
     }
     SECTION("Active: I0-0, I0-1, bgr-1, tau")
     {
@@ -122,12 +138,15 @@ TEST_CASE("Indexing scheme")
         solver.setPar(2, fix_d[5], true, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE(solver.chi2() == approx(11623.17388899667));
-        REQUIRE(solver.getParValue(1) == approx(20.61333132315124));
-        REQUIRE(solver.getParValue(0, 0) == approx(56.51395760213281));
-        REQUIRE(solver.getParValue(2, 0) == approx(fix_d[1]));
-        REQUIRE(solver.getParValue(0, 1) == approx(134.8973104943701));
-        REQUIRE(solver.getParValue(2, 1) == approx(11.77612256514583));
+        CHECK_THAT(solver.chi2(), WithinRel(11623.17388899667, 1e-14));
+        CHECK_THAT(solver.getParValue(1), WithinRel(20.61333132315124, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 0),
+                   WithinRel(56.5139576021328, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 0), WithinRel(fix_d[1], 1e-14));
+        CHECK_THAT(solver.getParValue(0, 1),
+                   WithinRel(134.8973104943701, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 1),
+                   WithinRel(11.77612256514583, 1e-14));
     }
     SECTION("Active: I0-0, bgr-0, I0-1, tau")
     {
@@ -137,12 +156,15 @@ TEST_CASE("Indexing scheme")
         solver.setPar(2, fix_d[5], false, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE(solver.chi2() == approx(30610.67204238355));
-        REQUIRE(solver.getParValue(1) == approx(16.54682323514368));
-        REQUIRE(solver.getParValue(0, 0) == approx(29.98632400541694));
-        REQUIRE(solver.getParValue(2, 0) == approx(12.99477135618182));
-        REQUIRE(solver.getParValue(0, 1) == approx(124.6991105597199));
-        REQUIRE(solver.getParValue(2, 1) == approx(fix_d[5]));
+        CHECK_THAT(solver.chi2(), WithinRel(30610.67204238365, 1e-14));
+        CHECK_THAT(solver.getParValue(1), WithinRel(16.54682323514368, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 0),
+                   WithinRel(29.98632400541692, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 0),
+                   WithinRel(12.99477135618182, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 1),
+                   WithinRel(124.6991105597198, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 1), WithinRel(fix_d[5], 1e-14));
     }
     SECTION("Active: I0-0, bgr-1, tau")
     {
@@ -152,12 +174,14 @@ TEST_CASE("Indexing scheme")
         solver.setPar(2, fix_d[5], true, 1);
         solver.setPar(1, fix_d[3], true);
         solver.fit(1.0);
-        REQUIRE(solver.chi2() == approx(150672.9869101835));
-        REQUIRE(solver.getParValue(1) == approx(16.73368044360274));
-        REQUIRE(solver.getParValue(0, 0) == approx(53.73848940201644));
-        REQUIRE(solver.getParValue(2, 0) == approx(fix_d[1]));
-        REQUIRE(solver.getParValue(0, 1) == approx(fix_d[4]));
-        REQUIRE(solver.getParValue(2, 1) == approx(36.50405720192947));
+        CHECK_THAT(solver.chi2(), WithinRel(150672.9869101836, 1e-14));
+        CHECK_THAT(solver.getParValue(1), WithinRel(16.73368044360274, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 0),
+                   WithinRel(53.73848940201638, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 0), WithinRel(fix_d[1], 1e-14));
+        CHECK_THAT(solver.getParValue(0, 1), WithinRel(fix_d[4], 1e-14));
+        CHECK_THAT(solver.getParValue(2, 1),
+                   WithinRel(36.50405720192947, 1e-14));
     }
     SECTION("Active: bgr-0, I0-1, tau")
     {
@@ -167,12 +191,14 @@ TEST_CASE("Indexing scheme")
         solver.setPar(2, fix_d[5], false, 1);
         solver.setPar(1, fix_d[3], true, "global parameter");
         solver.fit(1.0);
-        REQUIRE(solver.chi2() == approx(15348.60122706107));
-        REQUIRE(solver.getParValue(1) == approx(21.87456778662339));
-        REQUIRE(solver.getParValue(0, 0) == approx(fix_d[0]));
-        REQUIRE(solver.getParValue(2, 0) == approx(18.39176693290169));
-        REQUIRE(solver.getParValue(0, 1) == approx(147.1783948678938));
-        REQUIRE(solver.getParValue(2, 1) == approx(fix_d[5]));
+        CHECK_THAT(solver.chi2(), WithinRel(15348.60122706107, 1e-14));
+        CHECK_THAT(solver.getParValue(1), WithinRel(21.87456778662339, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 0), WithinRel(fix_d[0], 1e-14));
+        CHECK_THAT(solver.getParValue(2, 0),
+                   WithinRel(18.39176693290169, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 1),
+                   WithinRel(147.1783948678938, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 1), WithinRel(fix_d[5], 1e-14));
     }
 }
 
@@ -182,14 +208,10 @@ static auto prepareSolver(gadfit::LMsolver& solver) -> void
         return std::accumulate(
           x.cbegin(), limit == -1 ? x.cend() : x.cbegin() + limit, 0.0);
     } };
-    solver.addDataset(
-      std::make_shared<std::vector<double>>(x_data_1.begin(), x_data_1.end()),
-      std::make_shared<std::vector<double>>(y_data_1.begin(), y_data_1.end()),
-      std::make_shared<std::vector<double>>(x_data_1.size(), 1.0));
-    solver.addDataset(
-      std::make_shared<std::vector<double>>(x_data_2.begin(), x_data_2.end()),
-      std::make_shared<std::vector<double>>(y_data_2.begin(), y_data_2.end()));
+    solver.addDataset(x_data_1, y_data_1);
+    solver.addDataset(x_data_2, y_data_2);
     solver.settings.iteration_limit = 4;
+    solver.settings.n_threads = omp_get_max_threads();
     solver.setPar(0, fix_d[0], true, 0);
     solver.setPar(2, fix_d[1], true, 0);
     solver.setPar(0, fix_d[4], true, 1);
@@ -199,106 +221,55 @@ static auto prepareSolver(gadfit::LMsolver& solver) -> void
 
 TEST_CASE("Access functions")
 {
-    spdlog::set_level(spdlog::level::off);
     const auto sum { [](const std::vector<double>& x, const int limit = -1) {
         return std::accumulate(
           x.cbegin(), limit == -1 ? x.cend() : x.cbegin() + limit, 0.0);
     } };
-    SECTION("Parallel")
-    {
-        gadfit::LMsolver solver { exponential, MPI_COMM_WORLD };
-        prepareSolver(solver);
-        REQUIRE(solver.getValue(fix_d[2]) == approx(2.960644529912441));
-        solver.fit(1.0);
-        REQUIRE(solver.degreesOfFreedom() == 195);
-        REQUIRE(solver.getValue(fix_d[2]) == approx(36.39905496310918));
-        REQUIRE(sum(solver.getJacobian()) == approx(353.6485673748525));
-        REQUIRE(sum(solver.getJTJ(), 5) == approx(580.3488115472478));
-        REQUIRE(sum(solver.getDTD(), 5) == approx(34340.67196549198));
-        REQUIRE(sum(solver.getLeftSide(), 5) == approx(614.6894835127398));
-        REQUIRE(sum(solver.getRightSide(), 5) == approx(4410.585412402702));
-        REQUIRE(sum(solver.getResiduals()) == approx(213.3530475167955, 1e3));
-    }
-    SECTION("Sequential")
-    {
-        gadfit::LMsolver solver { exponential };
-        prepareSolver(solver);
-        REQUIRE(solver.getValue(fix_d[2]) == approx(2.960644529912441));
-        solver.fit(1.0);
-        REQUIRE(solver.degreesOfFreedom() == 195);
-        REQUIRE(solver.getValue(fix_d[2]) == approx(36.39905496310918));
-        REQUIRE(sum(solver.getJacobian()) == approx(353.6485673748525));
-        REQUIRE(sum(solver.getJTJ(), 5) == approx(580.3488115472478));
-        REQUIRE(sum(solver.getDTD(), 5) == approx(34340.67196549198));
-        REQUIRE(sum(solver.getLeftSide(), 5) == approx(614.6894835127398));
-        REQUIRE(sum(solver.getRightSide(), 5) == approx(4410.585412402702));
-        REQUIRE(sum(solver.getResiduals()) == approx(213.3530475167955, 1e3));
-    }
-}
-
-static auto computeJTJtimesInvJTJ(gadfit::LMsolver& solver,
-                                  int& n_dim,
-                                  std::vector<double>& result) -> void
-{
-    auto JTJ { solver.getJTJ() };
-    n_dim = static_cast<int>(std::sqrt(static_cast<double>(JTJ.size())));
-    for (int i {}; i < n_dim; ++i) {
-        for (int j {}; j < i; ++j) {
-            JTJ[i * n_dim + j] = JTJ[j * n_dim + i];
-        }
-    }
-    const auto& inv_JTJ { solver.getInvJTJ() };
-    result.resize(JTJ.size(), 0.0);
-    for (int i {}; i < n_dim; ++i) {
-        for (int j {}; j < n_dim; ++j) {
-            for (int k {}; k < n_dim; ++k) {
-                result[i * n_dim + j] +=
-                  inv_JTJ[i * n_dim + k] * JTJ[k * n_dim + j];
-            }
-        }
-    }
+    gadfit::LMsolver solver { exponential };
+    prepareSolver(solver);
+    CHECK_THAT(solver.getValue(fix_d[2]), WithinRel(2.960644529912441, 1e-13));
+    solver.fit(1.0);
+    CHECK(solver.degreesOfFreedom() == 195);
+    CHECK_THAT(solver.getValue(fix_d[2]), WithinRel(36.39905496310919, 1e-13));
+    CHECK_THAT(sum(solver.getJacobian()), WithinRel(353.6485673748526, 1e-13));
+    CHECK_THAT(sum(solver.getJTJ(), 5), WithinRel(580.3488115472484, 1e-13));
+    CHECK_THAT(sum(solver.getDTD(), 5), WithinRel(34340.67196549198, 1e-13));
+    CHECK_THAT(sum(solver.getLeftSide(), 5),
+               WithinRel(614.6894835127404, 1e-13));
+    CHECK_THAT(sum(solver.getRightSide(), 5),
+               WithinRel(4410.585412402701, 1e-13));
+    CHECK_THAT(sum(solver.getResiduals()), WithinRel(213.3530475167945, 1e-13));
 }
 
 TEST_CASE("computation of JTJ^-1")
 {
-    spdlog::set_level(spdlog::level::off);
     const auto sum { [](const std::vector<double>& x, const int limit = -1) {
         return std::accumulate(
           x.cbegin(), limit == -1 ? x.cend() : x.cbegin() + limit, 0.0);
     } };
-    SECTION("Parallel")
-    {
-        gadfit::LMsolver solver { exponential, MPI_COMM_WORLD };
-        prepareSolver(solver);
-        solver.fit(1.0);
-        int n_parameters {};
-        std::vector<double> result {};
-        computeJTJtimesInvJTJ(solver, n_parameters, result);
-        for (int i {}; i < n_parameters; ++i) {
-            for (int j {}; j < n_parameters; ++j) {
-                if (i == j) {
-                    REQUIRE(result[i * n_parameters + j] == approx(1.0));
-                } else {
-                    REQUIRE(result[i * n_parameters + j] + 1.0 == approx(1.0));
-                }
+    gadfit::LMsolver solver { exponential };
+    prepareSolver(solver);
+    solver.fit(1.0);
+    const auto JTJ { solver.getJTJ() };
+    const auto inv_JTJ { solver.getInvJTJ() };
+    std::vector<double> result(JTJ.size(), 0.0);
+    const int n_parameters { static_cast<int>(
+      std::sqrt(static_cast<double>(JTJ.size()))) };
+    for (int i {}; i < n_parameters; ++i) {
+        for (int j {}; j < n_parameters; ++j) {
+            for (int k {}; k < n_parameters; ++k) {
+                result[i * n_parameters + j] +=
+                  inv_JTJ[i * n_parameters + k] * JTJ[k * n_parameters + j];
             }
         }
     }
-    SECTION("Sequential")
-    {
-        gadfit::LMsolver solver { exponential };
-        prepareSolver(solver);
-        solver.fit(1.0);
-        int n_parameters {};
-        std::vector<double> result {};
-        computeJTJtimesInvJTJ(solver, n_parameters, result);
-        for (int i {}; i < n_parameters; ++i) {
-            for (int j {}; j < n_parameters; ++j) {
-                if (i == j) {
-                    REQUIRE(result[i * n_parameters + j] == approx(1.0));
-                } else {
-                    REQUIRE(result[i * n_parameters + j] + 1.0 == approx(1.0));
-                }
+    for (int i {}; i < n_parameters; ++i) {
+        for (int j {}; j < n_parameters; ++j) {
+            if (i == j) {
+                CHECK_THAT(result[i * n_parameters + j], WithinRel(1.0, 1e-14));
+            } else {
+                CHECK_THAT(result[i * n_parameters + j] + 1.0,
+                           WithinRel(1.0, 1e-14));
             }
         }
     }
@@ -306,76 +277,48 @@ TEST_CASE("computation of JTJ^-1")
 
 TEST_CASE("Exceptions")
 {
-    spdlog::set_level(spdlog::level::off);
-    gadfit::LMsolver solver { exponential, MPI_COMM_WORLD };
+    gadfit::LMsolver solver { exponential };
     solver.settings.iteration_limit = 4;
+    solver.settings.n_threads = omp_get_max_threads();
 
     SECTION("Incorrect number of calls")
     {
-        try {
-            solver.addDataset(x_data_1, y_data_1);
-            solver.setPar(0, fix_d[0], true, 0);
-            solver.addDataset(x_data_2, y_data_2);
-            solver.setPar(2, fix_d[1], true, 0);
-            solver.setPar(0, fix_d[4], true, 1);
-            solver.setPar(2, fix_d[5], true, 1);
-            solver.setPar(1, fix_d[3], true);
-            solver.fit(1.0);
-            REQUIRE(1 == 0);
-        } catch (const gadfit::LateAddDatasetCall& e) {
-            e.what();
-            REQUIRE(0 == 0);
-        }
+        solver.addDataset(x_data_1, y_data_1);
+        solver.setPar(0, fix_d[0], true, 0);
+        CHECK_THROWS_AS(solver.addDataset(x_data_2, y_data_2),
+                        gadfit::LateAddDatasetCall);
     }
     SECTION("Invalid data set index")
     {
-        try {
-            solver.addDataset(x_data_1, y_data_1);
-            solver.addDataset(x_data_2, y_data_2);
-            solver.setPar(0, fix_d[0], true, 0);
-            solver.setPar(2, fix_d[1], true, 0);
-            solver.setPar(0, fix_d[4], true, 1);
-            solver.setPar(2, fix_d[5], true, 1);
-            solver.setPar(1, fix_d[3], true, 2);
-            solver.fit(1.0);
-            REQUIRE(1 == 0);
-        } catch (const gadfit::SetParInvalidIndex& e) {
-            e.what();
-            REQUIRE(0 == 0);
-        }
+        solver.addDataset(x_data_1, y_data_1);
+        solver.addDataset(x_data_2, y_data_2);
+        solver.setPar(0, fix_d[0], true, 0);
+        solver.setPar(2, fix_d[1], true, 0);
+        solver.setPar(0, fix_d[4], true, 1);
+        solver.setPar(2, fix_d[5], true, 1);
+        CHECK_THROWS_AS(solver.setPar(1, fix_d[3], true, 2),
+                        gadfit::SetParInvalidIndex);
     }
     SECTION("Uninitialized fitting parameter")
     {
-        try {
-            solver.addDataset(x_data_1, y_data_1);
-            solver.addDataset(x_data_2, y_data_2);
-            solver.setPar(0, fix_d[0], true, 0);
-            solver.setPar(2, fix_d[1], true, 0);
-            solver.setPar(0, fix_d[4], true, 1);
-            solver.setPar(1, fix_d[3], true);
-            solver.fit(1.0);
-            REQUIRE(1 == 0);
-        } catch (const gadfit::UninitializedParameter& e) {
-            e.what();
-            REQUIRE(0 == 0);
-        }
+        solver.addDataset(x_data_1, y_data_1);
+        solver.addDataset(x_data_2, y_data_2);
+        solver.setPar(0, fix_d[0], true, 0);
+        solver.setPar(2, fix_d[1], true, 0);
+        solver.setPar(0, fix_d[4], true, 1);
+        solver.setPar(1, fix_d[3], true);
+        CHECK_THROWS_AS(solver.fit(1.0), gadfit::UninitializedParameter);
     }
     SECTION("Too few data points (or too many fitting parameters)")
     {
-        try {
-            solver.addDataset(2, x_data_1.data(), y_data_1.data());
-            solver.addDataset(2, x_data_2.data(), y_data_2.data());
-            solver.setPar(0, fix_d[0], true, 0);
-            solver.setPar(2, fix_d[1], true, 0);
-            solver.setPar(0, fix_d[4], true, 1);
-            solver.setPar(2, fix_d[5], true, 1);
-            solver.setPar(1, fix_d[3], true);
-            solver.fit(1.0);
-            REQUIRE(1 == 0);
-        } catch (const gadfit::NegativeDegreesOfFreedom& e) {
-            e.what();
-            REQUIRE(0 == 0);
-        }
+        solver.addDataset(2, x_data_1.data(), y_data_1.data());
+        solver.addDataset(2, x_data_2.data(), y_data_2.data());
+        solver.setPar(0, fix_d[0], true, 0);
+        solver.setPar(2, fix_d[1], true, 0);
+        solver.setPar(0, fix_d[4], true, 1);
+        solver.setPar(2, fix_d[5], true, 1);
+        solver.setPar(1, fix_d[3], true);
+        CHECK_THROWS_AS(solver.fit(1.0), gadfit::NegativeDegreesOfFreedom);
     }
     SECTION("No degrees of freedom")
     {
@@ -386,18 +329,16 @@ TEST_CASE("Exceptions")
         solver.setPar(0, fix_d[4], true, 1);
         solver.setPar(2, fix_d[5], true, 1);
         solver.setPar(1, fix_d[3], true);
-        try {
-            solver.fit(1.0);
-            REQUIRE(solver.getParValue(1) == approx(2.945868346541738));
-            REQUIRE(solver.getParValue(0, 0) == approx(7.351966871429208, 1e3));
-            REQUIRE(solver.getParValue(2, 0) == approx(49.68674387147235));
-            REQUIRE(solver.getParValue(0, 1)
-                    == approx(-13.18731292934496, 1e3));
-            REQUIRE(solver.getParValue(2, 1) == approx(162.1781165060048));
-        } catch (const gadfit::UnusedMPIProcesses& e) {
-            e.what();
-            REQUIRE(0 == 0);
-        }
+        solver.fit(1.0);
+        CHECK_THAT(solver.getParValue(1), WithinRel(2.945868346541778, 1e-12));
+        CHECK_THAT(solver.getParValue(0, 0),
+                   WithinRel(7.351966871429338, 1e-12));
+        CHECK_THAT(solver.getParValue(2, 0),
+                   WithinRel(49.68674387147222, 1e-12));
+        CHECK_THAT(solver.getParValue(0, 1),
+                   WithinRel(-13.18731292934346, 1e-12));
+        CHECK_THAT(solver.getParValue(2, 1),
+                   WithinRel(162.1781165060037, 1e-12));
     }
     SECTION("No active parameters")
     {
@@ -408,13 +349,7 @@ TEST_CASE("Exceptions")
         solver.setPar(0, fix_d[4], false, 1);
         solver.setPar(2, fix_d[5], false, 1);
         solver.setPar(1, fix_d[3], false);
-        try {
-            solver.fit(1.0);
-            REQUIRE(1 == 0);
-        } catch (const gadfit::NoFittingParameters& e) {
-            e.what();
-            REQUIRE(0 == 0);
-        }
+        CHECK_THROWS_AS(solver.fit(1.0), gadfit::NoFittingParameters);
     }
     SECTION("Active: bgr-0, I0-1")
     {
@@ -425,20 +360,14 @@ TEST_CASE("Exceptions")
         solver.setPar(0, fix_d[4], true, 1);
         solver.setPar(2, fix_d[5], false, 1);
         solver.setPar(1, fix_d[12], false);
-        try {
-            solver.fit(1.0);
-            REQUIRE(1 == 0);
-        } catch (const gadfit::NoGlobalParameters& e) {
-            e.what();
-            REQUIRE(0 == 0);
-        }
+        CHECK_THROWS_AS(solver.fit(1.0), gadfit::NoGlobalParameters);
     }
 }
 
 TEST_CASE("Number of iterations")
 {
-    spdlog::set_level(spdlog::level::off);
-    gadfit::LMsolver solver { exponential, MPI_COMM_WORLD };
+    gadfit::LMsolver solver { exponential };
+    solver.settings.n_threads = omp_get_max_threads();
     solver.addDataset(x_data_1, y_data_1);
     solver.addDataset(x_data_2, y_data_2);
     solver.setPar(0, fix_d[0], true, 0);
@@ -451,30 +380,41 @@ TEST_CASE("Number of iterations")
     {
         solver.settings.iteration_limit = 0;
         solver.fit(1.0);
-        REQUIRE(solver.chi2() == approx(284681.4650859555));
-        REQUIRE(solver.getParValue(1) == approx(0.5356792380861322));
-        REQUIRE(solver.getParValue(0, 0) == approx(6.13604207015635));
-        REQUIRE(solver.getParValue(2, 0) == approx(2.960644474827888));
-        REQUIRE(solver.getParValue(0, 1) == approx(-1.472720596147903));
-        REQUIRE(solver.getParValue(2, 1) == approx(4.251266120087788));
+        CHECK_THAT(solver.chi2(), WithinRel(284681.4650859562, 1e-14));
+        CHECK_THAT(solver.getParValue(1), WithinRel(0.5356792380861322, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 0),
+                   WithinRel(6.13604207015635, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 0),
+                   WithinRel(2.960644474827888, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 1),
+                   WithinRel(-1.472720596147903, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 1),
+                   WithinRel(4.251266120087788, 1e-14));
     }
     SECTION("No iteration limit")
     {
+        // Without an iteration limit the total number of iterations
+        // could be sensitive to the number of threads. Only target
+        // single precision accuracy here.
         solver.settings.iteration_limit = 100;
         solver.fit(1.0);
-        REQUIRE(solver.chi2() == approx(5640.175130917763));
-        REQUIRE(solver.getParValue(1) == approx(20.85609539806552, 1e7));
-        REQUIRE(solver.getParValue(0, 0) == approx(46.44788540130083, 1e6));
-        REQUIRE(solver.getParValue(2, 0) == approx(10.32140443375086, 1e7));
-        REQUIRE(solver.getParValue(0, 1) == approx(152.2711588120757, 1e6));
-        REQUIRE(solver.getParValue(2, 1) == approx(5.533936910924339, 1e8));
+        CHECK_THAT(solver.chi2(), WithinRel(5640.175130917765, 1e-8));
+        CHECK_THAT(solver.getParValue(1), WithinRel(20.85609539787557, 1e-8));
+        CHECK_THAT(solver.getParValue(0, 0),
+                   WithinRel(46.44788540145462, 1e-8));
+        CHECK_THAT(solver.getParValue(2, 0),
+                   WithinRel(10.32140443380387, 1e-8));
+        CHECK_THAT(solver.getParValue(0, 1),
+                   WithinRel(152.2711588123377, 1e-8));
+        CHECK_THAT(solver.getParValue(2, 1),
+                   WithinRel(5.533936911147024, 1e-8));
     }
 }
 
 TEST_CASE("Constraining the damping matrix DTD")
 {
-    spdlog::set_level(spdlog::level::off);
-    gadfit::LMsolver solver { exponential, MPI_COMM_WORLD };
+    gadfit::LMsolver solver { exponential };
+    solver.settings.n_threads = omp_get_max_threads();
     solver.addDataset(x_data_1, y_data_1);
     solver.addDataset(x_data_2, y_data_2);
     solver.setPar(0, fix_d[0], true, 0);
@@ -490,40 +430,52 @@ TEST_CASE("Constraining the damping matrix DTD")
         // Next line should have no effect
         solver.settings.DTD_min = { 2.0, 1.0, 3.0, 1.0, 7.0 };
         solver.fit(1.0);
-        REQUIRE(solver.chi2() == approx(5761.320550200893));
-        REQUIRE(solver.getParValue(1) == approx(20.15808767822607));
-        REQUIRE(solver.getParValue(0, 0) == approx(46.33952661438988));
-        REQUIRE(solver.getParValue(2, 0) == approx(10.4069642674494));
-        REQUIRE(solver.getParValue(0, 1) == approx(151.8449704289686));
-        REQUIRE(solver.getParValue(2, 1) == approx(5.793008018375243));
+        CHECK_THAT(solver.chi2(), WithinRel(5761.320550200902, 1e-14));
+        CHECK_THAT(solver.getParValue(1), WithinRel(20.15808767822605, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 0),
+                   WithinRel(46.33952661438988, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 0),
+                   WithinRel(10.40696426744941, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 1),
+                   WithinRel(151.8449704289686, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 1),
+                   WithinRel(5.793008018375257, 1e-14));
     }
     SECTION("Default constraint")
     {
         solver.fit(1.0);
-        REQUIRE(solver.chi2() == approx(5687.451130305411));
-        REQUIRE(solver.getParValue(1) == approx(21.01892108898218));
-        REQUIRE(solver.getParValue(0, 0) == approx(46.18357253310398));
-        REQUIRE(solver.getParValue(2, 0) == approx(10.48386354002993));
-        REQUIRE(solver.getParValue(0, 1) == approx(151.5283959798011));
-        REQUIRE(solver.getParValue(2, 1) == approx(6.087406702661866));
+        CHECK_THAT(solver.chi2(), WithinRel(5687.451130305415, 1e-14));
+        CHECK_THAT(solver.getParValue(1), WithinRel(21.01892108898218, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 0),
+                   WithinRel(46.18357253310398, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 0),
+                   WithinRel(10.48386354002993, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 1),
+                   WithinRel(151.5283959798012, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 1),
+                   WithinRel(6.087406702661871, 1e-14));
     }
     SECTION("Minimal values for the diagonal elements")
     {
         solver.settings.DTD_min = { 2.0, 1.0, 3.0, 1.0, 7.0 };
         solver.fit(1.0);
-        REQUIRE(solver.chi2() == approx(5640.443443547636));
-        REQUIRE(solver.getParValue(1) == approx(20.81941350480559));
-        REQUIRE(solver.getParValue(0, 0) == approx(46.44560357121117));
-        REQUIRE(solver.getParValue(2, 0) == approx(10.33411834275264));
-        REQUIRE(solver.getParValue(0, 1) == approx(152.2267670731584));
-        REQUIRE(solver.getParValue(2, 1) == approx(5.56046342286098));
+        CHECK_THAT(solver.chi2(), WithinRel(5640.44344354764, 1e-14));
+        CHECK_THAT(solver.getParValue(1), WithinRel(20.8194135048056, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 0),
+                   WithinRel(46.44560357121117, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 0),
+                   WithinRel(10.33411834275264, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 1),
+                   WithinRel(152.2267670731584, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 1),
+                   WithinRel(5.560463422860977, 1e-14));
     }
 }
 
 TEST_CASE("Geodesic acceleration")
 {
-    spdlog::set_level(spdlog::level::off);
-    gadfit::LMsolver solver { exponential, MPI_COMM_WORLD };
+    gadfit::LMsolver solver { exponential };
+    solver.settings.n_threads = omp_get_max_threads();
     solver.addDataset(x_data_1, y_data_1);
     solver.addDataset(x_data_2, y_data_2);
     solver.setPar(0, fix_d[0], true, 0);
@@ -536,18 +488,18 @@ TEST_CASE("Geodesic acceleration")
     solver.settings.verbosity =
       gadfit::io::delta1 | gadfit::io::delta2 | gadfit::io::timings;
     solver.fit(1.0);
-    REQUIRE(solver.chi2() == approx(5641.660305504621, 1e3));
-    REQUIRE(solver.getParValue(1) == approx(20.70654799943915));
-    REQUIRE(solver.getParValue(0, 0) == approx(46.48065799723028));
-    REQUIRE(solver.getParValue(2, 0) == approx(10.39142422387267));
-    REQUIRE(solver.getParValue(0, 1) == approx(152.4514268293043));
-    REQUIRE(solver.getParValue(2, 1) == approx(5.748941149916492));
+    CHECK_THAT(solver.chi2(), WithinRel(5641.66030550462, 1e-14));
+    CHECK_THAT(solver.getParValue(1), WithinRel(20.70654799943915, 1e-14));
+    CHECK_THAT(solver.getParValue(0, 0), WithinRel(46.48065799723029, 1e-14));
+    CHECK_THAT(solver.getParValue(2, 0), WithinRel(10.39142422387268, 1e-14));
+    CHECK_THAT(solver.getParValue(0, 1), WithinRel(152.4514268293043, 1e-14));
+    CHECK_THAT(solver.getParValue(2, 1), WithinRel(5.748941149916498, 1e-14));
 }
 
 TEST_CASE("Loss functions")
 {
-    spdlog::set_level(spdlog::level::off);
-    gadfit::LMsolver solver { exponential, MPI_COMM_WORLD };
+    gadfit::LMsolver solver { exponential };
+    solver.settings.n_threads = omp_get_max_threads();
     solver.addDataset(x_data_1, y_data_1);
     solver.addDataset(x_data_2, y_data_2);
     solver.setPar(0, fix_d[0], true, 0);
@@ -561,34 +513,45 @@ TEST_CASE("Loss functions")
     {
         solver.settings.loss = gadfit::Loss::linear;
         solver.fit(1.0);
-        REQUIRE(solver.chi2() == approx(5687.451130305415));
-        REQUIRE(solver.getParValue(1) == approx(21.0189210889822));
-        REQUIRE(solver.getParValue(0, 0) == approx(46.183572533104));
-        REQUIRE(solver.getParValue(2, 0) == approx(10.4838635400299));
-        REQUIRE(solver.getParValue(0, 1) == approx(151.528395979801));
-        REQUIRE(solver.getParValue(2, 1) == approx(6.08740670266188));
+        CHECK_THAT(solver.chi2(), WithinRel(5687.451130305415, 1e-14));
+        CHECK_THAT(solver.getParValue(1), WithinRel(21.01892108898218, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 0),
+                   WithinRel(46.18357253310398, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 0),
+                   WithinRel(10.48386354002993, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 1),
+                   WithinRel(151.5283959798012, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 1),
+                   WithinRel(6.087406702661871, 1e-14));
     }
     SECTION("Cauchy")
     {
         solver.settings.loss = gadfit::Loss::cauchy;
         solver.fit(1.0);
-        REQUIRE(solver.chi2() == approx(16869.67716299509));
-        REQUIRE(solver.getParValue(1) == approx(17.4544801475058));
-        REQUIRE(solver.getParValue(0, 0) == approx(40.28201426242));
-        REQUIRE(solver.getParValue(2, 0) == approx(9.27848058435527));
-        REQUIRE(solver.getParValue(0, 1) == approx(132.624219826402));
-        REQUIRE(solver.getParValue(2, 1) == approx(6.7051221338403));
+        CHECK_THAT(solver.chi2(), WithinRel(16869.67716299524, 1e-14));
+        CHECK_THAT(solver.getParValue(1), WithinRel(17.45448014750576, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 0),
+                   WithinRel(40.28201426242013, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 0),
+                   WithinRel(9.278480584355261, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 1),
+                   WithinRel(132.6242198264016, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 1), WithinRel(6.7051221338403, 1e-14));
     }
     SECTION("Huber")
     {
         solver.settings.iteration_limit = 2;
         solver.settings.loss = gadfit::Loss::huber;
         solver.fit(1.0);
-        REQUIRE(solver.chi2() == approx(120064.7930778129, 1e2));
-        REQUIRE(solver.getParValue(1) == approx(4.61849378663276));
-        REQUIRE(solver.getParValue(0, 0) == approx(52.2060064000457));
-        REQUIRE(solver.getParValue(2, 0) == approx(8.37229758091867));
-        REQUIRE(solver.getParValue(0, 1) == approx(165.903142253725));
-        REQUIRE(solver.getParValue(2, 1) == approx(8.50138400819885));
+        CHECK_THAT(solver.chi2(), WithinRel(123695.8709974329, 1e-14));
+        CHECK_THAT(solver.getParValue(1), WithinRel(4.643243104460152, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 0),
+                   WithinRel(52.6348486049053, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 0),
+                   WithinRel(7.874003370245958, 1e-14));
+        CHECK_THAT(solver.getParValue(0, 1),
+                   WithinRel(166.3872296081963, 1e-14));
+        CHECK_THAT(solver.getParValue(2, 1),
+                   WithinRel(7.690335499679898, 1e-14));
     }
 }

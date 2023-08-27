@@ -64,7 +64,8 @@ macro(include_coverage)
         COMMAND lcov -c -d CMakeFiles -o tracefile.info
         COMMAND
         perl -ne 'print if s|^SF:\(?!${PROJECT_SOURCE_DIR}\)|\\1|'
-        tracefile.info | xargs lcov -r tracefile.info -o tracefile_filtered.info
+        tracefile.info | xargs lcov --ignore-errors unused,unused -r
+        tracefile.info -o tracefile_filtered.info
         COMMAND genhtml tracefile_filtered.info -o out
         COMMAND cmake -E echo
         "Open ${PROJECT_BINARY_DIR}/out/index.html to see the detailed report"

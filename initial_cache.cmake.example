@@ -25,9 +25,6 @@ set(BUILD_CXX_VERSION ON CACHE BOOL "")
 # Whether to build in Release or Debug configuration
 set(CMAKE_BUILD_TYPE Release CACHE STRING "")
 
-# Whether to build with MPI support (C++ only)
-#set(USE_MPI ON CACHE BOOL "")
-
 # Whether to build a shared or a static library
 set(BUILD_SHARED ON CACHE BOOL "")
 
@@ -47,7 +44,7 @@ set(QUAD_PRECISION OFF CACHE BOOL "")
 #set(TESTS_RUN_PREFIX mpirun -np 8 CACHE STRING "")
 
 # You can probably install spdlog using your distribution's package
-# manager. If not, download, build, and install it manually and
+# manager. If not, download, build, and install it manually and point
 # SPDLOG_PATH to the installation directory.
 #set(SPDLOG_PATH /usr/local/spdlog CACHE STRING "")
 
@@ -55,7 +52,7 @@ set(QUAD_PRECISION OFF CACHE BOOL "")
 #set(INCLUDE_PATHS /usr/local/include CACHE STRING "")
 
 # Linear algebra library directories
-#set(LIBRARY_PATHS /opt/intel/mkl/lib/intel64 CACHE STRING "")
+#set(LIBRARY_PATHS /opt/intel/oneapi/mkl/latest/lib/intel64 CACHE STRING "")
 
 # Linear algebra libraries
 #set(LIBRARIES mkl_gf_lp64 mkl_sequential mkl_core CACHE STRING "")

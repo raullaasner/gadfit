@@ -13,35 +13,16 @@
 #include "lm_solver.h"
 
 #include "fit_function.h"
+#include "lapack.h"
 #include "numerical_integration.h"
 
-#include <iomanip>
 #include <numeric>
 #include <spdlog/spdlog.h>
-#include <sstream>
-
-#ifdef USE_MPI
-#include <mpi.h>
-#endif
 
 namespace gadfit {
 
-LMsolver::LMsolver(const fitSignature& function_body, const MPI_Comm& mpi_comm)
-  : mpi { mpi_comm }
+LMsolver::LMsolver(const fitSignature& function_body)
 {
-#ifdef USE_MPI
-    if (mpi_comm != MPI_COMM_NULL) {
-        int mpi_initialized {};
-        MPI_Initialized(&mpi_initialized);
-        int mpi_finalized {};
-        MPI_Finalized(&mpi_finalized);
-        if (!static_cast<bool>(mpi_initialized)
-            || static_cast<bool>(mpi_finalized)) {
-            throw MPIUninitialized {};
-        }
-    }
-#endif
-    initializeADReverse();
     fit_functions.emplace_back(function_body);
 }
 
@@ -58,13 +39,12 @@ auto LMsolver::addDataset(const int n_datapoints,
     if (static_cast<bool>(errors)) {
         this->errors.emplace_back(errors, static_cast<size_t>(n_datapoints));
     } else {
-        if (errors_shared.size() < this->x_data.size()) {
-            errors_shared.resize(this->x_data.size());
+        if (errors_dummy.size() < this->x_data.size()) {
+            errors_dummy.resize(this->x_data.size());
         }
         // By default all data points to have equal weights
-        errors_shared.back() = std::make_shared<std::vector<double>>(
-          std::vector<double>(n_datapoints, 1.0));
-        this->errors.emplace_back(*errors_shared.back());
+        errors_dummy.back() = std::vector<double>(n_datapoints, 1.0);
+        this->errors.emplace_back(errors_dummy.back());
     }
     // Make a new copy of the fitting function corresponding to the
     // last data set.
@@ -72,21 +52,6 @@ auto LMsolver::addDataset(const int n_datapoints,
         fit_functions.push_back(fit_functions.back());
     }
     indices.active.emplace_back();
-}
-
-auto LMsolver::addDataset(const std::shared_ptr<std::vector<double>>& x_data,
-                          const std::shared_ptr<std::vector<double>>& y_data,
-                          const std::shared_ptr<std::vector<double>>& errors)
-  -> void
-{
-    x_data_shared.push_back(x_data);
-    y_data_shared.push_back(y_data);
-    if (errors) {
-        errors_shared.push_back(errors);
-        addDataset(*x_data, *y_data, *errors);
-    } else {
-        addDataset(*x_data, *y_data);
-    }
 }
 
 auto LMsolver::setPar(const int i_par,
@@ -146,134 +111,13 @@ auto LMsolver::setPar(const int i_par,
     setPar(i_par, val, active, global_dataset_idx, parameter_name);
 }
 
-auto LMsolver::fit(double lambda) -> void
-{
-    prepareIndexing();
-    if (indices.n_active == 0) {
-        throw NoFittingParameters {};
-    }
-    resetTimers();
-#ifdef USE_SCALAPACK
-    if (sca.isInitialized()) {
-        Cblacs_gridexit(sca.blacs_context);
-    }
-#endif
-    sca.init(mpi, settings.blacs_single_column);
-    // Initialize the shared arrays
-    SharedArray Jacobian_shared {
-        mpi, indices.workloads.at(mpi.rank) * indices.n_active
-    };
-    SharedArray residuals_shared { mpi, indices.workloads.at(mpi.rank) };
-    // Initialize the block-cyclic arrays
-    assert(settings.min_n_blocks >= 1
-           && "Each process needs to hold at least one block if possible");
-    const int& nb { settings.min_n_blocks };
-    Jacobian.init(sca, indices.n_datapoints, indices.n_active, nb);
-    JTJ.init(sca, indices.n_active, indices.n_active, nb);
-    DTD.init(sca, indices.n_active, indices.n_active, nb);
-    std::ranges::fill(DTD.local, 0.0);
-    // Need equal block sizes for the left hand side because pdpotrf
-    // (Cholesky) requires square block decomposition
-    left_side.init(sca, indices.n_active, indices.n_active, nb);
-    left_side_chol.init(sca, indices.n_active, indices.n_active, nb, true);
-    residuals.init(sca, indices.n_datapoints, 1, nb);
-    delta1.init(sca, indices.n_active, 1, nb);
-    right_side.init(sca, indices.n_active, 1, nb);
-    if (!ioTest(io::final_only) && sca.isInitialized()) {
-        printMatrixSizes();
-    }
-    SharedArray omega_shared {};
-    if (settings.acceleration_threshold > 0.0) {
-        omega_shared = SharedArray { mpi, indices.workloads.at(mpi.rank) };
-        omega.init(sca, indices.n_datapoints, 1, nb);
-        delta2.init(sca, indices.n_active, 1, nb);
-        D_delta.init(sca, indices.n_active, 1, nb);
-    }
-    if (static_cast<int>(settings.DTD_min.size()) > 1) {
-        for (int i {}; i < indices.n_active; ++i) {
-            if (JTJ.global_rows.at(i) != passive_idx
-                && JTJ.global_cols.at(i) != passive_idx) {
-                DTD.local.at(JTJ.global_cols.at(i) * JTJ.n_rows
-                             + JTJ.global_rows.at(i)) = settings.DTD_min.at(i);
-            }
-        }
-    }
-    std::vector<std::vector<double>> old_parameters(x_data.size());
-    for (auto& parameters : old_parameters) {
-        parameters.resize(fit_functions.front().getNumPars());
-    }
-    for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
-        deactivateParameters(i_set);
-    }
-    main_timer.start();
-    double old_chi2 { chi2() };
-    int i_iteration {};
-    bool finished { settings.iteration_limit == 0 };
-    while (!finished) {
-        ++i_iteration;
-        computeLeftHandSide(lambda, Jacobian_shared, residuals_shared);
-        computeRightHandSide();
-        computeDeltas(omega_shared);
-        saveParameters(old_parameters);
-        updateParameters();
-        // Update lambda which is allowed to increase no more than
-        // lambda_incs times consecutively.
-        for (int i_lambda {}; i_lambda <= settings.lambda_incs; ++i_lambda) {
-            const double new_chi2 { chi2() };
-            if (!ioTest(io::final_only) && mpi.rank == 0) {
-                spdlog::debug("Current lambda: {}, new chi2 = {}, old chi2: {}",
-                              lambda,
-                              new_chi2,
-                              old_chi2);
-            }
-            if (new_chi2 < old_chi2) {
-                lambda /= settings.lambda_down;
-                old_chi2 = new_chi2;
-                if (!ioTest(io::final_only)) {
-                    printIterationResults(i_iteration, lambda, new_chi2);
-                }
-                break;
-            }
-            if (i_lambda < settings.lambda_incs) {
-                lambda *= settings.lambda_up;
-                revertParameters(old_parameters);
-                for (int i {}; i < static_cast<int>(left_side.local.size());
-                     ++i) {
-                    left_side.local[i] = JTJ.local[i] + lambda * DTD.local[i];
-                }
-                computeDeltas(omega_shared);
-                updateParameters();
-            } else {
-                revertParameters(old_parameters);
-                if (!ioTest(io::final_only) && mpi.rank == 0) {
-                    spdlog::info("Lambda increased {} times in a row",
-                                 settings.lambda_incs);
-                    spdlog::info("");
-                }
-                // This iteration was unsuccessful. Decrease
-                // i_iteration so it shows the total number of
-                // successful iterations.
-                --i_iteration;
-                finished = true;
-            }
-        }
-        if (i_iteration == settings.iteration_limit) {
-            if (mpi.rank == 0) {
-                spdlog::info("Iteration limit reached");
-            }
-            finished = true;
-        }
-    }
-    main_timer.stop();
-    if (ioTest(io::final_only) || settings.iteration_limit == 0) {
-        printIterationResults(i_iteration, lambda, old_chi2);
-    }
-    if (ioTest(io::timings)) {
-        printTimings();
-    }
-}
-
-auto LMsolver::prepareIndexing() -> void
+// Determine all relevant dimensions and parameter positions in the
+// Jacobian. In case the user activates or deactivates some parameters
+// between fitting procedures, this is called before every call to
+// LMsolver::fit.
+static auto prepareIndexing(const std::vector<std::span<const double>>& x_data,
+                            const std::vector<FitFunction>& fit_functions,
+                            Indices& indices) -> void
 {
     indices.n_active = 0;
     for (const auto& active : indices.active) {
@@ -293,14 +137,11 @@ auto LMsolver::prepareIndexing() -> void
         throw NegativeDegreesOfFreedom {};
     }
     if (indices.degrees_of_freedom == 0) {
-        if (mpi.rank == 0) {
-            spdlog::warn(
-              "Warning: there are no degrees of freedom - chi2/DOF has "
-              "no meaning.");
-        }
+        spdlog::warn("Warning: there are no degrees of freedom - chi2/DOF has "
+                     "no meaning.");
         indices.degrees_of_freedom = 1;
     }
-    for (auto& func : fit_functions) {
+    for (const auto& func : fit_functions) {
         if (func.getNumPars() != fit_functions.front().getNumPars()) {
             throw UninitializedParameter {};
         }
@@ -342,266 +183,18 @@ auto LMsolver::prepareIndexing() -> void
             }
         }
     }
-    if (indices.n_datapoints < mpi.n_procs) {
-        throw UnusedMPIProcesses {};
-    }
-    // Distribute data points over all data sets among the remaining
-    // MPI processes
-    indices.workloads =
-      std::vector<int>(mpi.n_procs, indices.n_datapoints / mpi.n_procs);
-    for (int i_rank {}; i_rank < indices.n_datapoints % mpi.n_procs; ++i_rank) {
-        ++indices.workloads.at(i_rank);
-    }
-    indices.global_starts.resize(mpi.n_procs);
-    indices.global_starts.front() = 0;
-    for (int i_rank { 1 }; i_rank < mpi.n_procs; ++i_rank) {
-        indices.global_starts.at(i_rank) = indices.global_starts.at(i_rank - 1)
-                                           + indices.workloads.at(i_rank - 1);
-    }
-    const std::array<int, 2> my_global_range {
-        indices.global_starts.at(mpi.rank),
-        indices.global_starts.at(mpi.rank) + indices.workloads.at(mpi.rank) - 1
-    };
-    // If data_ranges[i].back() equals passive_idx, where i is a data
-    // set, then no data points from that data set are processed by
-    // the given MPI process.
-    indices.data_ranges =
-      std::vector<std::array<int, 2>>(x_data.size(), { 0, passive_idx });
-    // Auxiliary variable that maps the current data set range onto a
-    // global range. For instance, with two data sets of sizes 79 and
-    // 93, cur_range is initialized to { 0, 78 } and updated to { 79, 171 }
-    // in the loop below.
-    std::array<int, 2> cur_range {
-        0, static_cast<int>(x_data.front().size()) - 1
-    };
-    for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
-        if (my_global_range.front() >= cur_range.front()
-            && my_global_range.front() <= cur_range.back()) {
-            indices.data_ranges.at(i_set).front() =
-              my_global_range.front() - cur_range.front();
-        }
-        if (my_global_range.back() >= cur_range.front()) {
-            if (my_global_range.back() <= cur_range.back()) {
-                indices.data_ranges.at(i_set).back() =
-                  my_global_range.back() - cur_range.front();
-            } else if (my_global_range.front() <= cur_range.back()) {
-                indices.data_ranges.at(i_set).back() =
-                  static_cast<int>(x_data.at(i_set).size()) - 1;
-            }
-        }
-        if (i_set < static_cast<int>(x_data.size()) - 1) {
-            cur_range.front() += static_cast<int>(x_data.at(i_set).size());
-            cur_range.back() += static_cast<int>(x_data.at(i_set + 1).size());
-        }
+    if (indices.n_active == 0) {
+        throw NoFittingParameters {};
     }
 }
 
-auto LMsolver::printMatrixSizes() const -> void
-{
-    if (mpi.rank == 0) {
-        spdlog::debug("  Matrix sizes:");
-        spdlog::debug("    Jacobian:");
-    }
-    Jacobian.printInfo(mpi);
-    if (mpi.rank == 0) {
-        spdlog::debug("    JTJ:");
-    }
-    JTJ.printInfo(mpi);
-    if (mpi.rank == 0) {
-        spdlog::debug("    residuals:");
-    }
-    residuals.printInfo(mpi);
-    if (mpi.rank == 0) {
-        spdlog::debug("    delta1:");
-    }
-    delta1.printInfo(mpi);
-    if (mpi.rank == 0) {
-        spdlog::debug("    chol:");
-    }
-    left_side_chol.printInfo(mpi);
-}
-auto LMsolver::resetTimers() -> void
-{
-    Jacobian_timer.reset();
-    chi2_timer.reset();
-    linalg_timer.reset();
-    omega_timer.reset();
-    comm_timer.reset();
-    main_timer.reset();
-}
-
-auto LMsolver::computeLeftHandSide(const double lambda,
-                                   SharedArray& Jacobian_shared,
-                                   SharedArray& residuals_shared) -> void
-{
-    auto cur_residual { residuals_shared.local.begin() };
-    auto cur_Jacobian { Jacobian_shared.local.begin() };
-    Jacobian_timer.start();
-    // Square root of the derivative of the loss function
-    double rho_sd { 1.0 };
-    for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
-        adResetSweep();
-        int cur_idx { -1 };
-        for (const auto& idx : indices.active.at(i_set)) {
-            fit_functions.at(i_set).activateParReverse(idx, ++cur_idx);
-            addADSeed(fit_functions.at(i_set).par(idx));
-        }
-        for (int i_point { indices.data_ranges.at(i_set).front() };
-             i_point <= indices.data_ranges.at(i_set).back();
-             ++i_point) {
-            // One residual
-            const double res {
-                (y_data[i_set][i_point]
-                 - fit_functions[i_set](x_data[i_set][i_point]).val)
-                / errors[i_set][i_point]
-            };
-            switch (settings.loss) {
-            case Loss::cauchy:
-                // rho(z) = ln(1 + z)
-                // sqrt(d rho(z) / dz) = sqrt(1 / (1 + z))
-                rho_sd = std::sqrt(1.0 / (1.0 + res * res));
-                break;
-            case Loss::huber:
-                // If res <= 1
-                //   rho(z) = z
-                //   sqrt(d rho(z) / dz) = 1
-                // else
-                //   rho(z) = 2 z^0.5 - 1
-                //   sqrt(d rho(z) / dz) = sqrt(1 / sqrt(z))
-                if (res * res > 1.0) {
-                    rho_sd = std::sqrt(1.0 / std::abs(res));
-                }
-                break;
-            case Loss::linear:
-                // rho(z) = z
-                // sqrt(d rho(z) / dz) = 1
-            default:
-                break;
-            }
-            *cur_residual++ = rho_sd * res;
-            gadfit::returnSweep();
-            for (int i_par {};
-                 i_par < static_cast<int>(indices.jacobian[i_set].size());
-                 ++i_par) {
-                *(cur_Jacobian + indices.jacobian[i_set][i_par]) =
-                  rho_sd * gadfit::reverse::adjoints[i_par]
-                  / errors[i_set][i_point];
-            }
-            cur_Jacobian += indices.n_active;
-        }
-        deactivateParameters(i_set);
-    }
-    Jacobian_timer.stop();
-    comm_timer.start();
-    sharedToBC(residuals_shared, residuals);
-    sharedToBC(Jacobian_shared, Jacobian);
-    comm_timer.stop();
-    linalg_timer.start();
-    pdsyr2k('t', Jacobian, Jacobian, JTJ);
-    for (int i_par {}; i_par < indices.n_active; ++i_par) {
-        if (JTJ.global_rows.at(i_par) != passive_idx
-            && JTJ.global_cols.at(i_par) != passive_idx) {
-            const int idx { JTJ.global_cols.at(i_par) * JTJ.n_rows
-                            + JTJ.global_rows.at(i_par) };
-            DTD.local.at(idx) = settings.damp_max
-                                  ? std::max(DTD.local[idx], JTJ.local[idx])
-                                  : JTJ.local[idx];
-        }
-    }
-    for (int i {}; i < static_cast<int>(left_side.local.size()); ++i) {
-        left_side.local[i] = JTJ.local[i] + lambda * DTD.local[i];
-    }
-    linalg_timer.stop();
-}
-
-auto LMsolver::computeRightHandSide() -> void
-{
-    linalg_timer.start();
-    pdgemv('t', Jacobian, residuals, right_side);
-    linalg_timer.stop();
-}
-
-auto LMsolver::computeDeltas(SharedArray& omega_shared) -> void
-{
-    linalg_timer.start();
-    delta1 = right_side;
-    copyBCArray(left_side, left_side_chol);
-    pdpotrf(left_side_chol);
-    pdpotrs(left_side_chol, delta1);
-    delta1.populateGlobal(mpi);
-    linalg_timer.stop();
-    if (!(settings.acceleration_threshold > 0.0)) {
-        return;
-    }
-    // This is a similar loop as for the residuals or the Jacobian
-    // except only the second directional derivatives are computed.
-    omega_timer.start();
-    auto cur_omega { omega_shared.local.begin() };
-    for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
-        auto idx_jacobian { indices.jacobian.at(i_set).cbegin() };
-        for (const auto& idx : indices.active.at(i_set)) {
-            fit_functions.at(i_set).activateParForward(
-              idx, delta1.global.at(*idx_jacobian++));
-        }
-        for (int i_point { indices.data_ranges.at(i_set).front() };
-             i_point <= indices.data_ranges.at(i_set).back();
-             ++i_point) {
-            *cur_omega++ = fit_functions[i_set](x_data[i_set][i_point]).dd
-                           / errors[i_set][i_point];
-        }
-        deactivateParameters(i_set);
-    }
-    omega_timer.stop();
-    comm_timer.start();
-    sharedToBC(omega_shared, omega);
-    comm_timer.stop();
-    linalg_timer.start();
-    pdgemv('t', Jacobian, omega, delta2);
-    pdpotrs(left_side_chol, delta2);
-    // Use acceleration only if sqrt((delta2 D delta2)/(delta1 D
-    // delta1)) < alpha, where alpha is the acceleration ratio
-    // threshold.
-    pdgemv('n', DTD, delta2, D_delta);
-    double D_delta2 { std::inner_product(delta2.local.cbegin(),
-                                         delta2.local.cend(),
-                                         D_delta.local.cbegin(),
-                                         0.0) };
-#ifdef USE_MPI
-    if (mpi.comm != MPI_COMM_NULL) {
-        MPI_Allreduce(
-          MPI_IN_PLACE, &D_delta2, 1, MPI_DOUBLE, MPI_SUM, mpi.comm);
-    }
-#endif
-    pdgemv('n', DTD, delta1, D_delta);
-    double D_delta1 { std::inner_product(delta1.local.cbegin(),
-                                         delta1.local.cend(),
-                                         D_delta.local.cbegin(),
-                                         0.0) };
-#ifdef USE_MPI
-    if (mpi.comm != MPI_COMM_NULL) {
-        MPI_Allreduce(
-          MPI_IN_PLACE, &D_delta1, 1, MPI_DOUBLE, MPI_SUM, mpi.comm);
-    }
-#endif
-    double acc_ratio { std::sqrt(D_delta2 / D_delta1) };
-    delta2.populateGlobal(mpi);
-    if (acc_ratio > settings.acceleration_threshold) {
-        std::ranges::fill(delta2.global, 0.0);
-    }
-    linalg_timer.stop();
-}
-
-auto LMsolver::deactivateParameters(const int i_set) -> void
-{
-    for (const auto& idx : indices.active.at(i_set)) {
-        fit_functions.at(i_set).deactivatePar(idx);
-    }
-}
-
-auto LMsolver::saveParameters(std::vector<std::vector<double>>& old_parameters)
+static auto saveParameters(const Indices& indices,
+                           const std::vector<FitFunction>& fit_functions,
+                           std::vector<std::vector<double>>& old_parameters)
   -> void
 {
-    for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
+    for (int i_set {}; i_set < static_cast<int>(fit_functions.size());
+         ++i_set) {
         for (const auto& idx : indices.active.at(i_set)) {
             old_parameters.at(i_set).at(idx) =
               fit_functions.at(i_set).par(idx).val;
@@ -609,31 +202,13 @@ auto LMsolver::saveParameters(std::vector<std::vector<double>>& old_parameters)
     }
 }
 
-auto LMsolver::updateParameters() -> void
+static auto revertParameters(
+  const Indices& indices,
+  const std::vector<std::vector<double>>& old_parameters,
+  std::vector<FitFunction>& fit_functions) -> void
 {
-    for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
-        auto idx_jacobian { indices.jacobian.at(i_set).cbegin() };
-        for (const auto& idx : indices.active.at(i_set)) {
-            fit_functions.at(i_set).par(idx).val +=
-              delta1.global.at(*idx_jacobian++);
-        }
-    }
-    if (settings.acceleration_threshold > 0.0) {
-        for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
-            auto idx_jacobian { indices.jacobian.at(i_set).cbegin() };
-            for (const auto& idx : indices.active.at(i_set)) {
-                fit_functions.at(i_set).par(idx).val -=
-                  // NOLINTNEXTLINE
-                  0.5 * delta2.global.at(*idx_jacobian++);
-            }
-        }
-    }
-}
-
-auto LMsolver::revertParameters(
-  const std::vector<std::vector<double>>& old_parameters) -> void
-{
-    for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
+    for (int i_set {}; i_set < static_cast<int>(fit_functions.size());
+         ++i_set) {
         for (const auto& idx : indices.active.at(i_set)) {
             fit_functions.at(i_set).par(idx).val =
               old_parameters.at(i_set).at(idx);
@@ -641,41 +216,314 @@ auto LMsolver::revertParameters(
     }
 }
 
-auto LMsolver::chi2() -> double
+static auto deactivateParameters(const Indices& indices,
+                                 const int i_set,
+                                 std::vector<FitFunction>& fit_functions)
+  -> void
 {
-    chi2_timer.start();
-    double sum {};
-    for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
-        // Normally we would loop over indices.data_ranges if MPI has
-        // been initialized. However, if chi2() is called before fit()
-        // then indices.data_ranges is not yet initialized so we do
-        // this operation in serial.
-        int i_point_beg {};
-        int i_point_end {};
-        if (indices.data_ranges.empty()) {
-            i_point_beg = 0;
-            i_point_end = static_cast<int>(x_data.at(i_set).size()) - 1;
-        } else {
-            i_point_beg = indices.data_ranges.at(i_set).front();
-            i_point_end = indices.data_ranges.at(i_set).back();
+    for (const auto& idx : indices.active.at(i_set)) {
+        fit_functions.at(i_set).deactivatePar(idx);
+    }
+}
+
+static auto updateParameters(const Indices& indices,
+                             const double acceleration_threshold,
+                             const std::vector<double>& delta1,
+                             const std::vector<double>& delta2,
+                             std::vector<FitFunction>& fit_functions) -> void
+{
+    const int n_datasets { static_cast<int>(fit_functions.size()) };
+    for (int i_set {}; i_set < n_datasets; ++i_set) {
+        auto idx_jacobian { indices.jacobian.at(i_set).cbegin() };
+        for (const auto& idx : indices.active.at(i_set)) {
+            fit_functions[i_set].par(idx).val += delta1[*idx_jacobian++];
         }
-        for (int i_point { i_point_beg }; i_point <= i_point_end; ++i_point) {
-            const double diff {
+    }
+    if (acceleration_threshold > 0.0) {
+        for (int i_set {}; i_set < n_datasets; ++i_set) {
+            auto idx_jacobian { indices.jacobian.at(i_set).cbegin() };
+            for (const auto& idx : indices.active.at(i_set)) {
+                constexpr double half { 0.5 };
+                fit_functions.at(i_set).par(idx).val -=
+                  half * delta2[*idx_jacobian++];
+            }
+        }
+    }
+}
+
+// Return the square root of the derivative of the loss function. This
+// value is 1 unless using a robust cost function.
+[[nodiscard]] static auto loss(const Loss loss_type, const double res) -> double
+{
+    // In the formulas, z is the square or the residual
+    switch (loss_type) {
+    case Loss::cauchy:
+        // rho(z) = ln(1 + z)
+        // sqrt(d rho(z) / dz) = sqrt(1 / (1 + z))
+        return std::sqrt(1.0 / (1.0 + res * res));
+    case Loss::huber:
+        // If res <= 1
+        //   rho(z) = z
+        //   sqrt(d rho(z) / dz) = 1
+        // else
+        //   rho(z) = 2 z^0.5 - 1
+        //   sqrt(d rho(z) / dz) = sqrt(1 / sqrt(z))
+        if (res * res > 1.0) {
+            return std::sqrt(1.0 / std::abs(res));
+        } else {
+            return 1.0;
+        }
+    case Loss::linear:
+        // rho(z) = z
+        // sqrt(d rho(z) / dz) = 1
+        return 1.0;
+    default:
+        return 0.0;
+    }
+}
+
+auto LMsolver::computeLeftHandSide(const double lambda) -> void
+{
+    Jacobian_timer.start();
+    int i_start {}; // Starting index for data sets
+#pragma omp parallel num_threads(settings.n_threads)                           \
+  firstprivate(i_start, fit_functions)
+    for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
+        int cur_idx { -1 };
+        for (const auto& idx : indices.active.at(i_set)) {
+            fit_functions.at(i_set).activateParReverse(idx, ++cur_idx);
+            addADSeed(fit_functions.at(i_set).par(idx));
+        }
+#pragma omp for nowait
+        for (int i_point = 0; i_point < static_cast<int>(x_data[i_set].size());
+             ++i_point) {
+            // One residual
+            const double res {
                 (y_data[i_set][i_point]
                  - fit_functions[i_set](x_data[i_set][i_point]).val)
                 / errors[i_set][i_point]
             };
+            // Square root of the derivative of the loss function
+            const double drho_sqrt { loss(settings.loss, res) };
+            residuals[i_start + i_point] = drho_sqrt * res;
+            gadfit::returnSweep();
+            for (int i_par {};
+                 i_par < static_cast<int>(indices.jacobian[i_set].size());
+                 ++i_par) {
+                jacobian[(i_start + i_point) * indices.n_active
+                         + indices.jacobian[i_set][i_par]] =
+                  drho_sqrt * gadfit::reverse::adjoints[i_par]
+                  / errors[i_set][i_point];
+            }
+        }
+        deactivateParameters(indices, i_set, fit_functions);
+        i_start += static_cast<int>(x_data[i_set].size());
+    }
+    Jacobian_timer.stop();
+    linalg_timer.start();
+    dsyrk('t', indices.n_active, indices.n_datapoints, jacobian, JTJ);
+    for (int i_par {}; i_par < indices.n_active; ++i_par) {
+        const int idx { i_par * indices.n_active + i_par };
+        DTD[idx] = settings.damp_max ? std::max(DTD[idx], JTJ[idx]) : JTJ[idx];
+    }
+    for (int i {}; i < static_cast<int>(left_side.size()); ++i) {
+        left_side[i] = JTJ[i] + lambda * DTD[i];
+    }
+    linalg_timer.stop();
+}
+
+auto LMsolver::computeRightHandSide() -> void
+{
+    linalg_timer.start();
+    dgemv('t',
+          indices.n_datapoints,
+          indices.n_active,
+          jacobian,
+          residuals,
+          right_side);
+    linalg_timer.stop();
+}
+
+auto LMsolver::computeDeltas(std::vector<double>& omega) -> void
+{
+    linalg_timer.start();
+    delta1 = right_side;
+    left_side_chol = left_side;
+    dpptrf(indices.n_active, left_side_chol);
+    dpptrs(indices.n_active, left_side_chol, delta1);
+    linalg_timer.stop();
+    if (!(settings.acceleration_threshold > 0.0)) {
+        return;
+    }
+    // This loop is similar to the residual or Jacobian calculation
+    // except only the second directional derivatives are computed.
+    omega_timer.start();
+    int i_start {};
+#pragma omp parallel num_threads(settings.n_threads)                           \
+  firstprivate(i_start, fit_functions)
+    for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
+        auto idx_jacobian { indices.jacobian.at(i_set).cbegin() };
+        for (const auto& idx : indices.active.at(i_set)) {
+            fit_functions.at(i_set).activateParForward(idx,
+                                                       delta1[*idx_jacobian++]);
+        }
+#pragma omp for nowait
+        for (int i_point = 0; i_point < static_cast<int>(x_data[i_set].size());
+             ++i_point) {
+            omega[i_start + i_point] =
+              fit_functions[i_set](x_data[i_set][i_point]).dd
+              / errors[i_set][i_point];
+        }
+        deactivateParameters(indices, i_set, fit_functions);
+        i_start += static_cast<int>(x_data[i_set].size());
+    }
+    omega_timer.stop();
+    linalg_timer.start();
+    dgemv('t', indices.n_datapoints, indices.n_active, jacobian, omega, delta2);
+    dpptrs(indices.n_active, left_side_chol, delta2);
+    // Use acceleration only if sqrt((delta2 D delta2)/(delta1 D
+    // delta1)) < alpha, where alpha is the acceleration ratio
+    // threshold.
+    dgemv('n', indices.n_active, indices.n_active, DTD, delta2, D_delta);
+    const double D_delta2 { std::inner_product(
+      delta2.cbegin(), delta2.cend(), D_delta.cbegin(), 0.0) };
+    dgemv('n', indices.n_active, indices.n_active, DTD, delta1, D_delta);
+    const double D_delta1 { std::inner_product(
+      delta1.cbegin(), delta1.cend(), D_delta.cbegin(), 0.0) };
+    const double acc_ratio { std::sqrt(D_delta2 / D_delta1) };
+    if (acc_ratio > settings.acceleration_threshold) {
+        std::ranges::fill(delta2, 0.0);
+    }
+    linalg_timer.stop();
+}
+
+auto LMsolver::fit(double lambda) -> void
+{
+#pragma omp parallel num_threads(settings.n_threads)
+    initializeADReverse(settings.ad_sweep_size);
+    prepareIndexing(x_data, fit_functions, indices);
+    // Reset all timers
+    Jacobian_timer.reset();
+    chi2_timer.reset();
+    linalg_timer.reset();
+    omega_timer.reset();
+    main_timer.reset();
+    // Initialize main arrays
+    jacobian.resize(indices.n_datapoints * indices.n_active);
+    residuals.resize(indices.n_datapoints);
+    JTJ.resize(indices.n_active * indices.n_active);
+    DTD.resize(indices.n_active * indices.n_active);
+    std::ranges::fill(DTD, 0.0);
+    left_side.resize(indices.n_active * indices.n_active);
+    left_side_chol.resize(indices.n_active * indices.n_active);
+    delta1.resize(indices.n_active);
+    right_side.resize(indices.n_active);
+    if (settings.acceleration_threshold > 0.0) {
+        omega.resize(indices.n_datapoints);
+        delta2.resize(indices.n_active);
+        D_delta.resize(indices.n_active);
+    }
+    if (settings.DTD_min.size() > 1) {
+        for (int i {}; i < indices.n_active; ++i) {
+            DTD.at(i * indices.n_active + i) = settings.DTD_min.at(i);
+        }
+    }
+    std::vector<std::vector<double>> old_parameters(x_data.size());
+    for (auto& parameters : old_parameters) {
+        parameters.resize(fit_functions.front().getNumPars());
+    }
+    for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
+        deactivateParameters(indices, i_set, fit_functions);
+    }
+    // Start the fitting process
+    main_timer.start();
+    double old_chi2 { chi2() };
+    int i_iteration {};
+    bool finished { settings.iteration_limit == 0 };
+    while (!finished) {
+        ++i_iteration;
+        computeLeftHandSide(lambda);
+        computeRightHandSide();
+        computeDeltas(omega);
+        saveParameters(indices, fit_functions, old_parameters);
+        updateParameters(indices,
+                         settings.acceleration_threshold,
+                         delta1,
+                         delta2,
+                         fit_functions);
+        // Update lambda which is allowed to increase no more than
+        // lambda_incs times consecutively.
+        for (int i_lambda {}; i_lambda <= settings.lambda_incs; ++i_lambda) {
+            const double new_chi2 { chi2() };
+            if (!ioTest(io::final_only)) {
+                spdlog::debug("Current lambda: {}, new chi2 = {}, old chi2: {}",
+                              lambda,
+                              new_chi2,
+                              old_chi2);
+            }
+            if (new_chi2 < old_chi2) {
+                lambda /= settings.lambda_down;
+                old_chi2 = new_chi2;
+                if (!ioTest(io::final_only)) {
+                    printIterationResults(i_iteration, lambda, new_chi2);
+                }
+                break;
+            }
+            if (i_lambda < settings.lambda_incs) {
+                lambda *= settings.lambda_up;
+                revertParameters(indices, old_parameters, fit_functions);
+                for (int i {}; i < static_cast<int>(JTJ.size()); ++i) {
+                    left_side[i] = JTJ[i] + lambda * DTD[i];
+                }
+                computeDeltas(omega);
+                updateParameters(indices,
+                                 settings.acceleration_threshold,
+                                 delta1,
+                                 delta2,
+                                 fit_functions);
+            } else {
+                revertParameters(indices, old_parameters, fit_functions);
+                if (!ioTest(io::final_only)) {
+                    spdlog::info("Lambda increased {} times in a row",
+                                 settings.lambda_incs);
+                    spdlog::info("");
+                }
+                // This iteration was unsuccessful. Decrease
+                // i_iteration so it shows the total number of
+                // successful iterations.
+                --i_iteration;
+                finished = true;
+            }
+        }
+        if (i_iteration == settings.iteration_limit) {
+            spdlog::info("Iteration limit reached");
+            finished = true;
+        }
+    }
+    main_timer.stop();
+    if (ioTest(io::final_only) || settings.iteration_limit == 0) {
+        printIterationResults(i_iteration, lambda, old_chi2);
+    }
+    if (ioTest(io::timings)) {
+        printTimings();
+    }
+}
+
+auto LMsolver::chi2() -> double
+{
+    chi2_timer.start();
+    double sum {};
+#pragma omp parallel num_threads(settings.n_threads)
+    for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
+#pragma omp for reduction(+ : sum) nowait
+        for (int i = 0; i < static_cast<int>(x_data[i_set].size()); ++i) {
+            const double diff { (y_data[i_set][i]
+                                 - fit_functions[i_set](x_data[i_set][i]).val)
+                                / errors[i_set][i] };
             sum += diff * diff;
         }
     }
     chi2_timer.stop();
-    comm_timer.start();
-#ifdef USE_MPI
-    if (mpi.comm != MPI_COMM_NULL && !indices.data_ranges.empty()) {
-        MPI_Allreduce(MPI_IN_PLACE, &sum, 1, MPI_DOUBLE, MPI_SUM, mpi.comm);
-    }
-#endif
-    comm_timer.stop();
     return sum;
 }
 
@@ -686,8 +534,7 @@ auto LMsolver::chi2() -> double
 
 [[nodiscard]] auto LMsolver::getJacobian() -> const std::vector<double>&
 {
-    Jacobian.populateGlobalTranspose(mpi);
-    return Jacobian.global;
+    return jacobian;
 }
 
 static auto populateLowerTriange(const int dim, std::vector<double>& data)
@@ -702,53 +549,44 @@ static auto populateLowerTriange(const int dim, std::vector<double>& data)
 
 [[nodiscard]] auto LMsolver::getJTJ() -> const std::vector<double>&
 {
-    JTJ.populateGlobalTranspose(mpi);
-    populateLowerTriange(indices.n_active, JTJ.global);
-    return JTJ.global;
+    populateLowerTriange(indices.n_active, JTJ);
+    return JTJ;
 }
 
 [[nodiscard]] auto LMsolver::getDTD() -> const std::vector<double>&
 {
-    DTD.populateGlobalTranspose(mpi);
-    return DTD.global;
+    return DTD;
 }
 
 [[nodiscard]] auto LMsolver::getLeftSide() -> const std::vector<double>&
 {
-    left_side.populateGlobalTranspose(mpi);
-    populateLowerTriange(indices.n_active, left_side.global);
-    return left_side.global;
+    populateLowerTriange(indices.n_active, left_side);
+    return left_side;
 }
 
 [[nodiscard]] auto LMsolver::getRightSide() -> const std::vector<double>&
 {
-    right_side.populateGlobalTranspose(mpi);
-    return right_side.global;
+    return right_side;
 }
 
 [[nodiscard]] auto LMsolver::getResiduals() -> const std::vector<double>&
 {
-    residuals.populateGlobalTranspose(mpi);
-    return residuals.global;
+    return residuals;
 }
 
 [[nodiscard]] auto LMsolver::getInvJTJ() -> const std::vector<double>&
 {
-    copyBCArray(JTJ, left_side_chol);
-    pdpotrf(left_side_chol);
-    pdpotri(left_side_chol);
-    left_side_chol.populateGlobalTranspose(mpi);
-    populateLowerTriange(indices.n_active, left_side_chol.global);
-    return left_side_chol.global;
+    left_side_chol = JTJ;
+    dpptrf(indices.n_active, left_side_chol);
+    dpotri(indices.n_active, left_side_chol);
+    populateLowerTriange(indices.n_active, left_side_chol);
+    return left_side_chol;
 }
 
 auto LMsolver::printIterationResults(const int i_iteration,
                                      const double lambda,
                                      const double new_chi2) const -> void
 {
-    if (mpi.rank != 0) {
-        return;
-    }
     spdlog::info("Iteration: {}", i_iteration);
     spdlog::info("Lambda: {}", lambda);
     spdlog::info("Chi2/DOF: {}", new_chi2 / indices.degrees_of_freedom);
@@ -772,13 +610,11 @@ auto LMsolver::printIterationResults(const int i_iteration,
             const auto idx { std::distance(indices.active.at(i_set).cbegin(),
                                            active_pos) };
             if (ioTest(io::delta1)) {
-                line << " ("
-                     << delta1.global.at(indices.jacobian.at(i_set).at(idx))
+                line << " (" << delta1[indices.jacobian.at(i_set).at(idx)]
                      << ')';
             }
-            if (ioTest(io::delta2) && !delta2.global.empty()) {
-                line << " ("
-                     << delta2.global.at(indices.jacobian.at(i_set).at(idx))
+            if (ioTest(io::delta2) && !delta2.empty()) {
+                line << " (" << delta2[indices.jacobian.at(i_set).at(idx)]
                      << ')';
             }
         } else {
@@ -818,82 +654,28 @@ auto LMsolver::printIterationResults(const int i_iteration,
 
 auto LMsolver::printTimings() const -> void
 {
-    std::vector<Times> Jacobian_times(mpi.n_procs);
-    std::vector<Times> chi2_times(mpi.n_procs);
-    std::vector<Times> linalg_times(mpi.n_procs);
-    std::vector<Times> omega_times(mpi.n_procs);
-    std::vector<Times> comm_times(mpi.n_procs);
-    std::vector<Times> main_times(mpi.n_procs);
-    gatherTimes(mpi, Jacobian_timer, Jacobian_times);
-    gatherTimes(mpi, chi2_timer, chi2_times);
-    gatherTimes(mpi, linalg_timer, linalg_times);
-    gatherTimes(mpi, omega_timer, omega_times);
-    gatherTimes(mpi, comm_timer, comm_times);
-    gatherTimes(mpi, main_timer, main_times);
-    if (mpi.rank == 0) {
-        spdlog::info("");
-        spdlog::info("Cost relative to the main loop on root process");
-        spdlog::info("==============================================");
-        const auto relTime { [this](const double time) {
-            constexpr int total_percent { 100 };
-            return total_percent * time / main_timer.totalCPUTime();
-        } };
-        spdlog::info("      Jacobian:{:6.2f}%",
-                     relTime(Jacobian_timer.totalCPUTime()));
-        spdlog::info("          chi2:{:6.2f}%",
-                     relTime(chi2_timer.totalCPUTime()));
-        spdlog::info("Linear algebra:{:6.2f}%",
-                     relTime(linalg_timer.totalCPUTime()));
-        spdlog::info("         omega:{:6.2f}%",
-                     relTime(omega_timer.totalCPUTime()));
-        spdlog::info(" Communication:{:6.2f}%",
-                     relTime(comm_timer.totalCPUTime()));
-        spdlog::info(
-          "         Total:{:6.2f}%",
-          relTime(Jacobian_timer.totalCPUTime() + chi2_timer.totalCPUTime()
-                  + linalg_timer.totalCPUTime() + omega_timer.totalCPUTime()
-                  + comm_timer.totalCPUTime()));
-        spdlog::info("");
-        spdlog::info(
-          "Timings          CPU, s    Wall, s    CPU*, s   Wall*, s Calls");
-        spdlog::info(
-          "==============================================================");
-        const auto timings { [this](const std::vector<Times>& times,
-                                    const Timer& timer) {
-            for (int i_proc {}; i_proc < mpi.n_procs; ++i_proc) {
-                spdlog::info(
-                  "  Proc {:5} {:10.2f} {:10.2f} {:10.2f} {:10.2f} {:5}",
-                  i_proc,
-                  times.at(i_proc).cpu,
-                  times.at(i_proc).wall,
-                  times.at(i_proc).cpu_ave,
-                  times.at(i_proc).wall_ave,
-                  timer.totalNumberOfCalls());
-            }
-        } };
-        spdlog::info(" Jacobian");
-        timings(Jacobian_times, Jacobian_timer);
-        spdlog::info(" Chi2");
-        timings(chi2_times, chi2_timer);
-        spdlog::info(" Linear algebra");
-        timings(linalg_times, linalg_timer);
-        if (settings.acceleration_threshold > 0.0) {
-            spdlog::info(" Omega");
-            timings(omega_times, omega_timer);
-        }
-        spdlog::info(
-          "--------------------------------------------------------------");
-        spdlog::info(" Main loop");
-        for (int i_proc {}; i_proc < mpi.n_procs; ++i_proc) {
-            spdlog::info("  Proc {:5} {:10.2f} {:10.2f}",
-                         i_proc,
-                         main_times.at(i_proc).cpu,
-                         main_times.at(i_proc).wall);
-        }
-        spdlog::info(
-          "==============================================================");
-        spdlog::info("* - per call");
-    }
+    const auto timings { [this](const std::string_view term,
+                                const Timer& timer) {
+        constexpr int total_percent { 100 };
+        spdlog::info("{:14} {:10.2f} {:10.2f}  {:6.2f}% {:5}",
+                     term,
+                     timer.totalWallTime(),
+                     timer.totalCPUTime(),
+                     total_percent * timer.totalCPUTime()
+                       / main_timer.totalCPUTime(),
+                     timer.totalNumberOfCalls());
+    } };
+    spdlog::info("");
+    spdlog::info("Timings          Wall (s)    CPU (s)  CPU rel  Calls");
+    spdlog::info("====================================================");
+    timings("Jacobian", Jacobian_timer);
+    timings("Chi2", chi2_timer);
+    timings("Linear algebra", linalg_timer);
+    timings("Omega", omega_timer);
+    spdlog::info("----------------------------------------------------");
+    timings("Main loop", main_timer);
+    spdlog::info("====================================================");
+    spdlog::info("");
 }
 
 auto LMsolver::ioTest(io::flag flag) const -> bool
@@ -914,8 +696,11 @@ auto LMsolver::getValue(const double arg, const int i_dataset) const -> double
 
 LMsolver::~LMsolver()
 {
-    freeIntegration();
-    freeAdReverse();
+#pragma omp parallel num_threads(settings.n_threads)
+    {
+        freeIntegration();
+        freeAdReverse();
+    }
 }
 
 } // namespace gadfit

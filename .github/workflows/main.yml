@@ -2,8 +2,11 @@ name: main
 
 on: [push]
 
+env:
+  OMP_NUM_THREADS: 8
+
 jobs:
-  CXX_Debug_serial_fallback_linear_algebra:
+  CXX_Debug_fallback_linear_algebra:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
@@ -17,7 +20,7 @@ jobs:
         run: cmake --build build
       - name: test
         run: cmake --build build --target test
-  CXX_Release_serial_fallback_linear_algebra:
+  CXX_Release_fallback_linear_algebra:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
@@ -31,7 +34,7 @@ jobs:
         run: cmake --build build
       - name: test
         run: cmake --build build --target test
-  CXX_Debug_MPI_fallback_linear_algebra:
+  CXX_Debug_MKL:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
@@ -39,69 +42,6 @@ jobs:
         run: |
           mkdir build && cd build
           cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
-          -D CMAKE_CXX_COMPILER=mpicxx \
-          -D CMAKE_BUILD_TYPE=Debug \
-          ..
-      - name: build
-        run: cmake --build build
-      - name: test
-        run: |
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;1" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;2" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;3" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;4" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;5" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;6" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;7" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;8" build
-          cmake --build build --target test
-  CXX_Release_MPI_fallback_linear_algebra:
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v2
-      - name: configure
-        run: |
-          mkdir build && cd build
-          cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
-          -D CMAKE_CXX_COMPILER=mpicxx \
-          -D CMAKE_BUILD_TYPE=Release \
-          ..
-      - name: build
-        run: cmake --build build
-      - name: test
-        run: |
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;1" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;2" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;3" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;4" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;5" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;6" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;7" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;8" build
-          cmake --build build --target test
-  CXX_Debug_MPI_MKL:
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v2
-      - name: configure
-        run: |
-          mkdir build && cd build
-          cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
-          -D CMAKE_CXX_COMPILER=mpicxx \
           -D CMAKE_BUILD_TYPE=Debug \
           -D LIBRARY_PATHS=/opt/intel/oneapi/mkl/latest/lib/intel64 \
           -D LIBRARIES="mkl_gf_lp64;mkl_sequential;mkl_core" \
@@ -109,24 +49,8 @@ jobs:
       - name: build
         run: cmake --build build
       - name: test
-        run: |
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;1" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;2" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;3" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;4" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;5" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;6" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;7" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;8" build
-          cmake --build build --target test
-  CXX_Release_MPI_MKL:
+        run: cmake --build build --target test
+  CXX_Release_MKL:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
@@ -134,32 +58,15 @@ jobs:
         run: |
           mkdir build && cd build
           cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
-          -D CMAKE_CXX_COMPILER=mpicxx \
           -D CMAKE_BUILD_TYPE=Release \
           -D LIBRARY_PATHS=/opt/intel/oneapi/mkl/latest/lib/intel64 \
-          -D LIBRARIES="mkl_gf_lp64;mkl_sequential;mkl_core;mkl_blacs_openmpi_lp64;mkl_scalapack_lp64" \
+          -D LIBRARIES="mkl_gf_lp64;mkl_sequential;mkl_core" \
           ..
       - name: build
         run: cmake --build build
       - name: test
-        run: |
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;1" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;2" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;3" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;4" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;5" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;6" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;7" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;8" build
-          cmake --build build --target test
-  CXX_Release_MPI_Lapack:
+        run: cmake --build build --target test
+  CXX_Release_Lapack:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
@@ -167,30 +74,13 @@ jobs:
         run: |
           mkdir build && cd build
           cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
-          -D CMAKE_CXX_COMPILER=mpicxx \
           -D CMAKE_BUILD_TYPE=Release \
           -D LIBRARIES="lapack" \
           ..
       - name: build
         run: cmake --build build
       - name: test
-        run: |
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;1" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;2" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;3" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;4" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;5" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;6" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;7" build
-          cmake --build build --target test
-          cmake -D TESTS_RUN_PREFIX="mpirun;-np;8" build
-          cmake --build build --target test
+        run: cmake --build build --target test
   Fortran_Debug_fallback_linear_algebra:
     runs-on: self-hosted
     steps:

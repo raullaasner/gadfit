@@ -1,5 +1,6 @@
-#include "lm_solver.h"
-#include "lm_solver_data.h"
+#include "fixtures.h"
+
+#include <gadfit/lm_solver.h>
 
 // If you don't have spdlog installed, remove all references to spdlog
 // from this file. It should still run.

@@ -11,7 +11,7 @@
 % limitations under the License.
 
 \documentclass{article}
-\def\version{1.7}
+\def\version{2.0}
 
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -249,7 +249,7 @@ The basic idea behind the forward mode is to extend all numbers to include a sec
   \label{eq:ddouble}
   x \rightarrow \tilde x = x + \dot x d \equiv (x,\dot x),
 \end{equation}
-resulting in so-called dual numbers. The arithmetic on dual numbers is defined by requiring that $d^2=0$. This is in contrast to ordinary complex numbers, which are also dual numbers but where the second component is defined according to $i^2=-1$. Elementary arithmetic between dual numbers can then be written as follows:
+resulting in so-called dual numbers. The arithmetic on dual numbers is defined by requiring $d^2=0$. This is in contrast to ordinary complex numbers, which are also dual numbers but where the second component is defined according to $i^2=-1$. Elementary arithmetic between dual numbers can then be written as follows:
 \begin{equation}
   \label{eq:dual_arith}
   \begin{split}
@@ -273,7 +273,7 @@ where $f'(x)$ is the derivative of $f$ evaluated at $x$. Applying the dual numbe
 \begin{equation}
   \label{eq:dual_chain}
   f(g(\tilde x)) = f(g(x) + g'(x)\dot xd) = \left( f(g(x)),
-    f'(g(x))g'(x)\dot x \right),
+    f'(g(x))g'(x)\dot x \right).
 \end{equation}
 With Eq.~\eqref{eq:dual_chain} we have actually rediscovered the chain rule! Repeatedly applying Eq.~\eqref{eq:dual_chain} yields the derivatives of arbitrarily complex functions.
 
@@ -293,7 +293,7 @@ As a simple example, we shall evaluate $\frac{\partial}{\partial x} f(x, y)$ for
     + y_0 \cos (x_0y_0)).
   \end{split}
 \end{equation}
-For such a simple case, it is easy to analytically check that the tangent of $\tilde v_5$ is indeed the correct result. Note that AD is as economical as the function evaluation in terms of reusing intermediate results --- the derivative of $xy$ (the tangent of $\tilde v_3$) is computed only once, even though it appears in two places. Again, we remind that AD is not symbolic differentiation since there is no record of the symbolic form of the derivatives. The algorithm only needs to recognize the elemental operation at hand, whose derivative needs to be precoded, but otherwise the procedure is completely mechanical. At each step in the computational graph, the algorithm has forgotten how it got there. For a better illustration, here is a throwaway C++ implementation of the same calculation with $(x_0,y_0) = (1.5,0.7)$.
+For such a simple case, it is easy to analytically check that the tangent of $\tilde v_5$ is indeed the correct result. Note that AD is as economical as the function evaluation in terms of reusing intermediate results --- the derivative of $xy$ (the tangent of $\tilde v_3$) is computed only once even though it appears in two places. We remind that AD is not symbolic differentiation since there is no record of the symbolic form of the derivatives. The algorithm only needs to recognize the elemental operation at hand, whose derivative needs to be precoded, but otherwise the procedure is completely mechanical. At each step in the computational graph, the algorithm has forgotten how it got there. For a better illustration, here is a throwaway C++ implementation of the same calculation with $(x_0,y_0) = (1.5,0.7)$.
 \begin{verbatim}
 class ddouble {
 public:
@@ -355,7 +355,7 @@ In order to compute the second directional derivative $\partial_i\partial_j f(x;
 
 \subsubsection{Reverse mode}
 
-The reverse mode is generally considered superior to the forward mode, because it is more efficient for calculating the gradient, which is more often required than a directional derivative. The Jacobian is exactly such a quantity, where each row $(J_{i1}, \ldots, J_{in})$ is the gradient of a single-valued function $f(x_i, \bm\beta)$. At the same time, it is also harder to implement, since it consists of two parts --- a forward sweep, which performs function evaluation, and a return sweep, which processes the computational graph in the reverse order to yield the partial derivatives. Information about the elemental operations must be saved during the forward sweep, which necessitates some form of memory management. This is in contrast to the forward mode, where both the function value and the derivatives are obtained by traversing in the same direction along the computational graph and no additional memory needs to be used.
+The reverse mode is generally considered superior to the forward mode because it is more efficient for calculating the gradient which is more often required than a directional derivative. The Jacobian is exactly such a quantity, where each row $(J_{i1}, \ldots, J_{in})$ is the gradient of a single-valued function $f(x_i, \bm\beta)$. At the same time, it is also harder to implement since it consists of two parts --- a forward sweep, which performs function evaluation, and a return sweep, which processes the computational graph in reverse order to yield the partial derivatives. Information about the elemental operations must be saved during the forward sweep which necessitates some form of memory management. This is in contrast to the forward mode where both the function value and the derivatives are obtained by traversing in the same direction along the computational graph and no additional memory needs to be used.
 
 The reverse mode is best understood with an example. The sequence of elemental operations for the evaluation of $f(x,y) = xy + \sin\frac{x}{y}$ at the point $(2.3,0.8)$, which we call the forward sweep, is
 \begin{subequations}
@@ -558,7 +558,7 @@ where
 
 \section{Building and linking}
 
-GADfit is a library, i.e., not a standalone program, written in \textit{two} different compiled languages. It started out as a Fortran implementation and was later duplicated as a C++ implementation (both implementations are currently maintained). What this means is that the user is expected to have at least basic knowledge of C++ or Fortran. Specifically, the fitting functions and the driver code would need to be written in C++/Fortran. The structure of the code is such that it is currently not possible to easily interface it with other languages. The C++/Fortran requirement might seem inconvenient for the user, but it allows to make full use of a powerful programming language for writing functions of arbitrary complexity, which is the primary benefit of using AD.
+GADfit is a library, i.e., not a standalone program, written in \textit{two} different compiled languages. It started out as a Fortran implementation and was later duplicated in C++. The Fortran development has largely stopped and only the C++ implementation sees progress these days. What this means is that the user is expected to have at least basic knowledge of C++ or Fortran. Specifically, the fitting functions and the driver code would need to be written in C++/Fortran. The structure of the code is such that it is currently not possible to easily interface it with other languages. The C++/Fortran requirement might seem inconvenient for the user, but it allows to make full use of a powerful programming language for writing functions of arbitrary complexity, which is the primary benefit of using AD.
 
 \subsection{Building process}
 
@@ -612,22 +612,7 @@ from the build directory, followed by the build commands. A change of the conten
 
 \begin{itemize}
 \item A C++ compiler. The GNU C++ compiler (g++) is usually pre-installed on a Linux distribution. If not, visit \url{gcc.gnu.org} to build and install one manually.
-\item spdlog, which is a C++ logger. Install it using your distribution's package manager. If not, issue the following steps to download and build it manually:
-\begin{verbatim}
-wget https://github.com/gabime/spdlog/archive/v1.8.2.tar.gz
-tar xf v1.8.2.tar.gz
-mkdir spdlog-1.8.2/build && cd spdlog-1.8.2/build
-cmake -DCMAKE_CXX_FLAGS="-fPIC" -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_INSTALL_PREFIX=$HOME/builds/spdlog-install ..
-cmake --build . --target install
-\end{verbatim}
-  Then, when building GADfit, including this in your initial cache file:
-\begin{verbatim}
-set(SPDLOG_PATH $ENV{HOME}/builds/spdlog-install
-    CACHE STRING "")
-\end{verbatim}
-\item An MPI compiler is optional but recommended in order to exploit multiple cores.
-\item Link against a Scalapack implementation in addition to MPI to exploit multiple cores even more.
+\item spdlog, which is a C++ logger. Install it either manually, using your distribution's package manager, or do nothing in which case the build system downloads and builds is automatically.
 \end{itemize}
 
 \subsubsection{\label{sec:fortran_prerequisites}Fortran prerequisites}
@@ -675,19 +660,15 @@ target_link_libraries(main PUBLIC gadfit::gadfit)
 Edit this file to reflect your environment. Next, create a build directory, configure and compile:
 \begin{verbatim}
 mkdir build && cd build
-# cmake -DCMAKE_CXX_COMPILER=mpicxx ..
 cmake ..
 cmake --build .
 \end{verbatim}
-If GADfit was compiled with MPI support, uncomment the line that includes compiler specification. The executable is produced in the same directory so you can run it with
+The executable is produced in the same directory so you can run it with
 \begin{verbatim}
+export OMP_NUM_THREADS=8
 ./main
 \end{verbatim}
-or
-\begin{verbatim}
-mpirun -np 2 main
-\end{verbatim}
-for the MPI version.
+If the C++ compiler does not have OpenMP support the export statement has no effect.
 
 \subsubsection{Fortran}
 
@@ -794,11 +775,13 @@ This is useful for developers.
 
 \subsubsection{C++}
 
-If the derivatives were calculated with finite differences, a simple usage of OpenMP would be sufficient to parallelize most of GADfit. However, with AD, both function evaluation and the gradient calculation have side effects, which means that a simple parallelization scheme is not possible. The C++ version of GADfit is parallelized using MPI. In particular, all computations that run over the number of data points (Jacobian, residuals, sum of squares, \ldots), are declared as shared arrays making use the MPI remote memory access (RMA) paradigm. If we stop here then the rest of the linear algebra is done in serial. However, if you have access to a Scalapack implementation, the linear algebra part can run in parallel as well. You may build the Netlib reference implementation of Scalapack yourself or use, e.g., the one supplied with MKL which, at the time of writing, is freely available.
+The C++ implementation of GADfit is thread-safe and is parallelized using OpenMP. That means you can speed up a single instance of the solver and/or call the solver from multiple threads in an OpenMP parallel environment. The number of threads working on a single instance are set by a user parameter (\verb+LMsolver::settings::n_threads+) which defaults to 1. Regardless of the \verb+OMP_NUM_THREADS+ environment variable or a call to \verb+omp_set_num_threads+, the fitting procedure still runs on a single thread unless the parameter is set.
+
+Under normal usage no OpenMP directives or functions need to be explicitly called. However, when calling some of the lower levels functions directly, such as allocating the AD tape variables, they need to be accompanied by the OpenMP parallel directive. If unsure have a look at the tests or the source code to see how certain GADfit functions must be called.
 
 \subsubsection{\label{sec:parallelism_fortran}Fortran}
 
-In Fortran, if we were working with finite differences, using \texttt{do concurrent} would be mostly sufficient for parallelization. However, as in the C++ version, with AD both function evaluation and the gradient calculation are impure procedures, which makes parallelization a nontrivial task. The Fortran version of GADfit is parallelized using Coarrays, a syntactic extension to the language that was included in the Fortran 2008 standard. Coarrays follow the SPMD parallelization scheme, where the main program is replicated at the start of execution. Each instance, called an image, has its own set of private variables plus so-called co-variables that are addressable by other images. Coarrays allow to parallelize programs with little effort compared to MPI or OpenMP, although it is often still MPI that runs under the hood.
+The Fortran version of GADfit is parallelized using Coarrays, a syntactic extension to the language that was included in the Fortran 2008 standard. Coarrays follow the SPMD parallelization scheme, where the main program is replicated at the start of execution. Each instance, called an image, has its own set of private variables plus so-called co-variables that are addressable by other images. Coarrays allow to parallelize programs with little effort compared to MPI or OpenMP, although it is often either MPI or OpenMP that runs under the hood.
 
 In order to compile a Coarray program with GFortran, the compiler flag \texttt{-fcoarray=lib} must be used. For GFortran, the Coarray support is provided by the OpenCoarrays project. It can be automatically downloaded and built with \verb+cmake --build . --target example+ or \verb+cmake --build . --target test+. The Coarray communication library, \verb+libcaf_mpi.a+, is installed in \\
 \verb+~gadfit/fortran/tests+. Alternatively, one may issue, e.g.,
@@ -918,7 +901,7 @@ where \texttt{f} is any function with the correct signature, e.g. \texttt{expone
 solver.addDataset(x_data_1, y_data_1);
 solver.addDataset(x_data_2, y_data_2);
 \end{verbatim}
-If you look into \verb+lm_solver_data.h+ you'll see that the input data are of type \texttt{std::array}. Internally the data are captured by \texttt{std::span} which is a view of the data and thus avoids a copy. The data could also be of type \texttt{std::vector} or anything that is compatible with \texttt{std::span}. Then set the initial values of all fitting parameters. In this example, all starting values are set to 1.0.
+If you look into \verb+lm_solver_data.h+ you'll see that the input data are of type \texttt{std::array}. Internally the data are captured by \texttt{std::span} which is a view of the data and thus avoids a copy. The data could also be of type \texttt{std::vector} or anything that is compatible with \texttt{std::span}. It is up to you to ensure that the data doesn't go out of scope before the solver is run. Then set the initial values of all fitting parameters. In this example, all starting values are set to 1.0.
 \begin{verbatim}
 solver.setPar(0, 1.0, true, 0);  // I0 of curve 1
 solver.setPar(2, 1.0, true, 0);  // bgr of curve 1
@@ -1014,39 +997,22 @@ where $\erf$ is the error function.
 You will mainly be interacting with the \verb+gadfit::LMsolver+ class. Here is an overview of the most important member functions and variables. Several of the functions and variables come with default values. Those are easily found in the source code (\texttt{c++/gadfit/lm\_solver.h}) and not duplicated here. The following functions and variables should be called on an \texttt{LMsolver} instance (i.e. not directly like static functions and variables).
 
 \begin{verbatim}
-gadfit::LMsolver::LMsolver(
-  const fitSignature& function_body,
-  const MPI_Comm mpi_comm = MPI_COMM_NULL)
+gadfit::LMsolver::LMsolver(const fitSignature& function_body)
 \end{verbatim}
 \begin{itemize}
 \item \verb+function_body+: the function body. See Sec.~\ref{sec:fit_function_cxx} for how to define one.
-\item \verb+mpi_comm+: if present, runs the fitting procedure in parallel. Default is to run in serial.
 \end{itemize}
 
 \begin{verbatim}
-gadfit::LMsolver::addDataset(
-  const T& x_data,
-  const T& y_data,
-  const std::vector<double>& errors = {})
+gadfit::LMsolver::addDataset(const T& x_data,
+                             const T& y_data,
+                             const T& errors = {})
 \end{verbatim}
 Add a dataset. The type \texttt{T} needs to be compatible with \texttt{std::span}, e.g. \texttt{std::vector<double>}.
 \begin{itemize}
 \item \verb+x_data+: array of independent variables of a data set.
 \item \verb+y_data+: array of dependent variables of a data set.
-\item \verb+errors+: if present, defines data point errors. Default is to set all errors equal to 1, i.e. all data points have the same weight.
-\end{itemize}
-
-\begin{verbatim}
-gadfit::LMsolver::addDataset(
-  const std::shared_ptr<std::vector<double>>& x_data,
-  const std::shared_ptr<std::vector<double>>& y_data,
-  const std::shared_ptr<std::vector<double>>& errors = {})
-\end{verbatim}
-The previous version of \texttt{addDataset} captures data via \texttt{std::span} which requires the caller to ensure that the data do not go out of scope before a fitting procedure is called. If the data do go out of scope before \texttt{LMsolver::fit} is called, it is better to call addDataset with shared pointers.
-\begin{itemize}
-\item \verb+x_data+: shared pointer of an array of independent variables of a data set.
-\item \verb+y_data+: shared pointer of an array of dependent variables of a data set.
-\item \verb+errors+: if present, defines a shared pointer of data point errors. Default is to set all errors equal to 1, i.e. all data points have the same weight.
+\item \verb+errors+: if present, data point errors (standard deviations). Default is to set all errors equal to 1, i.e. all data points have the same weight.
 \end{itemize}
 
 \begin{verbatim}
@@ -1099,14 +1065,14 @@ A struct containing parameters that define runtime behavior. Find the default va
 \item \verb+damp_max (bool)+: Whether to update the damping matrix with the largest entries of $J^TJ$ yet encountered. If \texttt{false}, the classical Marquardt scheme is used.
 \item \verb+DTD_min (std::vector<double>)+: Minimum initial values of the diagonal entries of the damping matrix. Only relevant if \verb+damp_max == true+. Length of this array must equal the number of fitting parameters.
 \item \verb+acceleration_threshold (double)+: Acceleration threshold [$\alpha$ in Eq.~\eqref{eq:acc_alpha}]. If negative, the acceleration term is not calculated.
-\item \verb+blacs_single_column+: whether to create an $N\times1$ BLACS process grid where $N$ is the number of processes. This might be suitable if the number of data points is (much) higher than the number of fitting parameters. If false, then a rectangular process grid is created with \verb+MPI_Dims_create+.
-\item \verb+min_n_blocks+: Minimum number of blocks of a 2D block-cyclic array held by each process. For minimal MPI communication set this values to 1 but for better load balancing set it to a larger value. Set \texttt{spdlog} level to \texttt{debug} in order to see details about the structure of block cyclic arrays.
 \item \verb+loss+: Type of loss function:
   \begin{itemize}
   \item \verb+linear+: $\rho(z) = z$ where $z$ is the squared residual (default)
   \item \verb+cauchy+: $\rho(z) = \ln(1 + z)$
   \item \verb+huber+: $\rho(z) = z$ if $z \le 1$ and $\rho(z) = 2(\sqrt z - 1)$ otherwise
   \end{itemize}
+\item \verb+ad_sweep_size+: Characteristic size of the AD tape. Default is 1\,000 arithmetic operations for normal functions and 1\,000\,000 for functions containing integrals.
+\item \verb+n_threads+: Number of OpenMP threads. Default is 1.
 \end{itemize}
 
 \begin{verbatim}

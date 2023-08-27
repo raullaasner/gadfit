@@ -24,15 +24,16 @@ namespace gadfit {
 namespace gk {
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-std::vector<double> roots {};
+thread_local std::vector<double> roots {};
+// #pragma omp threadprivate(roots)
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-std::vector<double> weights_gauss {};
+thread_local std::vector<double> weights_gauss {};
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-std::vector<double> weights_gauss_2D {};
+thread_local std::vector<double> weights_gauss_2D {};
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-std::vector<double> weights_kronrod {};
+thread_local std::vector<double> weights_kronrod {};
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-std::vector<double> weights_kronrod_2D {};
+thread_local std::vector<double> weights_kronrod_2D {};
 
 } // gk namespace
 
@@ -65,7 +66,7 @@ struct Workspace
 };
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-std::vector<Workspace> workspaces {};
+thread_local std::vector<Workspace> workspaces {};
 
 auto initIntegration(const int workspace_size,
                      const int n_workspaces,
@@ -249,7 +250,7 @@ auto integrate(const integrandSignature& function,
 {
     // Integration order. Usually zero but in the case of double
     // integrals, equals 0 for the outer and 1 for the inner integral.
-    static int int_order { -1 };
+    thread_local static int int_order { -1 };
     ++int_order;
     if (workspaces.empty()) {
         initIntegration();
@@ -304,7 +305,9 @@ auto integrate(const integrandSignature& function,
             return result;
         }
     }
+    // LCOV_EXCL_START
     throw InsufficientIntegrationWorkspace {};
+    // LCOV_EXCL_STOP
 }
 
 // This function is called in conjunction with the main integration
@@ -836,7 +839,7 @@ auto integrate(const integrandSignature2D& function,
                              x2_val,
                              rel_error,
                              abs_error) };
-    static AdVar x2 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar x2 { 0.0, 0.0, 0.0, passive_idx };
     x2.val = x2_val;
     traceRecordY1(
       function, parameters, y1, x1, x2, rel_error, abs_error, result);
@@ -864,7 +867,7 @@ auto integrate(const integrandSignature2D& function,
                              x2.val,
                              rel_error,
                              abs_error) };
-    static AdVar x1 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar x1 { 0.0, 0.0, 0.0, passive_idx };
     x1.val = x1_val;
     traceRecordY1(
       function, parameters, y1, x1, x2, rel_error, abs_error, result);
@@ -892,7 +895,7 @@ auto integrate(const integrandSignature2D& function,
                              x2.val,
                              rel_error,
                              abs_error) };
-    static AdVar y2 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar y2 { 0.0, 0.0, 0.0, passive_idx };
     y2.val = y2_val;
     traceRecordY1(
       function, parameters, y1, x1, x2, rel_error, abs_error, result);
@@ -920,7 +923,7 @@ auto integrate(const integrandSignature2D& function,
                              x2.val,
                              rel_error,
                              abs_error) };
-    static AdVar y1 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar y1 { 0.0, 0.0, 0.0, passive_idx };
     y1.val = y1_val;
     traceRecordY2(
       function, parameters, y2, x1, x2, rel_error, abs_error, result);
@@ -948,9 +951,9 @@ auto integrate(const integrandSignature2D& function,
                              x2_val,
                              rel_error,
                              abs_error) };
-    static AdVar x1 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar x1 { 0.0, 0.0, 0.0, passive_idx };
     x1.val = x1_val;
-    static AdVar x2 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar x2 { 0.0, 0.0, 0.0, passive_idx };
     x2.val = x2_val;
     traceRecordY1(
       function, parameters, y1, x1, x2, rel_error, abs_error, result);
@@ -976,9 +979,9 @@ auto integrate(const integrandSignature2D& function,
                              x2.val,
                              rel_error,
                              abs_error) };
-    static AdVar y1 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar y1 { 0.0, 0.0, 0.0, passive_idx };
     y1.val = y1_val;
-    static AdVar y2 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar y2 { 0.0, 0.0, 0.0, passive_idx };
     y2.val = y2_val;
     traceRecordX1(
       function, parameters, x1, y1, y2, rel_error, abs_error, result);
@@ -1004,9 +1007,9 @@ auto integrate(const integrandSignature2D& function,
                              x2.val,
                              rel_error,
                              abs_error) };
-    static AdVar y2 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar y2 { 0.0, 0.0, 0.0, passive_idx };
     y2.val = y2_val;
-    static AdVar x1 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar x1 { 0.0, 0.0, 0.0, passive_idx };
     x1.val = x1_val;
     traceRecordY1(
       function, parameters, y1, x1, x2, rel_error, abs_error, result);
@@ -1032,9 +1035,9 @@ auto integrate(const integrandSignature2D& function,
                              x2_val,
                              rel_error,
                              abs_error) };
-    static AdVar y1 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar y1 { 0.0, 0.0, 0.0, passive_idx };
     y1.val = y1_val;
-    static AdVar x2 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar x2 { 0.0, 0.0, 0.0, passive_idx };
     x2.val = x2_val;
     traceRecordY2(
       function, parameters, y2, x1, x2, rel_error, abs_error, result);
@@ -1060,9 +1063,9 @@ auto integrate(const integrandSignature2D& function,
                              x2_val,
                              rel_error,
                              abs_error) };
-    static AdVar y2 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar y2 { 0.0, 0.0, 0.0, passive_idx };
     y2.val = y2_val;
-    static AdVar x2 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar x2 { 0.0, 0.0, 0.0, passive_idx };
     x2.val = x2_val;
     traceRecordY1(
       function, parameters, y1, x1, x2, rel_error, abs_error, result);
@@ -1088,9 +1091,9 @@ auto integrate(const integrandSignature2D& function,
                              x2.val,
                              rel_error,
                              abs_error) };
-    static AdVar y1 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar y1 { 0.0, 0.0, 0.0, passive_idx };
     y1.val = y1_val;
-    static AdVar x1 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar x1 { 0.0, 0.0, 0.0, passive_idx };
     x1.val = x1_val;
     traceRecordY2(
       function, parameters, y2, x1, x2, rel_error, abs_error, result);
@@ -1116,9 +1119,9 @@ auto integrate(const integrandSignature2D& function,
                              x2_val,
                              rel_error,
                              abs_error) };
-    static AdVar x1 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar x1 { 0.0, 0.0, 0.0, passive_idx };
     x1.val = x1_val;
-    static AdVar x2 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar x2 { 0.0, 0.0, 0.0, passive_idx };
     x2.val = x2_val;
     traceRecordY1(
       function, parameters, y1, x1, x2, rel_error, abs_error, result);
@@ -1142,9 +1145,9 @@ auto integrate(const integrandSignature2D& function,
                              x2_val,
                              rel_error,
                              abs_error) };
-    static AdVar x1 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar x1 { 0.0, 0.0, 0.0, passive_idx };
     x1.val = x1_val;
-    static AdVar x2 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar x2 { 0.0, 0.0, 0.0, passive_idx };
     x2.val = x2_val;
     traceRecordY2(
       function, parameters, y2, x1, x2, rel_error, abs_error, result);
@@ -1168,9 +1171,9 @@ auto integrate(const integrandSignature2D& function,
                              x2_val,
                              rel_error,
                              abs_error) };
-    static AdVar y1 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar y1 { 0.0, 0.0, 0.0, passive_idx };
     y1.val = y1_val;
-    static AdVar y2 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar y2 { 0.0, 0.0, 0.0, passive_idx };
     y2.val = y2_val;
     traceRecordX1(
       function, parameters, x1, y1, y2, rel_error, abs_error, result);
@@ -1194,9 +1197,9 @@ auto integrate(const integrandSignature2D& function,
                              x2.val,
                              rel_error,
                              abs_error) };
-    static AdVar y1 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar y1 { 0.0, 0.0, 0.0, passive_idx };
     y1.val = y1_val;
-    static AdVar y2 { 0.0, 0.0, 0.0, passive_idx };
+    thread_local static AdVar y2 { 0.0, 0.0, 0.0, passive_idx };
     y2.val = y2_val;
     traceRecordX2(
       function, parameters, x2, y1, y2, rel_error, abs_error, result);

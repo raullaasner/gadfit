@@ -23,30 +23,34 @@ namespace gadfit {
 namespace reverse {
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-int last_index;
+thread_local int last_index;
 // Value of index of the most recent seed AD variable. It is
 // determined in the most recent call to addADSeed and should equal
 // the number of active parameters in the LM procedure. Each call to
 // returnSweep resets last_index to this value.
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-int last_index_reset_value;
+thread_local int last_index_reset_value;
+// #pragma omp threadprivate(last_index_reset_value)
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-std::vector<double> forwards;
+thread_local std::vector<double> forwards;
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-std::vector<double> adjoints;
+thread_local std::vector<double> adjoints;
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-std::vector<double> constants;
+thread_local std::vector<double> constants;
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-int const_count;
+thread_local int const_count;
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-std::vector<int> trace;
+thread_local std::vector<int> trace;
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-int trace_count;
+thread_local int trace_count;
 
 } // namespace reverse
 
 auto initializeADReverse(const int sweep_size) -> void
 {
+    if (static_cast<size_t>(sweep_size) < reverse::forwards.size()) {
+        return;
+    }
     reverse::forwards.resize(sweep_size);
     reverse::adjoints.resize(sweep_size);
     // We assume 4 entries per operation in the execution trace, i.e.
@@ -58,12 +62,6 @@ auto initializeADReverse(const int sweep_size) -> void
     reverse::constants.clear();
     reverse::const_count = -1;
     // last_index is reset in addADSeed
-}
-
-auto adResetSweep() -> void
-{
-    reverse::trace_count = -1;
-    reverse::const_count = -1;
 }
 
 auto addADSeed(const AdVar& x) -> void

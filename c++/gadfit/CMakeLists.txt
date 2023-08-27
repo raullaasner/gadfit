@@ -17,45 +17,18 @@ target_sources(gadfit PRIVATE
   exceptions.cpp
   numerical_integration.cpp
   timer.cpp
-  mpi.cpp
-  scalapack.cpp
-  )
+)
 
 # C++20 features
 target_compile_features(gadfit PUBLIC cxx_std_20)
 
-if (first_run)
-  # Automatically detect USE_MPI
-  try_compile(MPI_OK ${PROJECT_BINARY_DIR}
-    ${PROJECT_SOURCE_DIR}/cmake/tests/MPI.cpp)
-  option(USE_MPI "Whether to compile with MPI support" ${MPI_OK})
-  try_compile(SCALAPACK_OK ${PROJECT_BINARY_DIR}
-    ${PROJECT_SOURCE_DIR}/cmake/tests/Scalapack.cpp
-    CMAKE_FLAGS
-    "-DLINK_DIRECTORIES=${LIBRARY_PATHS}"
-    "-DLINK_LIBRARIES=${LIBRARIES}")
-  option(USE_SCALAPACK "Whether to compile with Scalapack support"
-    ${SCALAPACK_OK})
-endif()
-
-# MPI
-if (USE_MPI)
-  target_compile_definitions(gadfit PUBLIC USE_MPI)
-  message("Using MPI")
+find_package(OpenMP QUIET)
+if (OpenMP_CXX_FOUND)
+  message("Using OpenMP")
+  target_link_libraries(gadfit PUBLIC OpenMP::OpenMP_CXX)
 else()
-  message("Not using MPI")
+  message("Not using OpenMP")
 endif()
-
-# Scalapack
-if (USE_SCALAPACK)
-  target_compile_definitions(gadfit PUBLIC USE_SCALAPACK)
-  message("Using Scalapack")
-else()
-  message("Not using Scalapack")
-endif()
-
-# Options and variables (C++ only)
-set(SPDLOG_PATH "" CACHE STRING "Path to spdlog installation directory")
 
 # Linear algebra library
 try_compile(LINALG_TEST ${CMAKE_CURRENT_BINARY_DIR}
@@ -74,6 +47,7 @@ endif()
 
 # Logging
 include(FetchContent)
+set(SPDLOG_PATH "" CACHE STRING "Path to spdlog installation directory")
 find_package(spdlog HINTS ${SPDLOG_PATH})
 if (NOT TARGET spdlog::spdlog)
   if (first_run)
@@ -93,8 +67,8 @@ target_include_directories(gadfit INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
   $<INSTALL_INTERFACE:include>)
 set(_headers
-  lm_solver.h automatic_differentiation.h exceptions.h fit_function.h mpi.h
-  scalapack.h numerical_integration.h timer.h)
+  lm_solver.h automatic_differentiation.h exceptions.h fit_function.h
+  numerical_integration.h timer.h)
 set_target_properties(gadfit PROPERTIES PUBLIC_HEADER "${_headers}")
 if (NOT CMAKE_VERSION VERSION_LESS 3.14.7)
   install(TARGETS gadfit
