@@ -24,7 +24,7 @@ option(BUILD_CXX_VERSION
 if (NOT BUILD_CXX_VERSION)
   enable_language(Fortran)
 endif()
-option(BUILD_SHARED_LIBS "If true, build a shared library, else static" ON)
+option(BUILD_SHARED_LIBS "If true, build a shared library, else static" OFF)
 
 set(LINK_LIBRARIES "" CACHE STRING
   "Libraries to be linked against when running tests")
