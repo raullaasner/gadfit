@@ -492,8 +492,10 @@ auto LMsolver::fit(double lambda) -> void
                 finished = true;
             }
         }
-        if (!ioTest(io::hide_all) && i_iteration == settings.iteration_limit) {
-            spdlog::info("Iteration limit reached");
+        if (i_iteration == settings.iteration_limit) {
+            if (!ioTest(io::hide_all)) {
+                spdlog::info("Iteration limit reached");
+            }
             finished = true;
         }
     }
