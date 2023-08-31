@@ -453,7 +453,7 @@ auto LMsolver::fit(double lambda) -> void
         // lambda_incs times consecutively.
         for (int i_lambda {}; i_lambda <= settings.lambda_incs; ++i_lambda) {
             const double new_chi2 { chi2() };
-            if (!ioTest(io::final_only)) {
+            if (!ioTest(io::hide_all) && !ioTest(io::final_only)) {
                 spdlog::debug("Current lambda: {}, new chi2 = {}, old chi2: {}",
                               lambda,
                               new_chi2,
@@ -462,7 +462,7 @@ auto LMsolver::fit(double lambda) -> void
             if (new_chi2 < old_chi2) {
                 lambda /= settings.lambda_down;
                 old_chi2 = new_chi2;
-                if (!ioTest(io::final_only)) {
+                if (!ioTest(io::hide_all) && !ioTest(io::final_only)) {
                     printIterationResults(i_iteration, lambda, new_chi2);
                 }
                 break;
@@ -481,7 +481,7 @@ auto LMsolver::fit(double lambda) -> void
                                  fit_functions);
             } else {
                 revertParameters(indices, old_parameters, fit_functions);
-                if (!ioTest(io::final_only)) {
+                if (!ioTest(io::hide_all) && !ioTest(io::final_only)) {
                     spdlog::info("Lambda increased {} times in a row",
                                  settings.lambda_incs);
                     spdlog::info("");
@@ -493,16 +493,17 @@ auto LMsolver::fit(double lambda) -> void
                 finished = true;
             }
         }
-        if (i_iteration == settings.iteration_limit) {
+        if (!ioTest(io::hide_all) && i_iteration == settings.iteration_limit) {
             spdlog::info("Iteration limit reached");
             finished = true;
         }
     }
     main_timer.stop();
-    if (ioTest(io::final_only) || settings.iteration_limit == 0) {
+    if (!ioTest(io::hide_all) && ioTest(io::final_only)
+        || settings.iteration_limit == 0) {
         printIterationResults(i_iteration, lambda, old_chi2);
     }
-    if (ioTest(io::timings)) {
+    if (!ioTest(io::hide_all) && ioTest(io::timings)) {
         printTimings();
     }
 }

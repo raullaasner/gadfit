@@ -60,7 +60,7 @@ struct Indices
 namespace io {
 
 // IO flags for the LMsolver::verbosity settings
-constexpr int n_io_flags { 7 };
+constexpr int n_io_flags { 8 };
 using flag = std::bitset<n_io_flags>;
 static constexpr flag all { 0b0000'0001 };
 static constexpr flag delta1 { 0b0000'0010 };
@@ -68,7 +68,8 @@ static constexpr flag delta2 { 0b0000'0100 };
 static constexpr flag timings { 0b0000'1000 };
 static constexpr flag hide_local { 0b0001'0000 };
 static constexpr flag hide_global { 0b0010'0000 };
-static constexpr flag final_only { 0b0100'0000 };
+static constexpr flag hide_all { 0b0100'0000 };
+static constexpr flag final_only { 0b1000'0000 };
 
 } // namespace io
 
