@@ -17,12 +17,11 @@
 
 #pragma once
 
+#include "automatic_differentiation.h"
+
 #include <functional>
-#include <vector>
 
 namespace gadfit {
-
-class AdVar;
 
 using fitSignature =
   std::function<AdVar(const std::vector<AdVar>&, const double)>;

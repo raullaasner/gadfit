@@ -12,7 +12,6 @@
 
 #include "lm_solver.h"
 
-#include "automatic_differentiation.h"
 #include "fit_function.h"
 #include "lapack.h"
 #include "numerical_integration.h"

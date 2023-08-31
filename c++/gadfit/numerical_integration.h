@@ -21,7 +21,6 @@
 
 #include "fit_function.h"
 
-#include <functional>
 #include <limits>
 
 namespace gadfit {
