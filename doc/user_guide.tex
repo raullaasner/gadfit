@@ -775,7 +775,8 @@ This is useful for developers.
 
 \subsubsection{C++}
 
-The C++ implementation of GADfit is thread-safe and is parallelized using OpenMP. That means you can speed up a single instance of the solver and/or call the solver from multiple threads in an OpenMP parallel region. The number of threads working on a single instance are set by a user parameter (\verb+LMsolver::settings::n_threads+) which defaults to 1. Regardless of the \verb+OMP_NUM_THREADS+ environment variable or a call to \verb+omp_set_num_threads+, the fitting procedure still runs on a single thread unless the parameter is set.
+The C++ implementation of GADfit is thread-safe and is parallelized using OpenMP. That means you can speed up a single instance of the solver and/or call the solver from multiple threads in an OpenMP parallel region. The number of threads working on a single instance are set by a user parameter\\
+(\verb+LMsolver::settings::n_threads+) which defaults to 1. Regardless of the \verb+OMP_NUM_THREADS+ environment variable or a call to \verb+omp_set_num_threads+, the fitting procedure still runs on a single thread unless the parameter is set.
 
 Under normal usage no OpenMP directives or functions need to be explicitly called. However, when calling some of the lower levels functions directly, such as allocating the AD tape variables, they need to be accompanied by the OpenMP parallel directive. If unsure have a look at the tests or the source code to see how certain GADfit functions must be called.
 
@@ -1123,6 +1124,21 @@ gadfit::LMsolver::getResiduals()
 gadfit::LMsolver::getInvJTJ()
 \end{verbatim}
 Get $\bm J$, $\bm J^T\bm J$, $\bm D^T\bm D$, left side of Eq.~\eqref{eq:LM}, right side of Eq.~\eqref{eq:LM}, the residuals $\bm y - \bm f(\bm \beta)$, or $(\bm J^T\bm J)^{-1}$, respectively.
+
+\begin{verbatim}
+gadfit::initIntegration(const int workspace_size = 1000,
+                        const int n_workspaces = 1)
+\end{verbatim}
+Allocate memory for integration routines. This must be called before \verb+LMsolver::fit+ if the fitting function contains integrals.
+\begin{itemize}
+\item \verb+workspace_size+: number of Gauss-Kronrod sub-intervals.
+\item \verb+n_workspaces+: number of integration levels (1 for single integrals, 2 for double integrals).
+\end{itemize}
+
+\begin{verbatim}
+gadfit::freeIntegration()
+\end{verbatim}
+Deallocate integration workspaces.
 
 \begin{verbatim}
 spdlog::set_pattern(pattern_string)
