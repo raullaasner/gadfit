@@ -30,19 +30,13 @@ else()
   message("Not using OpenMP")
 endif()
 
-# Linear algebra library
-try_compile(LINALG_TEST ${CMAKE_CURRENT_BINARY_DIR}
-  ${PROJECT_SOURCE_DIR}/cmake/tests/Linalg.cpp
-  CMAKE_FLAGS
-  "-DINCLUDE_DIRECTORIES=${INCLUDE_PATHS}"
-  "-DLINK_DIRECTORIES=${LIBRARY_PATHS}"
-  "-DLINK_LIBRARIES=${LIBRARIES}")
-if (LINALG_TEST)
-  target_sources(gadfit PRIVATE lapack.cpp)
-  message("Using optimized linear algebra library")
-else()
+# Linear algebra library for tests
+if (FALLBACK_LINALG)
   target_sources(gadfit PRIVATE lapack_fallback.cpp)
   message("Using fallback linear algebra routines")
+else()
+  target_sources(gadfit PRIVATE lapack.cpp)
+  message("Using optimized linear algebra library")
 endif()
 
 # Logging

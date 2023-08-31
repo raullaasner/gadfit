@@ -92,11 +92,10 @@ private:
     static constexpr double default_DTD_min {};
     static constexpr double default_acceleration_threshold { -1.0 };
     static constexpr int default_iteration_limit { 1000 };
-    static constexpr int default_ad_sweep_size { default_sweep_size };
     static constexpr int default_n_threads { 1 };
 
     // If setPar is called with this value, denotes a global fitting parameter
-    static constexpr int global_dataset_idx { passive_idx };
+    static constexpr int global_dataset_idx { -1 };
 
     Indices indices {};
     // All data sets must be added before any calls to setPar. This
@@ -193,7 +192,7 @@ public:
     [[nodiscard]] auto getResiduals() -> const std::vector<double>&;
     [[nodiscard]] auto getInvJTJ() -> const std::vector<double>&;
     [[nodiscard]] auto chi2() -> double;
-    ~LMsolver();
+    ~LMsolver() = default;
 
     struct
     {
@@ -206,7 +205,6 @@ public:
         double acceleration_threshold { default_acceleration_threshold };
         io::flag verbosity {};
         Loss loss { Loss::linear };
-        int ad_sweep_size { default_ad_sweep_size };
         int n_threads { default_n_threads };
     } settings; // NOLINT: exposing this is harmless and convenient
                 // for the user

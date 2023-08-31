@@ -3,6 +3,7 @@ name: main
 on: [push]
 
 env:
+  MKLROOT: /opt/intel/oneapi/mkl/latest
   OMP_NUM_THREADS: 8
 
 jobs:
@@ -43,8 +44,8 @@ jobs:
           mkdir build && cd build
           cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
           -D CMAKE_BUILD_TYPE=Debug \
-          -D LIBRARY_PATHS=/opt/intel/oneapi/mkl/latest/lib/intel64 \
-          -D LIBRARIES="mkl_gf_lp64;mkl_sequential;mkl_core" \
+          -D FALLBACK_LINALG=OFF \
+          -D LINK_LIBRARIES="${MKLROOT}/lib/intel64/libmkl_gnu_thread.so;${MKLROOT}/lib/intel64/libmkl_gf_lp64.so;${MKLROOT}/lib/intel64/libmkl_sequential.so;${MKLROOT}/lib/intel64/libmkl_core.so" \
           ..
       - name: build
         run: cmake --build build
@@ -59,8 +60,8 @@ jobs:
           mkdir build && cd build
           cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
           -D CMAKE_BUILD_TYPE=Release \
-          -D LIBRARY_PATHS=/opt/intel/oneapi/mkl/latest/lib/intel64 \
-          -D LIBRARIES="mkl_gf_lp64;mkl_sequential;mkl_core" \
+          -D FALLBACK_LINALG=OFF \
+          -D LINK_LIBRARIES="${MKLROOT}/lib/intel64/libmkl_gnu_thread.so;${MKLROOT}/lib/intel64/libmkl_gf_lp64.so;${MKLROOT}/lib/intel64/libmkl_sequential.so;${MKLROOT}/lib/intel64/libmkl_core.so" \
           ..
       - name: build
         run: cmake --build build
@@ -75,7 +76,8 @@ jobs:
           mkdir build && cd build
           cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
           -D CMAKE_BUILD_TYPE=Release \
-          -D LIBRARIES="lapack" \
+          -D FALLBACK_LINALG=OFF \
+          -D LINK_LIBRARIES="blas;lapack" \
           ..
       - name: build
         run: cmake --build build
@@ -92,8 +94,7 @@ jobs:
           -D CMAKE_BUILD_TYPE=Debug \
           -D BUILD_CXX_VERSION=OFF \
           -D OPEN_COARRAYS=/usr/local/opencoarrays/lib/libcaf_mpi.a \
-          -D LIBRARY_PATHS=/usr/lib/openmpi \
-          -D LIBRARIES=mpi \
+          -D LINK_LIBRARIES=mpi \
           ..
       - name: build
         run: cmake --build build
@@ -110,8 +111,7 @@ jobs:
           -D CMAKE_BUILD_TYPE=Release \
           -D BUILD_CXX_VERSION=OFF \
           -D OPEN_COARRAYS=/usr/local/opencoarrays/lib/libcaf_mpi.a \
-          -D LIBRARY_PATHS=/usr/lib/openmpi \
-          -D LIBRARIES=mpi \
+          -D LINK_LIBRARIES=mpi \
           ..
       - name: build
         run: cmake --build build
@@ -128,8 +128,8 @@ jobs:
           -D CMAKE_BUILD_TYPE=Debug \
           -D BUILD_CXX_VERSION=OFF \
           -D OPEN_COARRAYS=/usr/local/opencoarrays/lib/libcaf_mpi.a \
-          -D LIBRARY_PATHS="/usr/lib/openmpi;/opt/intel/oneapi/mkl/latest/lib/intel64" \
-          -D LIBRARIES="mpi;mkl_gf_lp64;mkl_sequential;mkl_core" \
+          -D FALLBACK_LINALG=OFF \
+          -D LINK_LIBRARIES="${MKLROOT}/lib/intel64/libmkl_gf_lp64.so;${MKLROOT}/lib/intel64/libmkl_sequential.so;${MKLROOT}/lib/intel64/libmkl_core.so" \
           ..
       - name: build
         run: cmake --build build
@@ -146,8 +146,8 @@ jobs:
           -D CMAKE_BUILD_TYPE=Release \
           -D BUILD_CXX_VERSION=OFF \
           -D OPEN_COARRAYS=/usr/local/opencoarrays/lib/libcaf_mpi.a \
-          -D LIBRARY_PATHS="/usr/lib/openmpi;/opt/intel/oneapi/mkl/latest/lib/intel64" \
-          -D LIBRARIES="mpi;mkl_gf_lp64;mkl_sequential;mkl_core" \
+          -D FALLBACK_LINALG=OFF \
+          -D LINK_LIBRARIES="${MKLROOT}/lib/intel64/libmkl_gf_lp64.so;${MKLROOT}/lib/intel64/libmkl_sequential.so;${MKLROOT}/lib/intel64/libmkl_core.so" \
           ..
       - name: build
         run: cmake --build build
@@ -164,8 +164,7 @@ jobs:
           -D CMAKE_BUILD_TYPE=Release \
           -D BUILD_CXX_VERSION=OFF \
           -D OPEN_COARRAYS=/usr/local/opencoarrays/lib/libcaf_mpi.a \
-          -D LIBRARY_PATHS=/usr/lib/openmpi \
-          -D LIBRARIES="mpi;blas;lapack" \
+          -D LINK_LIBRARIES="blas;lapack \
           ..
       - name: build
         run: cmake --build build

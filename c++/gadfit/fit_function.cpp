@@ -12,6 +12,8 @@
 
 #include "fit_function.h"
 
+#include "automatic_differentiation.h"
+
 namespace gadfit {
 
 [[nodiscard]] auto FitFunction::par(const int i_par) -> AdVar&

@@ -22,14 +22,12 @@ target_sources(gadfit PRIVATE
   numerical_integration.F90
   )
 
-# Options and variables (Fortran only)
+# Options and variables
 option(USE_AD "If disabled, use finite differences" ON)
 option(QUAD_PRECISION "Whether to use quadruple or double precision" OFF)
-
-# Compiler capabilities
-set(HAS_CO_SUM TRUE)
-if (CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
-  set(HAS_CO_SUM FALSE)
+set(OPEN_COARRAYS "" CACHE STRING "Full path to libcaf_mpi.a")
+if (OPEN_COARRAYS AND NOT BUILD_CXX_VERSION)
+  target_link_libraries(gadfit PRIVATE ${OPEN_COARRAYS})
 endif()
 
 target_include_directories(gadfit PRIVATE ${PROJECT_BINARY_DIR})

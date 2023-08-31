@@ -21,18 +21,13 @@ set(tests
 
 enable_testing()
 
-# Linear algebra libraries
-try_compile(LINALG_TEST ${CMAKE_CURRENT_BINARY_DIR}
-  ${PROJECT_SOURCE_DIR}/cmake/tests/Linalg.f90
-  CMAKE_FLAGS
-  "-DLINK_LIBRARIES=${LIBRARIES}"
-  "-DLINK_DIRECTORIES=${LIBRARY_PATHS}")
-if (LINALG_TEST)
-  message(STATUS "Linear algebra library is OK")
-else()
-  message(STATUS "Fallback linear algebra library is used for tests.")
+# Linear algebra library for tests
+if (FALLBACK_LINALG)
   add_library(lapack-fallback SHARED EXCLUDE_FROM_ALL lapack-fallback.f)
-  list(APPEND LIBRARIES lapack-fallback)
+  list(APPEND LINK_LIBRARIES lapack-fallback)
+  message("Using fallback linear algebra routines")
+else()
+  message("Using optimized linear algebra library")
 endif()
 
 # OpenCoarrays
@@ -58,11 +53,11 @@ if (NOT OPEN_COARRAYS AND CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
     copy ${_caf_lib_dir}/libcaf_mpi.a ${CMAKE_CURRENT_BINARY_DIR}
     BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/libcaf_mpi.a
     )
-  list(APPEND LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libcaf_mpi.a)
+  list(APPEND LINK_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libcaf_mpi.a)
 endif()
 
 # GADfit
-list(APPEND LIBRARIES gadfit)
+list(APPEND LINK_LIBRARIES gadfit)
 
 # Example input
 add_executable(example0 EXCLUDE_FROM_ALL example.F90)
@@ -76,7 +71,7 @@ if (TARGET OpenCoarrays-fallback)
   add_dependencies(example0 OpenCoarrays-fallback)
 endif()
 target_include_directories(example0 PRIVATE ${PROJECT_BINARY_DIR})
-target_link_libraries(example0 ${LIBRARIES})
+target_link_libraries(example0 ${LINK_LIBRARIES})
 add_custom_target(example
   COMMAND ${TESTS_RUN_PREFIX} ${CMAKE_CURRENT_BINARY_DIR}/example0
   DEPENDS example0)
@@ -86,7 +81,7 @@ add_library(fortran_testing EXCLUDE_FROM_ALL testing.F90)
 if (TARGET OpenCoarrays-fallback)
   add_dependencies(fortran_testing OpenCoarrays-fallback)
 endif()
-target_link_libraries(fortran_testing PUBLIC ${LIBRARIES})
+target_link_libraries(fortran_testing PUBLIC ${LINK_LIBRARIES})
 foreach(f ${tests})
   add_executable(${f} EXCLUDE_FROM_ALL ${f}.F90)
   # If a test requires input data, include that in a separate module.

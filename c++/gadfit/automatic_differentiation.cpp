@@ -14,6 +14,7 @@
 
 #include "exceptions.h"
 
+#include <algorithm>
 #include <cassert>
 #include <iomanip>
 #include <numbers>
@@ -23,52 +24,16 @@ namespace gadfit {
 namespace reverse {
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-thread_local int last_index;
-// Value of index of the most recent seed AD variable. It is
-// determined in the most recent call to addADSeed and should equal
-// the number of active parameters in the LM procedure. Each call to
-// returnSweep resets last_index to this value.
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-thread_local int last_index_reset_value;
-// #pragma omp threadprivate(last_index_reset_value)
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 thread_local std::vector<double> forwards;
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-thread_local std::vector<double> adjoints;
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-thread_local std::vector<double> constants;
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-thread_local int const_count;
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 thread_local std::vector<int> trace;
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-thread_local int trace_count;
 
 } // namespace reverse
 
-auto initializeADReverse(const int sweep_size) -> void
-{
-    if (static_cast<size_t>(sweep_size) < reverse::forwards.size()) {
-        return;
-    }
-    reverse::forwards.resize(sweep_size);
-    reverse::adjoints.resize(sweep_size);
-    // We assume 4 entries per operation in the execution trace, i.e.
-    // most operations are expected to be binary.
-    reverse::trace.resize(static_cast<int>(4 * sweep_size));
-    reverse::trace_count = -1;
-    // We assume that 1/2 of all elemental operations produce a
-    // constant to be saved for the return sweep.
-    reverse::constants.clear();
-    reverse::const_count = -1;
-    // last_index is reset in addADSeed
-}
-
 auto addADSeed(const AdVar& x) -> void
 {
-    reverse::forwards[x.idx] = x.val;
-    reverse::last_index = x.idx;
-    reverse::last_index_reset_value = reverse::last_index;
+    reverse::forwards.resize(x.idx + 1);
+    reverse::forwards.back() = x.val;
 }
 
 auto AdVar::operator-() const -> AdVar
@@ -99,26 +64,26 @@ auto operator+(const AdVar& x1, const AdVar& x2) -> AdVar
     assert(!(x1.idx == forward_active_idx && x2.idx > passive_idx));
     AdVar y { x1.val + x2.val };
     if (x1.idx > passive_idx && x2.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x1.idx;
-        reverse::trace[++reverse::trace_count] = x2.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::add_a_a);
+        // Index of the last element added to forward values is always
+        // related to the size of the forward values array.
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x1.idx);
+        reverse::trace.push_back(x2.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::add_a_a));
     } else if (x1.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x1.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::add_subtract_a_r);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x1.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::add_subtract_a_r));
     } else if (x2.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x2.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::add_subtract_a_r);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x2.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::add_subtract_a_r));
     } else if (x1.idx == forward_active_idx && x2.idx == forward_active_idx) {
         y.d = x1.d + x2.d;
         y.dd = x1.dd + x2.dd;
@@ -145,27 +110,24 @@ auto operator-(const AdVar& x1, const AdVar& x2) -> AdVar
     assert(!(x1.idx == forward_active_idx && x2.idx > passive_idx));
     AdVar y { x1.val - x2.val };
     if (x1.idx > passive_idx && x2.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x1.idx;
-        reverse::trace[++reverse::trace_count] = x2.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::subtract_a_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x1.idx);
+        reverse::trace.push_back(x2.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::subtract_a_a));
     } else if (x1.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x1.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::add_subtract_a_r);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x1.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::add_subtract_a_r));
     } else if (x2.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x2.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::subtract_r_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x2.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::subtract_r_a));
     } else if (x1.idx == forward_active_idx && x2.idx == forward_active_idx) {
         y.d = x1.d - x2.d;
         y.dd = x1.dd - x2.dd;
@@ -192,36 +154,32 @@ auto operator*(const AdVar& x1, const AdVar& x2) -> AdVar
     assert(!(x1.idx == forward_active_idx && x2.idx > passive_idx));
     AdVar y { x1.val * x2.val };
     if (x1.idx > passive_idx && x2.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x1.idx;
-        reverse::trace[++reverse::trace_count] = x2.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::multiply_a_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x1.idx);
+        reverse::trace.push_back(x2.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::multiply_a_a));
     } else if (x1.idx > passive_idx) {
         // Typically we start by setting the index and value of the
         // result (y). However, if there is a constant involved we
         // save that first. It can be referenced in the return sweep
-        // as forwards[trace[trace_count-1]-1] where
-        // trace[trace_count-1] is the index of y and by subtracting 1
-        // we refer to the value that precedes y in the forward array,
-        // i.e. the constant.
-        reverse::forwards[++reverse::last_index] = x2.val;
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x1.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::multiply_divide_a_r);
+        // as forwards[trace[i_tr-1]-1] where trace[i_tr-1] is the
+        // index of y and by subtracting 1 we refer to the value that
+        // precedes y in the forward array, i.e. the constant.
+        reverse::forwards.push_back(x2.val);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x1.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::multiply_divide_a_r));
     } else if (x2.idx > passive_idx) {
-        reverse::forwards[++reverse::last_index] = x1.val;
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x2.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::multiply_divide_a_r);
+        reverse::forwards.push_back(x1.val);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x2.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::multiply_divide_a_r));
     } else if (x1.idx == forward_active_idx && x2.idx == forward_active_idx) {
         y.d = x1.d * x2.val + x1.val * x2.d;
         y.dd = x1.dd * x2.val + 2 * x1.d * x2.d + x1.val * x2.dd;
@@ -249,29 +207,26 @@ auto operator/(const AdVar& x1, const AdVar& x2) -> AdVar
     const double inv_x2 { 1.0 / x2.val };
     AdVar y { x1.val * inv_x2 };
     if (x1.idx > passive_idx && x2.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x1.idx;
-        reverse::trace[++reverse::trace_count] = x2.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::divide_a_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x1.idx);
+        reverse::trace.push_back(x2.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::divide_a_a));
     } else if (x1.idx > passive_idx) {
-        reverse::forwards[++reverse::last_index] = inv_x2;
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x1.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::multiply_divide_a_r);
+        reverse::forwards.push_back(inv_x2);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x1.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::multiply_divide_a_r));
     } else if (x2.idx > passive_idx) {
-        reverse::forwards[++reverse::last_index] = x1.val;
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x2.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::divide_r_a);
+        reverse::forwards.push_back(x1.val);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x2.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::divide_r_a));
     } else if (x1.idx == forward_active_idx && x2.idx == forward_active_idx) {
         y.d = (x1.d - x2.d * y.val) * inv_x2;
         y.dd = (x1.dd - x2.dd * y.val - 2 * y.d * x2.d) * inv_x2;
@@ -298,26 +253,26 @@ auto pow(const AdVar& x1, const AdVar& x2) -> AdVar
     assert(!(x1.idx == forward_active_idx && x2.idx > passive_idx));
     AdVar y { std::pow(x1.val, x2.val) };
     if (x1.idx > passive_idx && x2.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x1.idx;
-        reverse::trace[++reverse::trace_count] = x2.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::pow_a_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x1.idx);
+        reverse::trace.push_back(x2.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::pow_a_a));
     } else if (x1.idx > passive_idx) {
-        reverse::forwards[++reverse::last_index] = x2.val;
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x1.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::pow_a_r);
+        reverse::forwards.push_back(x2.val);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x1.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::pow_a_r));
     } else if (x2.idx > passive_idx) {
-        reverse::forwards[++reverse::last_index] = x1.val;
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x2.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::pow_r_a);
+        reverse::forwards.push_back(x1.val);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x2.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::pow_r_a));
     } else if (x1.idx == forward_active_idx && x2.idx == forward_active_idx) {
         const double log_value { std::log(x1.val) };
         y.d = x1.d * x2.val * std::pow(x1.val, x2.val - 1)
@@ -353,11 +308,11 @@ auto log(const AdVar& x) -> AdVar
 {
     AdVar y { std::log(x.val) };
     if (x.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::log_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::log_a));
     } else if (x.idx == forward_active_idx) {
         const double inv_x { 1.0 / x.val };
         y.d = x.d * inv_x;
@@ -375,11 +330,11 @@ auto exp(const AdVar& x) -> AdVar
 {
     AdVar y { std::exp(x.val) };
     if (x.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::exp_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::exp_a));
     } else if (x.idx == forward_active_idx) {
         y.d = x.d * y.val;
         y.dd = x.dd * y.val + x.d * y.d;
@@ -396,11 +351,11 @@ auto sqrt(const AdVar& x) -> AdVar
 {
     AdVar y { std::sqrt(x.val) };
     if (x.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::sqrt_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::sqrt_a));
     } else if (x.idx == forward_active_idx) {
         const double inv_y { 1.0 / y.val };
         y.d = x.d / 2 * inv_y;
@@ -418,11 +373,11 @@ auto abs(const AdVar& x) -> AdVar
 {
     AdVar y { std::abs(x.val) };
     if (x.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::abs_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::abs_a));
     } else if (x.idx == forward_active_idx) {
         y.d = x.d * (std::signbit(x.val) ? -1 : 1);
         y.dd = x.dd * (std::signbit(x.val) ? -1 : 1);
@@ -439,11 +394,11 @@ auto sin(const AdVar& x) -> AdVar
 {
     AdVar y { std::sin(x.val) };
     if (x.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::sin_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::sin_a));
     } else if (x.idx == forward_active_idx) {
         const double cos_value { std::cos(x.val) };
         y.d = x.d * cos_value;
@@ -461,11 +416,11 @@ auto cos(const AdVar& x) -> AdVar
 {
     AdVar y { std::cos(x.val) };
     if (x.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::cos_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::cos_a));
     } else if (x.idx == forward_active_idx) {
         const double sin_value { -std::sin(x.val) };
         y.d = x.d * sin_value;
@@ -483,11 +438,11 @@ auto tan(const AdVar& x) -> AdVar
 {
     AdVar y { std::tan(x.val) };
     if (x.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::tan_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::tan_a));
     } else if (x.idx == forward_active_idx) {
         const double inv_cos_value { 1.0 / std::cos(x.val) };
         const double inv_cos_value2 { inv_cos_value * inv_cos_value };
@@ -506,11 +461,11 @@ auto asin(const AdVar& x) -> AdVar
 {
     AdVar y { std::asin(x.val) };
     if (x.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::asin_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::asin_a));
     } else if (x.idx == forward_active_idx) {
         const double tmp { 1.0 / std::sqrt(1 - x.val * x.val) };
         y.d = x.d * tmp;
@@ -528,11 +483,11 @@ auto acos(const AdVar& x) -> AdVar
 {
     AdVar y { std::acos(x.val) };
     if (x.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::acos_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::acos_a));
     } else if (x.idx == forward_active_idx) {
         const double tmp { -1.0 / std::sqrt(1 - x.val * x.val) };
         y.d = x.d * tmp;
@@ -550,11 +505,11 @@ auto atan(const AdVar& x) -> AdVar
 {
     AdVar y { std::atan(x.val) };
     if (x.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::atan_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::atan_a));
     } else if (x.idx == forward_active_idx) {
         const double tmp { 1.0 / (1 + x.val * x.val) };
         y.d = x.d * tmp;
@@ -572,11 +527,11 @@ auto sinh(const AdVar& x) -> AdVar
 {
     AdVar y { std::sinh(x.val) };
     if (x.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::sinh_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::sinh_a));
     } else if (x.idx == forward_active_idx) {
         const double cosh_value { std::cosh(x.val) };
         y.d = x.d * cosh_value;
@@ -594,11 +549,11 @@ auto cosh(const AdVar& x) -> AdVar
 {
     AdVar y { std::cosh(x.val) };
     if (x.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::cosh_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::cosh_a));
     } else if (x.idx == forward_active_idx) {
         const double sinh_value { std::sinh(x.val) };
         y.d = x.d * sinh_value;
@@ -616,11 +571,11 @@ auto tanh(const AdVar& x) -> AdVar
 {
     AdVar y { std::tanh(x.val) };
     if (x.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::tanh_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::tanh_a));
     } else if (x.idx == forward_active_idx) {
         const double inv_cosh_value { 1.0 / std::cosh(x.val) };
         const double inv_cosh_value2 { inv_cosh_value * inv_cosh_value };
@@ -639,11 +594,11 @@ auto asinh(const AdVar& x) -> AdVar
 {
     AdVar y { std::asinh(x.val) };
     if (x.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::asinh_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::asinh_a));
     } else if (x.idx == forward_active_idx) {
         const double tmp { 1.0 / std::sqrt(x.val * x.val + 1) };
         y.d = x.d * tmp;
@@ -661,11 +616,11 @@ auto acosh(const AdVar& x) -> AdVar
 {
     AdVar y { std::acosh(x.val) };
     if (x.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::acosh_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::acosh_a));
     } else if (x.idx == forward_active_idx) {
         const double tmp { 1.0 / std::sqrt(x.val * x.val - 1) };
         y.d = x.d * tmp;
@@ -683,11 +638,11 @@ auto atanh(const AdVar& x) -> AdVar
 {
     AdVar y { std::atanh(x.val) };
     if (x.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::atanh_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::atanh_a));
     } else if (x.idx == forward_active_idx) {
         const double tmp { 1.0 / (1 - x.val * x.val) };
         y.d = x.d * tmp;
@@ -705,11 +660,11 @@ auto erf(const AdVar& x) -> AdVar
 {
     AdVar y { std::erf(x.val) };
     if (x.idx > passive_idx) {
-        y.idx = ++reverse::last_index;
-        reverse::forwards[reverse::last_index] = y.val;
-        reverse::trace[++reverse::trace_count] = x.idx;
-        reverse::trace[++reverse::trace_count] = y.idx;
-        reverse::trace[++reverse::trace_count] = static_cast<int>(Op::erf_a);
+        y.idx = static_cast<int>(reverse::forwards.size());
+        reverse::forwards.push_back(y.val);
+        reverse::trace.push_back(x.idx);
+        reverse::trace.push_back(y.idx);
+        reverse::trace.push_back(static_cast<int>(Op::erf_a));
     } else if (x.idx == forward_active_idx) {
         const double tmp { 2 * std::numbers::inv_sqrtpi
                            * std::exp(-x.val * x.val) };
@@ -724,249 +679,202 @@ auto erf(const AdVar& x) -> AdVar
     return y;
 }
 
-auto returnSweep() -> void
+auto returnSweep(const int rewind_index, std::vector<double>& adjoints) -> void
 {
-    using reverse::adjoints;
     using reverse::forwards;
     using reverse::trace;
-    using reverse::trace_count;
-    assert(reverse::last_index < static_cast<int>(forwards.size()));
-    assert(reverse::const_count < static_cast<int>(reverse::constants.size()));
-    assert(trace_count < static_cast<int>(trace.size()));
-    for (int i {}; i < reverse::last_index; ++i) {
-        adjoints[i] = 0.0;
+    adjoints.assign(forwards.size(), 0.0);
+    if (!adjoints.empty()) {
+        adjoints.back() = 1.0;
     }
-    adjoints[reverse::last_index] = 1.0;
+    // Current position on the AD trace
+    int i_tr { static_cast<int>(trace.size()) - 1 };
     // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
     double tmp;
-    while (trace_count > 0) {
-        switch (static_cast<Op>(trace[trace_count])) {
+    while (i_tr > 0) {
+        switch (static_cast<Op>(trace[i_tr])) {
         case Op::add_a_a:
-            adjoints[trace[trace_count - 3]] +=
-              adjoints[trace[trace_count - 1]];
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]];
-            trace_count -= 4;
+            adjoints[trace[i_tr - 3]] += adjoints[trace[i_tr - 1]];
+            adjoints[trace[i_tr - 2]] += adjoints[trace[i_tr - 1]];
+            i_tr -= 4;
             break;
         case Op::add_subtract_a_r:
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]];
-            trace_count -= 3;
+            adjoints[trace[i_tr - 2]] += adjoints[trace[i_tr - 1]];
+            i_tr -= 3;
             break;
         case Op::subtract_a_a:
-            adjoints[trace[trace_count - 3]] +=
-              adjoints[trace[trace_count - 1]];
-            adjoints[trace[trace_count - 2]] -=
-              adjoints[trace[trace_count - 1]];
-            trace_count -= 4;
+            adjoints[trace[i_tr - 3]] += adjoints[trace[i_tr - 1]];
+            adjoints[trace[i_tr - 2]] -= adjoints[trace[i_tr - 1]];
+            i_tr -= 4;
             break;
         case Op::subtract_r_a:
-            adjoints[trace[trace_count - 2]] -=
-              adjoints[trace[trace_count - 1]];
-            trace_count -= 3;
+            adjoints[trace[i_tr - 2]] -= adjoints[trace[i_tr - 1]];
+            i_tr -= 3;
             break;
         case Op::multiply_a_a:
-            adjoints[trace[trace_count - 3]] +=
-              adjoints[trace[trace_count - 1]]
-              * forwards[trace[trace_count - 2]];
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]]
-              * forwards[trace[trace_count - 3]];
-            trace_count -= 4;
+            adjoints[trace[i_tr - 3]] +=
+              adjoints[trace[i_tr - 1]] * forwards[trace[i_tr - 2]];
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]] * forwards[trace[i_tr - 3]];
+            i_tr -= 4;
             break;
         case Op::multiply_divide_a_r:
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]]
-              * forwards[trace[trace_count - 1] - 1];
-            trace_count -= 3;
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]] * forwards[trace[i_tr - 1] - 1];
+            i_tr -= 3;
             break;
         case Op::divide_a_a:
-            adjoints[trace[trace_count - 3]] +=
-              adjoints[trace[trace_count - 1]]
-              / forwards[trace[trace_count - 2]];
-            adjoints[trace[trace_count - 2]] -=
-              adjoints[trace[trace_count - 1]]
-              * forwards[trace[trace_count - 1]]
-              / forwards[trace[trace_count - 2]];
-            trace_count -= 4;
+            adjoints[trace[i_tr - 3]] +=
+              adjoints[trace[i_tr - 1]] / forwards[trace[i_tr - 2]];
+            adjoints[trace[i_tr - 2]] -= adjoints[trace[i_tr - 1]]
+                                         * forwards[trace[i_tr - 1]]
+                                         / forwards[trace[i_tr - 2]];
+            i_tr -= 4;
             break;
         case Op::divide_r_a:
-            adjoints[trace[trace_count - 2]] -=
-              adjoints[trace[trace_count - 1]]
-              * forwards[trace[trace_count - 1] - 1]
-              / forwards[trace[trace_count - 2]]
-              / forwards[trace[trace_count - 2]];
-            trace_count -= 3;
+            adjoints[trace[i_tr - 2]] -=
+              adjoints[trace[i_tr - 1]] * forwards[trace[i_tr - 1] - 1]
+              / forwards[trace[i_tr - 2]] / forwards[trace[i_tr - 2]];
+            i_tr -= 3;
             break;
         case Op::pow_a_a:
-            adjoints[trace[trace_count - 3]] +=
-              adjoints[trace[trace_count - 1]]
-              * forwards[trace[trace_count - 2]]
-              * std::pow(forwards[trace[trace_count - 3]],
-                         forwards[trace[trace_count - 2]] - 1);
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]]
-              * std::log(forwards[trace[trace_count - 3]])
-              * std::pow(forwards[trace[trace_count - 3]],
-                         forwards[trace[trace_count - 2]]);
-            trace_count -= 4;
+            adjoints[trace[i_tr - 3]] +=
+              adjoints[trace[i_tr - 1]] * forwards[trace[i_tr - 2]]
+              * std::pow(forwards[trace[i_tr - 3]],
+                         forwards[trace[i_tr - 2]] - 1);
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]] * std::log(forwards[trace[i_tr - 3]])
+              * std::pow(forwards[trace[i_tr - 3]], forwards[trace[i_tr - 2]]);
+            i_tr -= 4;
             break;
         case Op::pow_a_r:
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]]
-              * forwards[trace[trace_count - 1] - 1]
-              * std::pow(forwards[trace[trace_count - 2]],
-                         forwards[trace[trace_count - 1] - 1] - 1);
-            trace_count -= 3;
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]] * forwards[trace[i_tr - 1] - 1]
+              * std::pow(forwards[trace[i_tr - 2]],
+                         forwards[trace[i_tr - 1] - 1] - 1);
+            i_tr -= 3;
             break;
         case Op::pow_r_a:
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]]
-              * std::log(forwards[trace[trace_count - 1] - 1])
-              * std::pow(forwards[trace[trace_count - 1] - 1],
-                         forwards[trace[trace_count - 2]]);
-            // --reverse::const_count;
-            trace_count -= 3;
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]]
+              * std::log(forwards[trace[i_tr - 1] - 1])
+              * std::pow(forwards[trace[i_tr - 1] - 1],
+                         forwards[trace[i_tr - 2]]);
+            i_tr -= 3;
             break;
         case Op::log_a:
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]]
-              / forwards[trace[trace_count - 2]];
-            trace_count -= 3;
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]] / forwards[trace[i_tr - 2]];
+            i_tr -= 3;
             break;
         case Op::exp_a:
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]]
-              * forwards[trace[trace_count - 1]];
-            trace_count -= 3;
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]] * forwards[trace[i_tr - 1]];
+            i_tr -= 3;
             break;
         case Op::sqrt_a:
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]] / 2
-              / forwards[trace[trace_count - 1]];
-            trace_count -= 3;
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]] / 2 / forwards[trace[i_tr - 1]];
+            i_tr -= 3;
             break;
         case Op::abs_a:
-            if (forwards[trace[trace_count - 2]] < 0.0) {
-                adjoints[trace[trace_count - 2]] -=
-                  adjoints[trace[trace_count - 1]];
+            if (forwards[trace[i_tr - 2]] < 0.0) {
+                adjoints[trace[i_tr - 2]] -= adjoints[trace[i_tr - 1]];
             } else {
-                adjoints[trace[trace_count - 2]] +=
-                  adjoints[trace[trace_count - 1]];
+                adjoints[trace[i_tr - 2]] += adjoints[trace[i_tr - 1]];
             }
-            trace_count -= 3;
+            i_tr -= 3;
             break;
         case Op::sin_a:
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]]
-              * std::cos(forwards[trace[trace_count - 2]]);
-            trace_count -= 3;
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]] * std::cos(forwards[trace[i_tr - 2]]);
+            i_tr -= 3;
             break;
         case Op::cos_a:
-            adjoints[trace[trace_count - 2]] -=
-              adjoints[trace[trace_count - 1]]
-              * std::sin(forwards[trace[trace_count - 2]]);
-            trace_count -= 3;
+            adjoints[trace[i_tr - 2]] -=
+              adjoints[trace[i_tr - 1]] * std::sin(forwards[trace[i_tr - 2]]);
+            i_tr -= 3;
             break;
         case Op::tan_a:
-            tmp = std::cos(forwards[trace[trace_count - 2]]);
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]] / (tmp * tmp);
-            trace_count -= 3;
+            tmp = std::cos(forwards[trace[i_tr - 2]]);
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]] / (tmp * tmp);
+            i_tr -= 3;
             break;
         case Op::asin_a:
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]]
-              / std::sqrt(1
-                          - forwards[trace[trace_count - 2]]
-                              * forwards[trace[trace_count - 2]]);
-            trace_count -= 3;
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]]
+              / std::sqrt(
+                1 - forwards[trace[i_tr - 2]] * forwards[trace[i_tr - 2]]);
+            i_tr -= 3;
             break;
         case Op::acos_a:
-            adjoints[trace[trace_count - 2]] -=
-              adjoints[trace[trace_count - 1]]
-              / std::sqrt(1
-                          - forwards[trace[trace_count - 2]]
-                              * forwards[trace[trace_count - 2]]);
-            trace_count -= 3;
+            adjoints[trace[i_tr - 2]] -=
+              adjoints[trace[i_tr - 1]]
+              / std::sqrt(
+                1 - forwards[trace[i_tr - 2]] * forwards[trace[i_tr - 2]]);
+            i_tr -= 3;
             break;
         case Op::atan_a:
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]]
-              / (1
-                 + forwards[trace[trace_count - 2]]
-                     * forwards[trace[trace_count - 2]]);
-            trace_count -= 3;
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]]
+              / (1 + forwards[trace[i_tr - 2]] * forwards[trace[i_tr - 2]]);
+            i_tr -= 3;
             break;
         case Op::sinh_a:
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]]
-              * std::cosh(forwards[trace[trace_count - 2]]);
-            trace_count -= 3;
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]] * std::cosh(forwards[trace[i_tr - 2]]);
+            i_tr -= 3;
             break;
         case Op::cosh_a:
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]]
-              * std::sinh(forwards[trace[trace_count - 2]]);
-            trace_count -= 3;
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]] * std::sinh(forwards[trace[i_tr - 2]]);
+            i_tr -= 3;
             break;
         case Op::tanh_a:
-            tmp = std::cosh(forwards[trace[trace_count - 2]]);
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]] / (tmp * tmp);
-            trace_count -= 3;
+            tmp = std::cosh(forwards[trace[i_tr - 2]]);
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]] / (tmp * tmp);
+            i_tr -= 3;
             break;
         case Op::asinh_a:
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]]
-              / std::sqrt(forwards[trace[trace_count - 2]]
-                            * forwards[trace[trace_count - 2]]
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]]
+              / std::sqrt(forwards[trace[i_tr - 2]] * forwards[trace[i_tr - 2]]
                           + 1);
-            trace_count -= 3;
+            i_tr -= 3;
             break;
         case Op::acosh_a:
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]]
-              / std::sqrt(forwards[trace[trace_count - 2]]
-                            * forwards[trace[trace_count - 2]]
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]]
+              / std::sqrt(forwards[trace[i_tr - 2]] * forwards[trace[i_tr - 2]]
                           - 1);
-            trace_count -= 3;
+            i_tr -= 3;
             break;
         case Op::atanh_a:
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]]
-              / (1
-                 - forwards[trace[trace_count - 2]]
-                     * forwards[trace[trace_count - 2]]);
-            trace_count -= 3;
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]]
+              / (1 - forwards[trace[i_tr - 2]] * forwards[trace[i_tr - 2]]);
+            i_tr -= 3;
             break;
         case Op::erf_a:
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]] * 2 * std::numbers::inv_sqrtpi
-              * std::exp(-forwards[trace[trace_count - 2]]
-                         * forwards[trace[trace_count - 2]]);
-            trace_count -= 3;
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]] * 2 * std::numbers::inv_sqrtpi
+              * std::exp(-forwards[trace[i_tr - 2]]
+                         * forwards[trace[i_tr - 2]]);
+            i_tr -= 3;
             break;
         case Op::integration_bound:
-            adjoints[trace[trace_count - 2]] +=
-              adjoints[trace[trace_count - 1]]
-              * reverse::constants[reverse::const_count--];
-            trace_count -= 3;
+            adjoints[trace[i_tr - 2]] +=
+              adjoints[trace[i_tr - 1]] * forwards[trace[i_tr - 3]];
+            i_tr -= 4;
             break;
         default:
-            throw UnknownOperation { trace[trace_count] };
+            throw UnknownOperation { trace[i_tr] };
         }
     }
-    reverse::constants.clear();
-    reverse::last_index = reverse::last_index_reset_value;
-}
-
-auto freeAdReverse() -> void
-{
-    reverse::forwards = std::vector<double> {};
-    reverse::adjoints = std::vector<double> {};
-    reverse::constants = std::vector<double> {};
-    reverse::trace = std::vector<int> {};
+    trace.clear();
+    forwards.resize(rewind_index + 1);
 }
 
 } // namespace gadfit

@@ -24,22 +24,18 @@ option(BUILD_CXX_VERSION
 if (NOT BUILD_CXX_VERSION)
   enable_language(Fortran)
 endif()
-option(BUILD_SHARED_LIBS
-  "If enabled, builds a shared library, else static" ON)
-set(INCLUDE_PATHS "" CACHE STRING
-  "Directories containing necessary header files")
-set(LIBRARY_PATHS "" CACHE STRING
-  "Directories containing libraries to be linked against")
-set(LIBRARIES "" CACHE STRING "Libraries to be linked against")
-option(INCLUDE_COVERAGE "Defines new target called 'coverage'" OFF)
+option(BUILD_SHARED_LIBS "If true, build a shared library, else static" ON)
+
+set(LINK_LIBRARIES "" CACHE STRING
+  "Libraries to be linked against when running tests")
+option(FALLBACK_LINALG
+  "Whether to compile with fallback linear algebra library" ON)
+option(INCLUDE_COVERAGE "Define a new target called 'coverage'" OFF)
 set(COVERAGE_FLAGS "--coverage" CACHE STRING
   "Additional compiler flags used when running code coverage")
 if (INCLUDE_COVERAGE)
-  if (BUILD_CXX_VERSION)
-    string(APPEND CMAKE_CXX_FLAGS " ${COVERAGE_FLAGS}")
-  else()
-    string(APPEND CMAKE_Fortran_FLAGS " ${COVERAGE_FLAGS}")
-  endif()
+  string(APPEND CMAKE_CXX_FLAGS " ${COVERAGE_FLAGS}")
+  string(APPEND CMAKE_Fortran_FLAGS " ${COVERAGE_FLAGS}")
 endif()
 
 # The first_run variable is useful when attempting to detect the
@@ -58,21 +54,8 @@ target_compile_definitions(gadfit PRIVATE
   PROJECT_VERSION="${PROJECT_VERSION}"
   CMAKE_PLATFORM="${CMAKE_HOST_SYSTEM}")
 
-# Process user defined include paths and libraries
-include(GADfitTools)
-target_include_directories(gadfit PRIVATE ${INCLUDE_PATHS})
-# Convert variables to list first
-foreach(_var LIBRARIES LIBRARY_PATHS INCLUDE_PATHS)
-  convert_to_list(${_var})
-endforeach()
-generate_library_targets(LIBRARY_PATHS LIBRARIES)
-target_link_libraries(gadfit PRIVATE ${LIBRARIES})
-set(OPEN_COARRAYS "" CACHE STRING "Full path to libcaf_mpi.a")
-if (OPEN_COARRAYS AND NOT BUILD_CXX_VERSION)
-  target_link_libraries(gadfit PRIVATE ${OPEN_COARRAYS})
-endif()
-
 # Print info
+include(GADfitTools)
 if (BUILD_CXX_VERSION)
   message(
     "C++ compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
@@ -89,7 +72,6 @@ if (BUILD_SHARED)
 else()
   message("Building a static library")
 endif()
-
 message("Install location: ${CMAKE_INSTALL_PREFIX}")
 
 # Sources

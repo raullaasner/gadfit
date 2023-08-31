@@ -37,7 +37,8 @@ endif()
 
 foreach(_test ${tests})
   add_executable(${_test} EXCLUDE_FROM_ALL ${_test}.cpp)
-  target_link_libraries(${_test} PRIVATE gadfit Catch2::Catch2WithMain)
+  target_link_libraries(${_test} PRIVATE
+    gadfit Catch2::Catch2WithMain ${LINK_LIBRARIES})
   add_test(${_test} ${_test})
 endforeach()
 add_custom_target(test COMMAND ctest --output-on-failure DEPENDS ${tests})

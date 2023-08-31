@@ -12,6 +12,7 @@
 
 #include "numerical_integration.h"
 
+#include "automatic_differentiation.h"
 #include "exceptions.h"
 #include "fit_function.h"
 #include "gauss_kronrod_parameters.h"
@@ -24,16 +25,16 @@ namespace gadfit {
 namespace gk {
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-thread_local std::vector<double> roots {};
+std::vector<double> roots {};
 // #pragma omp threadprivate(roots)
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-thread_local std::vector<double> weights_gauss {};
+std::vector<double> weights_gauss {};
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-thread_local std::vector<double> weights_gauss_2D {};
+std::vector<double> weights_gauss_2D {};
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-thread_local std::vector<double> weights_kronrod {};
+std::vector<double> weights_kronrod {};
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-thread_local std::vector<double> weights_kronrod_2D {};
+std::vector<double> weights_kronrod_2D {};
 
 } // gk namespace
 
@@ -52,7 +53,7 @@ struct Workspace
     std::vector<IntegrationBounds> bounds_2D {};
     std::vector<AdVar> inactive_parameters {};
     std::vector<AdVar> integrand_inactive_parameters {};
-    auto resize(const int size, const int size_2D = -1) -> void
+    auto resize(const int size) -> void
     {
         sums.resize(size);
         abs_errors.resize(size);
@@ -61,33 +62,22 @@ struct Workspace
         // the sums or errors. This is because they always record
         // information for the current and the next iteration.
         bounds.resize(size + 1);
-        bounds_2D.resize(size_2D + 1);
+        bounds_2D.resize(size + 1);
     }
 };
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 thread_local std::vector<Workspace> workspaces {};
 
-auto initIntegration(const int workspace_size,
-                     const int n_workspaces,
-                     const int sweep_size) -> void
+auto initIntegration(const int workspace_size, const int n_workspaces) -> void
 {
-    // AD work arrays need to be resized to accommodate the larger
-    // cost of numerical integration.
-    initializeADReverse(sweep_size);
+    // 1-dimensional integrals
     gk::roots = std::vector<double> { roots_15p.cbegin(), roots_15p.cend() };
     gk::weights_gauss = std::vector<double> { weights_gauss_7p.cbegin(),
                                               weights_gauss_7p.cend() };
     gk::weights_kronrod = std::vector<double> { weights_kronrod_15p.cbegin(),
                                                 weights_kronrod_15p.cend() };
-    workspaces.resize(n_workspaces);
-    for (auto& work : workspaces) {
-        work.resize(workspace_size);
-    }
-}
-
-auto initIntegration2D() -> void
-{
+    // 2-dimensional integrals
     const int gauss_size { static_cast<int>(gk::weights_gauss.size()) };
     gk::weights_gauss_2D.resize(static_cast<int>(gauss_size * gauss_size));
     for (int i {}; i < gauss_size; ++i) {
@@ -103,6 +93,14 @@ auto initIntegration2D() -> void
         for (int j {}; j < kronrod_size; ++j) {
             gk::weights_kronrod_2D[i * kronrod_size + j] =
               gk::weights_kronrod[i] * gk::weights_kronrod[j];
+        }
+    }
+    // Work arrays for integration
+#pragma omp parallel
+    {
+        workspaces.resize(n_workspaces);
+        for (auto& work : workspaces) {
+            work.resize(workspace_size);
         }
     }
 }
@@ -252,9 +250,6 @@ auto integrate(const integrandSignature& function,
     // integrals, equals 0 for the outer and 1 for the inner integral.
     thread_local static int int_order { -1 };
     ++int_order;
-    if (workspaces.empty()) {
-        initIntegration();
-    }
     auto& work { workspaces[int_order] };
     // Make a copy of the all parameters and deactivate them. The main
     // loop should be performed without AD being active. AD is only
@@ -323,18 +318,18 @@ static auto traceRecordLower(const integrandSignature& function,
     if (lower.idx > passive_idx) {
         setInactiveParameters(parameters);
         if (result.idx == passive_idx) {
-            result.idx = ++reverse::last_index;
-            reverse::forwards[reverse::last_index] = result.val;
+            result.idx = static_cast<int>(reverse::forwards.size());
+            reverse::forwards.push_back(result.val);
         }
-        reverse::constants.emplace_back(
+        reverse::forwards.emplace_back(
           -function(workspaces.front().inactive_parameters,
                     AdVar { lower.val, passive_idx })
              .val);
-        ++reverse::const_count;
-        reverse::trace[++reverse::trace_count] = lower.idx;
-        reverse::trace[++reverse::trace_count] = result.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::integration_bound);
+        reverse::trace.push_back(
+          static_cast<int>(reverse::forwards.size() - 1));
+        reverse::trace.push_back(lower.idx);
+        reverse::trace.push_back(result.idx);
+        reverse::trace.push_back(static_cast<int>(Op::integration_bound));
     } else if (lower.idx == forward_active_idx) {
         const AdVar tmp { function(parameters,
                                    AdVar { lower.val, passive_idx }) };
@@ -356,18 +351,18 @@ static auto traceRecordUpper(const integrandSignature& function,
     if (upper.idx > passive_idx) {
         setInactiveParameters(parameters);
         if (result.idx == passive_idx) {
-            result.idx = ++reverse::last_index;
-            reverse::forwards[reverse::last_index] = result.val;
+            result.idx = static_cast<int>(reverse::forwards.size());
+            reverse::forwards.push_back(result.val);
         }
-        reverse::constants.emplace_back(
+        reverse::forwards.emplace_back(
           function(workspaces.front().inactive_parameters,
                    AdVar { upper.val, passive_idx })
             .val);
-        ++reverse::const_count;
-        reverse::trace[++reverse::trace_count] = upper.idx;
-        reverse::trace[++reverse::trace_count] = result.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::integration_bound);
+        reverse::trace.push_back(
+          static_cast<int>(reverse::forwards.size() - 1));
+        reverse::trace.push_back(upper.idx);
+        reverse::trace.push_back(result.idx);
+        reverse::trace.push_back(static_cast<int>(Op::integration_bound));
     } else if (upper.idx == forward_active_idx) {
         const AdVar tmp { function(parameters,
                                    AdVar { upper.val, passive_idx }) };
@@ -437,14 +432,7 @@ auto integrate(const integrandSignature2D& function,
                const double rel_error,
                const double abs_error) -> AdVar
 {
-    if (workspaces.empty()) {
-        initIntegration();
-    }
     auto& work { workspaces.front() };
-    if (work.bounds_2D.empty()) {
-        initIntegration2D();
-        work.bounds_2D.resize(work.bounds.size());
-    }
     setInactiveParameters(parameters);
     const double y_scale_inv { 1.0 / (y2 - y1) };
     const double x_scale_inv { 1.0 / (x2 - x1) };
@@ -556,10 +544,10 @@ static auto traceRecordY1(const integrandSignature2D& function,
     } };
     if (y1.idx > passive_idx) {
         if (result.idx == passive_idx) {
-            result.idx = ++reverse::last_index;
-            reverse::forwards[reverse::last_index] = result.val;
+            result.idx = static_cast<int>(reverse::forwards.size());
+            reverse::forwards.push_back(result.val);
         }
-        reverse::constants.emplace_back(
+        reverse::forwards.emplace_back(
           -integrate(f_fixed_y,
                      workspaces.front().inactive_parameters,
                      x1.val,
@@ -567,11 +555,11 @@ static auto traceRecordY1(const integrandSignature2D& function,
                      rel_error,
                      abs_error)
              .val);
-        ++reverse::const_count;
-        reverse::trace[++reverse::trace_count] = y1.idx;
-        reverse::trace[++reverse::trace_count] = result.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::integration_bound);
+        reverse::trace.push_back(
+          static_cast<int>(reverse::forwards.size() - 1));
+        reverse::trace.push_back(y1.idx);
+        reverse::trace.push_back(result.idx);
+        reverse::trace.push_back(static_cast<int>(Op::integration_bound));
     } else if (y1.idx == forward_active_idx) {
         const AdVar f_x { integrate(f_fixed_y,
                                     workspaces.front().inactive_parameters,
@@ -619,10 +607,10 @@ static auto traceRecordY2(const integrandSignature2D& function,
     } };
     if (y2.idx > passive_idx) {
         if (result.idx == passive_idx) {
-            result.idx = ++reverse::last_index;
-            reverse::forwards[reverse::last_index] = result.val;
+            result.idx = static_cast<int>(reverse::forwards.size());
+            reverse::forwards.push_back(result.val);
         }
-        reverse::constants.emplace_back(
+        reverse::forwards.emplace_back(
           integrate(f_fixed_y,
                     workspaces.front().inactive_parameters,
                     x1.val,
@@ -630,11 +618,11 @@ static auto traceRecordY2(const integrandSignature2D& function,
                     rel_error,
                     abs_error)
             .val);
-        ++reverse::const_count;
-        reverse::trace[++reverse::trace_count] = y2.idx;
-        reverse::trace[++reverse::trace_count] = result.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::integration_bound);
+        reverse::trace.push_back(
+          static_cast<int>(reverse::forwards.size() - 1));
+        reverse::trace.push_back(y2.idx);
+        reverse::trace.push_back(result.idx);
+        reverse::trace.push_back(static_cast<int>(Op::integration_bound));
     } else if (y2.idx == forward_active_idx) {
         const AdVar f_x { integrate(f_fixed_y,
                                     workspaces.front().inactive_parameters,
@@ -682,10 +670,10 @@ static auto traceRecordX1(const integrandSignature2D& function,
     } };
     if (x1.idx > passive_idx) {
         if (result.idx == passive_idx) {
-            result.idx = ++reverse::last_index;
-            reverse::forwards[reverse::last_index] = result.val;
+            result.idx = static_cast<int>(reverse::forwards.size());
+            reverse::forwards.push_back(result.val);
         }
-        reverse::constants.emplace_back(
+        reverse::forwards.emplace_back(
           -integrate(f_fixed_x,
                      workspaces.front().inactive_parameters,
                      y1.val,
@@ -693,11 +681,11 @@ static auto traceRecordX1(const integrandSignature2D& function,
                      rel_error,
                      abs_error)
              .val);
-        ++reverse::const_count;
-        reverse::trace[++reverse::trace_count] = x1.idx;
-        reverse::trace[++reverse::trace_count] = result.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::integration_bound);
+        reverse::trace.push_back(
+          static_cast<int>(reverse::forwards.size() - 1));
+        reverse::trace.push_back(x1.idx);
+        reverse::trace.push_back(result.idx);
+        reverse::trace.push_back(static_cast<int>(Op::integration_bound));
     } else if (x1.idx == forward_active_idx) {
         const AdVar f_y { integrate(f_fixed_x,
                                     workspaces.front().inactive_parameters,
@@ -745,10 +733,10 @@ static auto traceRecordX2(const integrandSignature2D& function,
     } };
     if (x2.idx > passive_idx) {
         if (result.idx == passive_idx) {
-            result.idx = ++reverse::last_index;
-            reverse::forwards[reverse::last_index] = result.val;
+            result.idx = static_cast<int>(reverse::forwards.size());
+            reverse::forwards.push_back(result.val);
         }
-        reverse::constants.emplace_back(
+        reverse::forwards.emplace_back(
           integrate(f_fixed_x,
                     workspaces.front().inactive_parameters,
                     y1.val,
@@ -756,11 +744,11 @@ static auto traceRecordX2(const integrandSignature2D& function,
                     rel_error,
                     abs_error)
             .val);
-        ++reverse::const_count;
-        reverse::trace[++reverse::trace_count] = x2.idx;
-        reverse::trace[++reverse::trace_count] = result.idx;
-        reverse::trace[++reverse::trace_count] =
-          static_cast<int>(Op::integration_bound);
+        reverse::trace.push_back(
+          static_cast<int>(reverse::forwards.size() - 1));
+        reverse::trace.push_back(x2.idx);
+        reverse::trace.push_back(result.idx);
+        reverse::trace.push_back(static_cast<int>(Op::integration_bound));
     } else if (x2.idx == forward_active_idx) {
         const AdVar f_y { integrate(f_fixed_x,
                                     workspaces.front().inactive_parameters,

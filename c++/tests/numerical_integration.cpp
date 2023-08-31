@@ -2,6 +2,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
+#include <gadfit/automatic_differentiation.h>
 #include <gadfit/lm_solver.h>
 #include <gadfit/numerical_integration.h>
 #include <omp.h>
@@ -13,6 +14,7 @@ using Catch::Matchers::WithinRel;
 // initialization.
 static auto setSolverState(gadfit::LMsolver& solver) -> void
 {
+    gadfit::initIntegration();
     solver.addDataset(x_data_single, y_data_single);
     solver.setPar(0, 10.0, true);
     solver.setPar(1, 1.0, true);
@@ -37,6 +39,7 @@ TEST_CASE("Single integral")
         setSolverState(solver);
         solver.fit(10.0);
         CHECK_THAT(solver.chi2(), WithinRel(4994.801048103614, 1e-14));
+        gadfit::freeIntegration();
         CHECK_THAT(solver.getParValue(0), WithinRel(9.345693397983833, 1e-14));
         CHECK_THAT(solver.getParValue(1), WithinRel(1.086341822060304, 1e-14));
     }
@@ -227,11 +230,10 @@ static auto setSolverStateNested(gadfit::LMsolver& solver) -> void
     // case the nesting level (max 2) must be given manually. This is
     // in contrast with the direct double integral formula where all
     // the relevant work arrays are allocated automatically.
-#pragma omp parallel
     gadfit::initIntegration(1000, 2);
-    solver.settings.n_threads = omp_get_max_threads();
     solver.addDataset(x_data_double, y_data_double, weights_double);
     solver.setPar(0, 7.0, true);
+    solver.settings.n_threads = omp_get_max_threads();
     solver.settings.iteration_limit = 2;
     solver.settings.acceleration_threshold = 0.9;
 }
@@ -918,6 +920,7 @@ TEST_CASE("Double integral (nested)")
 
 static auto setSolverStateDirect(gadfit::LMsolver& solver) -> void
 {
+    gadfit::initIntegration();
     solver.addDataset(x_data_double, y_data_double_direct);
     solver.setPar(0, 7.0, true);
     solver.settings.iteration_limit = 2;
@@ -1242,8 +1245,7 @@ TEST_CASE("Double integral (direct)")
         CHECK_THAT(solver.getParValue(1), WithinRel(1.3, 1e-7));
         CHECK_THAT(solver.getParValue(2), WithinRel(1.2, 1e-7));
         CHECK_THAT(solver.getParValue(3), WithinRel(2.0, 1e-7));
-        CHECK_THAT(solver.getParValue(4),
-                   WithinRel(0.09633003605472064, 1e-7));
+        CHECK_THAT(solver.getParValue(4), WithinRel(0.09633003605472064, 1e-7));
         CHECK_THAT(solver.getParValue(5), WithinRel(2.1, 1e-7));
         CHECK_THAT(solver.getParValue(6), WithinRel(1.0, 1e-7));
     }
@@ -1369,8 +1371,7 @@ TEST_CASE("Double integral (direct)")
         CHECK_THAT(solver.getParValue(1), WithinRel(1.3, 1e-7));
         CHECK_THAT(solver.getParValue(2), WithinRel(1.2, 1e-7));
         CHECK_THAT(solver.getParValue(3), WithinRel(2.0, 1e-7));
-        CHECK_THAT(solver.getParValue(4),
-                   WithinRel(0.02430156976447609, 1e-7));
+        CHECK_THAT(solver.getParValue(4), WithinRel(0.02430156976447609, 1e-7));
         CHECK_THAT(solver.getParValue(5), WithinRel(2.1, 1e-7));
         CHECK_THAT(solver.getParValue(6), WithinRel(1.0, 1e-7));
     }

@@ -19,28 +19,6 @@ macro(convert_to_list var)
   endif()
 endmacro()
 
-# Go through directories listed in LIB_PATHS and turn the entries of
-# LIBS into actual targets.
-function(generate_library_targets _PATHS _LIBS)
-  foreach(LIB ${${_LIBS}})
-    # If the target already exists, skip it. This can occur when the
-    # same library is set multiple times in LIBS due to circular
-    # dependencies.
-    if (NOT TARGET ${LIB})
-      find_library(LIB_FULLPATH ${LIB} HINTS ${${_PATHS}})
-      if (LIB_FULLPATH)
-        message(STATUS "Found ${LIB_FULLPATH}")
-        add_library(${LIB} UNKNOWN IMPORTED)
-        set_target_properties(${LIB} PROPERTIES
-          IMPORTED_LOCATION ${LIB_FULLPATH})
-        unset(LIB_FULLPATH CACHE)
-      else()
-        message(FATAL_ERROR "Could not find ${LIB}")
-      endif()
-    endif()
-  endforeach()
-endfunction()
-
 # Determine current flags
 macro(get_all_flags language flags)
   set(${flags} ${CMAKE_${language}_FLAGS})

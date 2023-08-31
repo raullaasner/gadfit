@@ -12,6 +12,7 @@
 
 #include "lm_solver.h"
 
+#include "automatic_differentiation.h"
 #include "fit_function.h"
 #include "lapack.h"
 #include "numerical_integration.h"
@@ -286,13 +287,14 @@ auto LMsolver::computeLeftHandSide(const double lambda) -> void
 {
     Jacobian_timer.start();
     int i_start {}; // Starting index for data sets
+    std::vector<double> adjoints {};
 #pragma omp parallel num_threads(settings.n_threads)                           \
-  firstprivate(i_start, fit_functions)
+  firstprivate(i_start, fit_functions) private(adjoints)
     for (int i_set {}; i_set < static_cast<int>(x_data.size()); ++i_set) {
         int cur_idx { -1 };
-        for (const auto& idx : indices.active.at(i_set)) {
-            fit_functions.at(i_set).activateParReverse(idx, ++cur_idx);
-            addADSeed(fit_functions.at(i_set).par(idx));
+        for (const auto& idx : indices.active[i_set]) {
+            fit_functions[i_set].activateParReverse(idx, ++cur_idx);
+            addADSeed(fit_functions[i_set].par(idx));
         }
 #pragma omp for nowait
         for (int i_point = 0; i_point < static_cast<int>(x_data[i_set].size());
@@ -306,14 +308,13 @@ auto LMsolver::computeLeftHandSide(const double lambda) -> void
             // Square root of the derivative of the loss function
             const double drho_sqrt { loss(settings.loss, res) };
             residuals[i_start + i_point] = drho_sqrt * res;
-            gadfit::returnSweep();
+            gadfit::returnSweep(*indices.active[i_set].rbegin(), adjoints);
             for (int i_par {};
                  i_par < static_cast<int>(indices.jacobian[i_set].size());
                  ++i_par) {
                 jacobian[(i_start + i_point) * indices.n_active
                          + indices.jacobian[i_set][i_par]] =
-                  drho_sqrt * gadfit::reverse::adjoints[i_par]
-                  / errors[i_set][i_point];
+                  drho_sqrt * adjoints[i_par] / errors[i_set][i_point];
             }
         }
         deactivateParameters(indices, i_set, fit_functions);
@@ -399,8 +400,6 @@ auto LMsolver::computeDeltas(std::vector<double>& omega) -> void
 
 auto LMsolver::fit(double lambda) -> void
 {
-#pragma omp parallel num_threads(settings.n_threads)
-    initializeADReverse(settings.ad_sweep_size);
     prepareIndexing(x_data, fit_functions, indices);
     // Reset all timers
     Jacobian_timer.reset();
@@ -412,8 +411,7 @@ auto LMsolver::fit(double lambda) -> void
     jacobian.resize(indices.n_datapoints * indices.n_active);
     residuals.resize(indices.n_datapoints);
     JTJ.resize(indices.n_active * indices.n_active);
-    DTD.resize(indices.n_active * indices.n_active);
-    std::ranges::fill(DTD, 0.0);
+    DTD.assign(indices.n_active * indices.n_active, 0.0);
     left_side.resize(indices.n_active * indices.n_active);
     left_side_chol.resize(indices.n_active * indices.n_active);
     delta1.resize(indices.n_active);
@@ -692,15 +690,6 @@ auto LMsolver::getParValue(const int i_par, const int i_dataset) const -> double
 auto LMsolver::getValue(const double arg, const int i_dataset) const -> double
 {
     return fit_functions.at(i_dataset)(arg).val;
-}
-
-LMsolver::~LMsolver()
-{
-#pragma omp parallel num_threads(settings.n_threads)
-    {
-        freeIntegration();
-        freeAdReverse();
-    }
 }
 
 } // namespace gadfit

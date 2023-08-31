@@ -4,20 +4,15 @@
 #  set(<variable> <value> CACHE <type> <docstring>) .
 # You only need to edit the <value> parameter.
 
-# GNU compilers and flags
-#set(CMAKE_CXX_FLAGS "" CACHE STRING "")
-#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG" CACHE STRING "")
-#set(CMAKE_CXX_FLAGS_DEBUG "-Og -g -Wall -Wextra -Wcast-align -Wformat -Winvalid-pch -Wmissing-declarations -Wmissing-include-dirs -Wconversion -Wredundant-decls -Wswitch-default -Wswitch-enum -pedantic" CACHE STRING "")
-#set(CMAKE_Fortran_COMPILER mpif90 CACHE STRING "")
-#set(CMAKE_Fortran_FLAGS "-ffree-line-length-0" CACHE STRING "")
-#set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -funroll-all-loops -fcoarray=lib" CACHE STRING "")
-#set(CMAKE_Fortran_FLAGS_DEBUG "-O3 -g -Wall -Wno-maybe-uninitialized -Wextra -pedantic -fcheck=all -ffpe-trap=zero,overflow -fbacktrace -fcoarray=lib -std=f2008ts" CACHE STRING "")
+# Suggested C++ compiler defaults
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG" CACHE STRING "")
+set(CMAKE_CXX_FLAGS_DEBUG "-Og -g -Wall -Wextra -Wcast-align -Wformat -Winvalid-pch -Wmissing-declarations -Wmissing-include-dirs -Wconversion -Wredundant-decls -Wswitch-default -Wswitch-enum -pedantic -Wno-parentheses" CACHE STRING "")
 
-# Intel compilers and flags
-#set(CMAKE_C_COMPILER icc CACHE STRING "")
-#set(CMAKE_Fortran_COMPILER ifort CACHE STRING "")
-#set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -ipo -xHost -fp-model precise -coarray=shared" CACHE STRING "" FORCE)
-#set(CMAKE_Fortran_FLAGS_DEBUG "-O0 -g -debug all -check all -fpe0 -traceback -warn -coarray=shared -std08" CACHE STRING "")
+# Suggested Fortran compiler defaults
+set(CMAKE_Fortran_COMPILER mpif90 CACHE STRING "")
+set(CMAKE_Fortran_FLAGS "-ffree-line-length-0" CACHE STRING "")
+set(CMAKE_Fortran_FLAGS_RELEASE "-O3 -funroll-all-loops -fcoarray=lib" CACHE STRING "")
+set(CMAKE_Fortran_FLAGS_DEBUG "-O3 -g -Wall -Wno-maybe-uninitialized -Wextra -pedantic -fcheck=all -ffpe-trap=zero,overflow -fbacktrace -fcoarray=lib -std=f2008ts" CACHE STRING "")
 
 # Whether to build the C++ or Fortran version of GADfit
 set(BUILD_CXX_VERSION ON CACHE BOOL "")
@@ -26,10 +21,29 @@ set(BUILD_CXX_VERSION ON CACHE BOOL "")
 set(CMAKE_BUILD_TYPE Release CACHE STRING "")
 
 # Whether to build a shared or a static library
-set(BUILD_SHARED ON CACHE BOOL "")
+set(BUILD_SHARED OFF CACHE BOOL "")
 
-# Path to the directory that contains Catch2
-#set(CATCH2_PATH /usr/local/catch2 CACHE STRING "")
+# Path to the directory that contains Catch2. If not found, Catch2 is
+# downloaded automatically.
+# set(CATCH2_PATH /usr/local/catch2 CACHE STRING "")
+
+# Path to the directory that contains spdlog. If not found, spdlog is
+# downloaded automatically.
+# set(SPDLOG_PATH /home/local/spdlog CACHE STRING "")
+
+# Whether to compile with fallback linear algebra library. Set to
+# false if you have a linear algebra present on your system.
+set(FALLBACK_LINALG ON CACHE BOOL "")
+
+# Linear algebra library for running tests
+# set(LINK_LIBRARIES blas lapack CACHE STRING "")
+# or if you have access to the Intel MKL,
+# set(MKLROOT /opt/intel/oneapi/mkl/latest)
+# set(LINK_LIBRARIES
+#   ${MKLROOT}/lib/intel64/libmkl_gnu_thread.so
+#   ${MKLROOT}/lib/intel64/libmkl_gf_lp64.so
+#   ${MKLROOT}/lib/intel64/libmkl_sequential.so
+#   ${MKLROOT}/lib/intel64/libmkl_core.so CACHE STRING "")
 
 # Where to install GADfit
 set(CMAKE_INSTALL_PREFIX /usr/local/gadfit CACHE STRING "")
@@ -39,23 +53,9 @@ set(QUAD_PRECISION OFF CACHE BOOL "")
 
 # Use this prefix if you want to run the tests in parallel with
 # GFortran. Do not use it with the Intel compiler (it handles Coarrays
-# differently). With Intel, the number of cores used is controlled by
-# the FOR_COARRAY_NUM_IMAGES environment variable.
-#set(TESTS_RUN_PREFIX mpirun -np 8 CACHE STRING "")
-
-# You can probably install spdlog using your distribution's package
-# manager. If not, download, build, and install it manually and point
-# SPDLOG_PATH to the installation directory.
-#set(SPDLOG_PATH /usr/local/spdlog CACHE STRING "")
-
-# Additional directories containing header files
-#set(INCLUDE_PATHS /usr/local/include CACHE STRING "")
-
-# Linear algebra library directories
-#set(LIBRARY_PATHS /opt/intel/oneapi/mkl/latest/lib/intel64 CACHE STRING "")
-
-# Linear algebra libraries
-#set(LIBRARIES mkl_gf_lp64 mkl_sequential mkl_core CACHE STRING "")
+# differently). With Intel, the number of cores is controlled by the
+# FOR_COARRAY_NUM_IMAGES variable.
+# set(TESTS_RUN_PREFIX mpirun -np 8 CACHE STRING "")
 
 # Location of libcaf_mpi.a
-#set(OPEN_COARRAYS /usr/local/opencoarrays/lib/libcaf_mpi.a CACHE STRING "")
+# set(OPEN_COARRAYS /usr/local/opencoarrays/lib/libcaf_mpi.a CACHE STRING "")

@@ -26,13 +26,13 @@
 
 namespace gadfit {
 
+// Function arguments are a parameter list and an integration variable x
 using integrandSignature =
   std::function<AdVar(const std::vector<AdVar>&, const AdVar&)>;
 
+// Function arguments are a parameter list and integration variables x and y
 using integrandSignature2D =
   std::function<AdVar(const std::vector<AdVar>&, const AdVar&, const AdVar&)>;
-
-class AdVar;
 
 // Default relative threshold for the Gauss–Kronrod quadrature error
 // estimate
@@ -40,19 +40,12 @@ constexpr double default_rel_error { 1e2
                                      * std::numeric_limits<double>::epsilon() };
 constexpr int default_workspace_size { 1000 };
 constexpr int default_n_workspaces { 1 };
-// Characteristic size of AD work arrays when numerical integration is used
-constexpr int default_sweep_size_int { 1'000'000 };
 
 // Initialize the Gauss-Kronrod rules and the work arrays for adaptive
 // integration. The work arrays store things like errors for each
 // subinterval. This is automatically called in 'integrate'.
 auto initIntegration(const int workspace_size = default_workspace_size,
-                     const int n_workspaces = default_n_workspaces,
-                     const int sweep_size = default_sweep_size_int) -> void;
-
-// Initialize additional work arrays for 2D integration. This needs to
-// be called in addition to initIntegration.
-auto initIntegration2D() -> void;
+                     const int n_workspaces = default_n_workspaces) -> void;
 
 // One-dimensional Gauss-Kronrod integration
 auto gaussKronrod(const integrandSignature& function,

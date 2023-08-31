@@ -8,6 +8,8 @@
 using Catch::Matchers::WithinRel;
 using gadfit::AdVar;
 
+std::vector<double> adjoints {};
+
 TEST_CASE("Basic arithmetic (add, subtract, multiply, divide)")
 {
     constexpr double a_ref { 0.3757755919598275 };
@@ -25,47 +27,43 @@ TEST_CASE("Basic arithmetic (add, subtract, multiply, divide)")
     AdVar a { fix_d[4], 0.0, 0.0, gadfit::passive_idx };
     AdVar b { fix_d[5], 0.0, 0.0, gadfit::passive_idx };
     AdVar c { fix_d[6], 0.0, 0.0, gadfit::passive_idx };
-    gadfit::initializeADReverse();
 
     SECTION("Active: none")
     {
         const AdVar result { expression(a, b, c) };
         CHECK_THAT(result.val, WithinRel(val_ref, 1e-14));
         CHECK(result.idx == gadfit::passive_idx);
-        gadfit::freeAdReverse();
+        gadfit::returnSweep(0, adjoints);
     }
     SECTION("Active: a")
     {
         a.idx = 0;
         gadfit::addADSeed(a);
         const AdVar result { expression(a, b, c) };
-        gadfit::returnSweep();
+        gadfit::returnSweep(a.idx, adjoints);
         CHECK_THAT(result.val, WithinRel(val_ref, 1e-14));
         CHECK(result.idx == 16);
-        CHECK_THAT(gadfit::reverse::adjoints[0], WithinRel(a_ref, 1e-14));
-        gadfit::freeAdReverse();
+        CHECK_THAT(adjoints[0], WithinRel(a_ref, 1e-14));
     }
     SECTION("Active: b")
     {
         b.idx = 0;
         gadfit::addADSeed(b);
         const AdVar result { expression(a, b, c) };
-        gadfit::returnSweep();
+        gadfit::returnSweep(b.idx, adjoints);
         CHECK_THAT(result.val, WithinRel(val_ref, 1e-14));
         CHECK(result.idx == 16);
-        CHECK_THAT(gadfit::reverse::adjoints[0], WithinRel(b_ref, 1e-14));
-        gadfit::freeAdReverse();
+        CHECK_THAT(adjoints[0], WithinRel(b_ref, 1e-14));
     }
     SECTION("Active: c")
     {
         c.idx = 0;
         gadfit::addADSeed(c);
         const AdVar result { expression(a, b, c) };
-        gadfit::returnSweep();
+        gadfit::returnSweep(c.idx, adjoints);
         CHECK_THAT(result.val, WithinRel(val_ref, 1e-14));
         CHECK(result.idx == 9);
-        CHECK_THAT(gadfit::reverse::adjoints[0], WithinRel(c_ref, 1e-14));
-        gadfit::freeAdReverse();
+        CHECK_THAT(adjoints[0], WithinRel(c_ref, 1e-14));
     }
     SECTION("Active: a, b")
     {
@@ -74,12 +72,11 @@ TEST_CASE("Basic arithmetic (add, subtract, multiply, divide)")
         b.idx = 1;
         gadfit::addADSeed(b);
         const AdVar result { expression(a, b, c) };
-        gadfit::returnSweep();
+        gadfit::returnSweep(b.idx, adjoints);
         CHECK_THAT(result.val, WithinRel(val_ref, 1e-14));
         CHECK(result.idx == 25);
-        CHECK_THAT(gadfit::reverse::adjoints[0], WithinRel(a_ref, 1e-14));
-        CHECK_THAT(gadfit::reverse::adjoints[1], WithinRel(b_ref, 1e-14));
-        gadfit::freeAdReverse();
+        CHECK_THAT(adjoints[0], WithinRel(a_ref, 1e-14));
+        CHECK_THAT(adjoints[1], WithinRel(b_ref, 1e-14));
     }
     SECTION("Active: a, c (with resetting)")
     {
@@ -88,18 +85,17 @@ TEST_CASE("Basic arithmetic (add, subtract, multiply, divide)")
         c.idx = 1;
         gadfit::addADSeed(c);
         expression(a, b, c);
-        gadfit::returnSweep();
+        gadfit::returnSweep(c.idx, adjoints);
         a.idx = 0;
         gadfit::addADSeed(a);
         c.idx = 1;
         gadfit::addADSeed(c);
         const AdVar result { expression(a, b, c) };
-        gadfit::returnSweep();
+        gadfit::returnSweep(c.idx, adjoints);
         CHECK_THAT(result.val, WithinRel(val_ref, 1e-14));
         CHECK(result.idx == 20);
-        CHECK_THAT(gadfit::reverse::adjoints[0], WithinRel(a_ref, 1e-14));
-        CHECK_THAT(gadfit::reverse::adjoints[1], WithinRel(c_ref, 1e-14));
-        gadfit::freeAdReverse();
+        CHECK_THAT(adjoints[0], WithinRel(a_ref, 1e-14));
+        CHECK_THAT(adjoints[1], WithinRel(c_ref, 1e-14));
     }
     SECTION("Active: b, c")
     {
@@ -108,12 +104,11 @@ TEST_CASE("Basic arithmetic (add, subtract, multiply, divide)")
         c.idx = 1;
         gadfit::addADSeed(c);
         const AdVar result { expression(a, b, c) };
-        gadfit::returnSweep();
+        gadfit::returnSweep(c.idx, adjoints);
         CHECK_THAT(result.val, WithinRel(val_ref, 1e-14));
         CHECK(result.idx == 17);
-        CHECK_THAT(gadfit::reverse::adjoints[0], WithinRel(b_ref, 1e-14));
-        CHECK_THAT(gadfit::reverse::adjoints[1], WithinRel(c_ref, 1e-14));
-        gadfit::freeAdReverse();
+        CHECK_THAT(adjoints[0], WithinRel(b_ref, 1e-14));
+        CHECK_THAT(adjoints[1], WithinRel(c_ref, 1e-14));
     }
     SECTION("Active: a, b, c")
     {
@@ -124,15 +119,14 @@ TEST_CASE("Basic arithmetic (add, subtract, multiply, divide)")
         c.idx = 2;
         gadfit::addADSeed(c);
         const AdVar result { expression(a, b, c) };
-        gadfit::returnSweep();
+        gadfit::returnSweep(c.idx, adjoints);
         CHECK_THAT(result.val, WithinRel(val_ref, 1e-14));
         CHECK_THAT(result.d, Catch::Matchers::WithinAbs(0.0, 1e-100));
         CHECK_THAT(result.dd, Catch::Matchers::WithinAbs(0.0, 1e-100));
         CHECK(result.idx == 26);
-        CHECK_THAT(gadfit::reverse::adjoints[0], WithinRel(a_ref, 1e-14));
-        CHECK_THAT(gadfit::reverse::adjoints[1], WithinRel(b_ref, 1e-14));
-        CHECK_THAT(gadfit::reverse::adjoints[2], WithinRel(c_ref, 1e-14));
-        gadfit::freeAdReverse();
+        CHECK_THAT(adjoints[0], WithinRel(a_ref, 1e-14));
+        CHECK_THAT(adjoints[1], WithinRel(b_ref, 1e-14));
+        CHECK_THAT(adjoints[2], WithinRel(c_ref, 1e-14));
     }
     SECTION("Active: a (error handling)")
     {
@@ -141,7 +135,8 @@ TEST_CASE("Basic arithmetic (add, subtract, multiply, divide)")
         const AdVar result { expression(a, b, c) };
         // Artificially introduce a wrong operation code
         gadfit::reverse::trace[2] = -1;
-        CHECK_THROWS_AS(gadfit::returnSweep(), gadfit::UnknownOperation);
+        CHECK_THROWS_AS(gadfit::returnSweep(a.idx, adjoints),
+                        gadfit::UnknownOperation);
     }
 }
 
@@ -159,36 +154,34 @@ TEST_CASE("Exponentiation, logarithm, other")
     } };
     AdVar a { fix_d[4], 0.0, 0.0, gadfit::passive_idx };
     AdVar b { fix_d[5], 0.0, 0.0, gadfit::passive_idx };
-    gadfit::initializeADReverse();
 
     SECTION("Active: none")
     {
         const AdVar result { expression(a, b) };
         CHECK_THAT(result.val, WithinRel(val_ref, 1e-14));
         CHECK(result.idx == gadfit::passive_idx);
-        gadfit::freeAdReverse();
+        // The trace is normally cleared by calling the return sweep
+        gadfit::reverse::trace.clear();
     }
     SECTION("Active: a")
     {
         a.idx = 0;
         gadfit::addADSeed(a);
         const AdVar result { expression(a, b) };
-        gadfit::returnSweep();
+        gadfit::returnSweep(a.idx, adjoints);
         CHECK_THAT(result.val, WithinRel(val_ref, 1e-14));
         CHECK(result.idx == 25);
-        CHECK_THAT(gadfit::reverse::adjoints[0], WithinRel(a_ref, 1e-14));
-        gadfit::freeAdReverse();
+        CHECK_THAT(adjoints[0], WithinRel(a_ref, 1e-14));
     }
     SECTION("Active: b")
     {
         b.idx = 0;
         gadfit::addADSeed(b);
         const AdVar result { expression(a, b) };
-        gadfit::returnSweep();
+        gadfit::returnSweep(b.idx, adjoints);
         CHECK_THAT(result.val, WithinRel(val_ref, 1e-14));
         CHECK(result.idx == 25);
-        CHECK_THAT(gadfit::reverse::adjoints[0], WithinRel(b_ref, 1e-14));
-        gadfit::freeAdReverse();
+        CHECK_THAT(adjoints[0], WithinRel(b_ref, 1e-14));
     }
     SECTION("Active: a, b")
     {
@@ -197,12 +190,11 @@ TEST_CASE("Exponentiation, logarithm, other")
         b.idx = 1;
         gadfit::addADSeed(b);
         const AdVar result { expression(a, b) };
-        gadfit::returnSweep();
+        gadfit::returnSweep(b.idx, adjoints);
         CHECK_THAT(result.val, WithinRel(val_ref, 1e-14));
         CHECK(result.idx == 32);
-        CHECK_THAT(gadfit::reverse::adjoints[0], WithinRel(a_ref, 1e-14));
-        CHECK_THAT(gadfit::reverse::adjoints[1], WithinRel(b_ref, 1e-14));
-        gadfit::freeAdReverse();
+        CHECK_THAT(adjoints[0], WithinRel(a_ref, 1e-14));
+        CHECK_THAT(adjoints[1], WithinRel(b_ref, 1e-14));
     }
 }
 
@@ -219,36 +211,32 @@ TEST_CASE("Trigonometric")
     } };
     AdVar a { fix_d[4], 0.0, 0.0, gadfit::passive_idx };
     AdVar b { fix_d[5], 0.0, 0.0, gadfit::passive_idx };
-    gadfit::initializeADReverse();
 
     SECTION("Active: none")
     {
         const AdVar result { expression(a, b) };
         CHECK_THAT(result.val, WithinRel(val_ref, 1e-14));
         CHECK(result.idx == gadfit::passive_idx);
-        gadfit::freeAdReverse();
     }
     SECTION("Active: a")
     {
         a.idx = 0;
         gadfit::addADSeed(a);
         const AdVar result { expression(a, b) };
-        gadfit::returnSweep();
+        gadfit::returnSweep(a.idx, adjoints);
         CHECK_THAT(result.val, WithinRel(val_ref, 1e-14));
         CHECK(result.idx == 47);
-        CHECK_THAT(gadfit::reverse::adjoints[0], WithinRel(a_ref, 1e-14));
-        gadfit::freeAdReverse();
+        CHECK_THAT(adjoints[0], WithinRel(a_ref, 1e-14));
     }
     SECTION("Active: b")
     {
         b.idx = 0;
         gadfit::addADSeed(b);
         const AdVar result { expression(a, b) };
-        gadfit::returnSweep();
+        gadfit::returnSweep(b.idx, adjoints);
         CHECK_THAT(result.val, WithinRel(val_ref, 1e-14));
         CHECK(result.idx == 43);
-        CHECK_THAT(gadfit::reverse::adjoints[0], WithinRel(b_ref, 1e-14));
-        gadfit::freeAdReverse();
+        CHECK_THAT(adjoints[0], WithinRel(b_ref, 1e-14));
     }
     SECTION("Active: a, b")
     {
@@ -257,12 +245,11 @@ TEST_CASE("Trigonometric")
         b.idx = 1;
         gadfit::addADSeed(b);
         const AdVar result { expression(a, b) };
-        gadfit::returnSweep();
+        gadfit::returnSweep(b.idx, adjoints);
         CHECK_THAT(result.val, WithinRel(val_ref, 1e-14));
         CHECK(result.idx == 39);
-        CHECK_THAT(gadfit::reverse::adjoints[0], WithinRel(a_ref, 1e-14));
-        CHECK_THAT(gadfit::reverse::adjoints[1], WithinRel(b_ref, 1e-14));
-        gadfit::freeAdReverse();
+        CHECK_THAT(adjoints[0], WithinRel(a_ref, 1e-14));
+        CHECK_THAT(adjoints[1], WithinRel(b_ref, 1e-14));
     }
 }
 
@@ -272,7 +259,6 @@ TEST_CASE("Special")
     constexpr double a_ref { 0.8469022413858851 };
     const auto expression { [=](const AdVar& a) { return erf(a); } };
     AdVar a { fix_d[3], 0.0, 0.0, gadfit::passive_idx };
-    gadfit::initializeADReverse();
 
     SECTION("Active: none")
     {
@@ -281,17 +267,15 @@ TEST_CASE("Special")
         CHECK_THAT(result.d, Catch::Matchers::WithinAbs(0.0, 1e-100));
         CHECK_THAT(result.dd, Catch::Matchers::WithinAbs(0.0, 1e-100));
         CHECK(result.idx == gadfit::passive_idx);
-        gadfit::freeAdReverse();
     }
     SECTION("Active: a")
     {
         a.idx = 0;
         gadfit::addADSeed(a);
         const AdVar result { expression(a) };
-        gadfit::returnSweep();
+        gadfit::returnSweep(a.idx, adjoints);
         CHECK_THAT(result.val, WithinRel(val_ref, 1e-14));
         CHECK(result.idx == 1);
-        CHECK_THAT(gadfit::reverse::adjoints[0], WithinRel(a_ref, 1e-14));
-        gadfit::freeAdReverse();
+        CHECK_THAT(adjoints[0], WithinRel(a_ref, 1e-14));
     }
 }

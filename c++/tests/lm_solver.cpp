@@ -2,6 +2,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
+#include <gadfit/automatic_differentiation.h>
 #include <gadfit/lm_solver.h>
 #include <numeric>
 #include <omp.h>
