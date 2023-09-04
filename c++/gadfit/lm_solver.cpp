@@ -16,6 +16,7 @@
 #include "lapack.h"
 #include "numerical_integration.h"
 
+#include <iomanip>
 #include <numeric>
 #include <spdlog/spdlog.h>
 
