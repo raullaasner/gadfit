@@ -40,13 +40,4 @@ public:
     [[nodiscard]] auto totalNumberOfCalls() const -> int;
 };
 
-// A handy utility struct for collecting results from different processes
-struct Times
-{
-    double wall {};
-    double cpu {};
-    double wall_ave {};
-    double cpu_ave {};
-};
-
 } // namespace gadfit
