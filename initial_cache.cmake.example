@@ -51,11 +51,16 @@ set(CMAKE_INSTALL_PREFIX /usr/local/gadfit CACHE STRING "")
 # Whether to use quadruple or double precision (Fortran only)
 set(QUAD_PRECISION OFF CACHE BOOL "")
 
-# Use this prefix if you want to run the tests in parallel with
-# GFortran. Do not use it with the Intel compiler (it handles Coarrays
-# differently). With Intel, the number of cores is controlled by the
-# FOR_COARRAY_NUM_IMAGES variable.
+# Use this prefix if you want to run the tests in parallel. With
+# GFortran and libcaf_shmem the number of images is controlled by the
+# GFORTRAN_NUM_IMAGES environment variable. With the Intel compiler it
+# is FOR_COARRAY_NUM_IMAGES and no prefix is required.
+# set(TESTS_RUN_PREFIX env GFORTRAN_NUM_IMAGES=8 CACHE STRING "")
 # set(TESTS_RUN_PREFIX mpirun -np 8 CACHE STRING "")
 
-# Location of libcaf_mpi.a
-# set(OPEN_COARRAYS /usr/local/opencoarrays/lib/libcaf_mpi.a CACHE STRING "")
+# Coarray runtime library. With GFortran this is one of the libcaf
+# libraries that ship with the compiler: caf_single (a single image)
+# or, since GCC 15, caf_shmem (multiple images using shared
+# memory). A full path to a library also works. If left unset,
+# caf_single is used.
+# set(CAF_LIBRARY caf_shmem CACHE STRING "")

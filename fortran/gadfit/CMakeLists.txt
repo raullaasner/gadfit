@@ -25,9 +25,10 @@ target_sources(gadfit PRIVATE
 # Options and variables
 option(USE_AD "If disabled, use finite differences" ON)
 option(QUAD_PRECISION "Whether to use quadruple or double precision" OFF)
-set(OPEN_COARRAYS "" CACHE STRING "Full path to libcaf_mpi.a")
-if (OPEN_COARRAYS AND NOT BUILD_CXX_VERSION)
-  target_link_libraries(gadfit PRIVATE ${OPEN_COARRAYS})
+set(CAF_LIBRARY "" CACHE STRING
+  "Coarray runtime library: a link name (caf_shmem, caf_single) or a full path")
+if (CAF_LIBRARY AND NOT BUILD_CXX_VERSION)
+  target_link_libraries(gadfit PRIVATE ${CAF_LIBRARY})
 endif()
 
 target_include_directories(gadfit PRIVATE ${PROJECT_BINARY_DIR})

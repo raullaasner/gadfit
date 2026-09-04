@@ -93,8 +93,8 @@ jobs:
           cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
           -D CMAKE_BUILD_TYPE=Debug \
           -D BUILD_CXX_VERSION=OFF \
-          -D OPEN_COARRAYS=/usr/local/opencoarrays/lib/libcaf_mpi.a \
-          -D LINK_LIBRARIES=mpi \
+          -D CAF_LIBRARY=caf_shmem \
+          -D TESTS_RUN_PREFIX="env;GFORTRAN_NUM_IMAGES=8" \
           ..
       - name: build
         run: cmake --build build
@@ -110,8 +110,8 @@ jobs:
           cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
           -D CMAKE_BUILD_TYPE=Release \
           -D BUILD_CXX_VERSION=OFF \
-          -D OPEN_COARRAYS=/usr/local/opencoarrays/lib/libcaf_mpi.a \
-          -D LINK_LIBRARIES=mpi \
+          -D CAF_LIBRARY=caf_shmem \
+          -D TESTS_RUN_PREFIX="env;GFORTRAN_NUM_IMAGES=8" \
           ..
       - name: build
         run: cmake --build build
@@ -127,9 +127,10 @@ jobs:
           cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
           -D CMAKE_BUILD_TYPE=Debug \
           -D BUILD_CXX_VERSION=OFF \
-          -D OPEN_COARRAYS=/usr/local/opencoarrays/lib/libcaf_mpi.a \
+          -D CAF_LIBRARY=caf_shmem \
+          -D TESTS_RUN_PREFIX="env;GFORTRAN_NUM_IMAGES=8" \
           -D FALLBACK_LINALG=OFF \
-          -D LINK_LIBRARIES="${MKLROOT}/lib/intel64/libmkl_gf_lp64.so;${MKLROOT}/lib/intel64/libmkl_sequential.so;${MKLROOT}/lib/intel64/libmkl_core.so;mpi" \
+          -D LINK_LIBRARIES="${MKLROOT}/lib/intel64/libmkl_gf_lp64.so;${MKLROOT}/lib/intel64/libmkl_sequential.so;${MKLROOT}/lib/intel64/libmkl_core.so" \
           ..
       - name: build
         run: cmake --build build
@@ -145,9 +146,10 @@ jobs:
           cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
           -D CMAKE_BUILD_TYPE=Release \
           -D BUILD_CXX_VERSION=OFF \
-          -D OPEN_COARRAYS=/usr/local/opencoarrays/lib/libcaf_mpi.a \
+          -D CAF_LIBRARY=caf_shmem \
+          -D TESTS_RUN_PREFIX="env;GFORTRAN_NUM_IMAGES=8" \
           -D FALLBACK_LINALG=OFF \
-          -D LINK_LIBRARIES="${MKLROOT}/lib/intel64/libmkl_gf_lp64.so;${MKLROOT}/lib/intel64/libmkl_sequential.so;${MKLROOT}/lib/intel64/libmkl_core.so;mpi" \
+          -D LINK_LIBRARIES="${MKLROOT}/lib/intel64/libmkl_gf_lp64.so;${MKLROOT}/lib/intel64/libmkl_sequential.so;${MKLROOT}/lib/intel64/libmkl_core.so" \
           ..
       - name: build
         run: cmake --build build
@@ -163,8 +165,9 @@ jobs:
           cmake -G Ninja -C ../.github/gnu_compiler_flags.cmake \
           -D CMAKE_BUILD_TYPE=Release \
           -D BUILD_CXX_VERSION=OFF \
-          -D OPEN_COARRAYS=/usr/local/opencoarrays/lib/libcaf_mpi.a \
-          -D LINK_LIBRARIES="blas;lapack;mpi" \
+          -D CAF_LIBRARY=caf_shmem \
+          -D TESTS_RUN_PREFIX="env;GFORTRAN_NUM_IMAGES=8" \
+          -D LINK_LIBRARIES="blas;lapack" \
           ..
       - name: build
         run: cmake --build build

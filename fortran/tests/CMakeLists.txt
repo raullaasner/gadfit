@@ -30,30 +30,12 @@ else()
   message("Using optimized linear algebra library")
 endif()
 
-# OpenCoarrays
-if (NOT OPEN_COARRAYS AND CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-  include(ExternalProject)
-  if (NOT CMAKE_VERSION VERSION_LESS 3.16.9)
-    set(_caf_lib_dir lib)
-  else()
-    set(_caf_lib_dir lib64)
-  endif()
-  ExternalProject_Add(
-    OpenCoarrays-fallback
-    EXCLUDE_FROM_ALL 1
-    URL
-    https://github.com/sourceryinstitute/opencoarrays/archive/2.8.0.tar.gz
-    CMAKE_CACHE_ARGS
-    -DCMAKE_Fortran_COMPILER:STRING=${CMAKE_Fortran_COMPILER}
-    -DCMAKE_C_COMPILER:STRING=${CMAKE_C_COMPILER}
-    -DCMAKE_BUILD_TYPE:STRING=Release
-    CMAKE_GENERATOR "Unix Makefiles"
-    BUILD_COMMAND ${CMAKE_COMMAND} --build . --target caf_mpi_static
-    INSTALL_COMMAND ${CMAKE_COMMAND} -E
-    copy ${_caf_lib_dir}/libcaf_mpi.a ${CMAKE_CURRENT_BINARY_DIR}
-    BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/libcaf_mpi.a
-    )
-  list(APPEND LINK_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libcaf_mpi.a)
+# Coarray runtime library
+if (NOT CAF_LIBRARY AND CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
+  # GFortran ships libcaf_single (a single image) and, since GCC 15,
+  # libcaf_shmem (multiple images using shared memory). Default to the
+  # former, which is available with all GFortran versions.
+  list(APPEND LINK_LIBRARIES caf_single)
 endif()
 
 # GADfit
@@ -67,9 +49,6 @@ add_dependencies(example0 gadfit)
 if (TARGET lapack-fallback)
   add_dependencies(example0 lapack-fallback)
 endif()
-if (TARGET OpenCoarrays-fallback)
-  add_dependencies(example0 OpenCoarrays-fallback)
-endif()
 target_include_directories(example0 PRIVATE ${PROJECT_BINARY_DIR})
 target_link_libraries(example0 ${LINK_LIBRARIES})
 add_custom_target(example
@@ -78,9 +57,6 @@ add_custom_target(example
 
 # Tests
 add_library(fortran_testing EXCLUDE_FROM_ALL testing.F90)
-if (TARGET OpenCoarrays-fallback)
-  add_dependencies(fortran_testing OpenCoarrays-fallback)
-endif()
 target_link_libraries(fortran_testing PUBLIC ${LINK_LIBRARIES})
 foreach(f ${tests})
   add_executable(${f} EXCLUDE_FROM_ALL ${f}.F90)
