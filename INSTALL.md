@@ -46,7 +46,7 @@ GADfit comes in two implementations, one in C++ and one in Fortran. The CMake va
 
     Source code is available at https://gcc.gnu.org/wiki/GFortran.
 
-  * **OpenCoarrays**. The multi-image Coarray support of GFortran is provided by the OpenCoarrays project. This allows to run GADfit in parallel. It is available at https://github.com/sourceryinstitute/opencoarrays and can be built and installed using standard CMake commands. When running tests and if the OpenCoarrays library is not specified the user, it is automatically downloaded and built. The Coarray support of the Intel compiler does not depend on an external project and is available out of the box.
+  * **Coarray runtime library**. Coarray support in GFortran is provided by a separate runtime library, which is selected with the CMake variable `CAF_LIBRARY` (see below for how CMake cache variables work). GFortran ships two of them: `caf_single`, which supports a single image only, and, since GCC 15, `caf_shmem`, where the images are separate processes communicating through shared memory. The latter is what allows to run GADfit in parallel. Default is `caf_single`. The number of images is controlled by the `GFORTRAN_NUM_IMAGES` environment variable. The Coarray support of the Intel compiler does not depend on an external library and is available out of the box.
 
 * **Linear algebra library**. While not required during compilation, a linear algebra library is necessary for using GADfit for running the tests (see `make test` below). If none is specified, the fallback Lapack library is used.
 

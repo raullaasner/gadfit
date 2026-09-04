@@ -34,7 +34,7 @@
 \DeclareMathOperator{\acosh}{acosh}
 \DeclareMathOperator{\atanh}{atanh}
 \DeclareMathOperator{\erf}{erf}
-\DeclareMathOperator{\Li2}{Li_2}
+\DeclareMathOperator{\Litwo}{Li_2}
 
 \title{User guide for GADfit version \version}
 \date{\monthname {} \the\year}
@@ -471,7 +471,7 @@ No work arrays are required for the forward mode. The current list of elemental 
   \quad $\atanh x_1$,
 % special
 \item $\erf(x_1) = \frac{2}{\sqrt{\pi}} \int_0^{x_1} e^{-t^2} \D t$,
-  \quad $\Li2(x_1) = -\int_0^{x_1} \frac{\ln(1-u)}{u} \D u$,
+  \quad $\Litwo(x_1) = -\int_0^{x_1} \frac{\ln(1-u)}{u} \D u$,
 % integrals
 \item
   $\int_{a(x_1, \ldots, x_n)}^{b(x_1, \ldots, x_n)} f(x_1, \ldots,
@@ -701,11 +701,11 @@ If GADfit was compiled with multi-image support, uncomment the two lines above. 
 \begin{verbatim}
 ./main
 \end{verbatim}
-or
+With the multi-image version the number of images is set through the environment,
 \begin{verbatim}
-mpirun -np 2 main
+GFORTRAN_NUM_IMAGES=2 ./main
 \end{verbatim}
-for the multi-image version.
+(\verb+FOR_COARRAY_NUM_IMAGES+ with the Intel compiler).
 
 For legacy reasons, we also include here a shell script for compiling and running a Fortran program with calls to GADfit.
 \begin{verbatim}
@@ -714,9 +714,9 @@ For legacy reasons, we also include here a shell script for compiling and runnin
 GAD=/usr/local/gadfit
 
 # GNU
-FC=mpif90
-FFLAGS="-J$GAD/include -L$GAD/lib"
-LIBS="$LIBS /usr/local/opencoarrays/lib/libcaf_mpi.a"
+FC=gfortran
+FFLAGS="-fcoarray=lib -J$GAD/include -L$GAD/lib"
+LIBS="$LIBS -lcaf_shmem"
 # Intel
 #FC=ifort
 #FFLAGS="-coarray=shared -I$GAD/include -L$GAD/lib"
@@ -737,10 +737,10 @@ LIBS="$LIBS -llapack"
 
 export LD_LIBRARY_PATH=$GAD/lib:$LD_LIBRARY_PATH
 $FC $FFLAGS main.f90 -o main -lgadfit $LIBS && \
-mpirun -np 4 ./main # GNU
-#./main             # Intel
+GFORTRAN_NUM_IMAGES=4 ./main # GNU
+#./main                      # Intel
 \end{verbatim}
-This may need to be modified to reflect the user's environment. If \verb+libcaf_mpi.a+ was built automatically (see Sec.~\ref{sec:parallelism_fortran}), then its location is \\ \verb+~gadfit/fortran/tests+. If GADfit was built in serial, \verb+libcaf_mpi.a+ need not be linked.
+This may need to be modified to reflect the user's environment. The Coarray runtime library must be the same one that GADfit was built against (see Sec.~\ref{sec:parallelism_fortran}); with \verb+caf_single+ replace \verb+-lcaf_shmem+ by \verb+-lcaf_single+. If GADfit was built without \verb+-fcoarray=lib+, no Coarray runtime library need be linked.
 
 \subsection{Notes on using GADfit in other CMake projects}
 
@@ -784,17 +784,16 @@ Under normal usage no OpenMP directives or functions need to be explicitly calle
 
 The Fortran version of GADfit is parallelized using Coarrays, a syntactic extension to the language that was included in the Fortran 2008 standard. Coarrays follow the SPMD parallelization scheme, where the main program is replicated at the start of execution. Each instance, called an image, has its own set of private variables plus so-called co-variables that are addressable by other images. Coarrays allow to parallelize programs with little effort compared to MPI or OpenMP, although it is often either MPI or OpenMP that runs under the hood.
 
-In order to compile a Coarray program with GFortran, the compiler flag \texttt{-fcoarray=lib} must be used. For GFortran, the Coarray support is provided by the OpenCoarrays project. It can be automatically downloaded and built with \verb+cmake --build . --target example+ or \verb+cmake --build . --target test+. The Coarray communication library, \verb+libcaf_mpi.a+, is installed in \\
-\verb+~gadfit/fortran/tests+. Alternatively, one may issue, e.g.,
+In order to compile a Coarray program with GFortran, the compiler flag \texttt{-fcoarray=lib} must be used and a Coarray runtime library must be linked. GFortran ships two such libraries: \verb+libcaf_single+, which supports a single image only, and, since GCC 15, \verb+libcaf_shmem+, where the images are separate processes communicating through shared memory. Which one is used is determined by the \verb+CAF_LIBRARY+ configuration variable,
 \begin{verbatim}
-  wget https://github.com/sourceryinstitute/OpenCoarrays/\
-  releases/download/2.10.0/OpenCoarrays-2.10.0.tar.gz
-  tar xf OpenCoarrays-2.10.0.tar.gz
-  mkdir OpenCoarrays-2.10.0/build && cd OpenCoarrays-2.10.0/build
-  cmake ..
-  make -j # libcaf_mpi.a is in lib
+  cmake -D CAF_LIBRARY=caf_shmem ..
 \end{verbatim}
-and set the \verb+OPEN_COARRAYS+ variable in the GADfit configuration to the full path of \verb+libcaf_mpi.a+. If using the Intel compiler, there is no such external dependency.
+If it is left unset, \verb+caf_single+ is used. The number of images is set with the \verb+GFORTRAN_NUM_IMAGES+ environment variable, which by default equals the number of cores,
+\begin{verbatim}
+  GFORTRAN_NUM_IMAGES=4 ./main
+\end{verbatim}
+The same applies to the tests, which are launched through the \verb+TESTS_RUN_PREFIX+ variable, e.g.\ \\
+\verb+-D TESTS_RUN_PREFIX="env;GFORTRAN_NUM_IMAGES=4"+.
 
 \subsection{\label{sec:example}Example input}
 
