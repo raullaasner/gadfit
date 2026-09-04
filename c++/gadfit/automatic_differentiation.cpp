@@ -870,7 +870,10 @@ auto returnSweep(const int rewind_index, std::vector<double>& adjoints) -> void
             i_tr -= 4;
             break;
         default:
-            throw UnknownOperation { trace[i_tr] };
+            const int i_op { trace[i_tr] };
+            trace.clear();
+            forwards.resize(rewind_index + 1);
+            throw UnknownOperation { i_op };
         }
     }
     trace.clear();
