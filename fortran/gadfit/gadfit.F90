@@ -1173,10 +1173,10 @@ contains
           if (is_global(active_pars(i))) then
              associate(val => fitfuncs(1)%pars(active_pars(i))%val)
                if (len_aux(tmp_names(i)%name) > 0) then ! If is named
-                  write(io_unit, '(2x'//fmt_name//'" ="'//fmt_value//')', &
+                  write(io_unit, '(2x, '//fmt_name//', " =", '//fmt_value//')', &
                        & advance='no') tmp_names(i)%name, val
                else
-                  write(io_unit, '(2x, "Par ", '//par_digits//', " ="'// &
+                  write(io_unit, '(2x, "Par ,"'//par_digits//', " =" '// &
                        & fmt_value//')', advance='no') active_pars(i), val
                end if
                if (present(delta1) .and. show_delta1) &
@@ -1206,7 +1206,7 @@ contains
                      write(io_unit, '(x'//fmt_name//'" ="'//fmt_value//')', &
                           & advance='no') tmp_names(i)%name, val
                   else
-                     write(io_unit, '(1x, "Par "'//par_digits//'" ="'// &
+                     write(io_unit, '(1x, "Par ", '//par_digits//'," ="'// &
                           & fmt_value//')', advance='no') active_pars(i), val
                   end if
                   if (present(delta1) .and. show_delta1) &
