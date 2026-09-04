@@ -52,7 +52,9 @@ endif()
 add_library(gadfit "")
 target_compile_definitions(gadfit PRIVATE
   PROJECT_VERSION="${PROJECT_VERSION}"
-  CMAKE_PLATFORM="${CMAKE_HOST_SYSTEM}")
+  CMAKE_PLATFORM="${CMAKE_HOST_SYSTEM}"
+  HAS_CO_SUM=FALSE
+)
 
 # Print info
 include(GADfitTools)
